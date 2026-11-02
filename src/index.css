@@ -2,8 +2,10 @@
 
 /* ===== Art Direction: 雨の湾岸、夜。ネイビーの闇に、シアン（信頼）とマゼンタ（外の声）。 ===== */
 @theme {
-  --font-sans: "DotGothic16", "Hiragino Kaku Gothic ProN", system-ui, sans-serif;
-  --font-mono: "DotGothic16", ui-monospace, monospace;
+  /* 本文は読みやすいゴシック、見出し・ボタン・数字はドット文字 */
+  --font-sans: "M PLUS 1p", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
+  --font-pixel: "DotGothic16", "M PLUS 1p", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
   --color-ink: #05060d;
   --color-night: #0a0e1d;
   --color-panel: #0f1530;
@@ -26,23 +28,23 @@ body {
   background: var(--color-ink);
   color: var(--color-fg);
   font-family: var(--font-sans);
-  -webkit-font-smoothing: none;
-  font-smooth: never;
-  letter-spacing: 0.02em;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.7;
   overflow-x: hidden;
 }
 button { font-family: inherit; }
+h1, h2, h3, .px-btn, .font-pixel { font-family: var(--font-pixel); letter-spacing: 0.03em; }
 .pixelated { image-rendering: pixelated; }
 
 /* CRT 走査線 + ビネット */
 .crt::before {
   content: ""; pointer-events: none; position: fixed; inset: 0; z-index: 80;
-  background: repeating-linear-gradient(to bottom, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
+  background: repeating-linear-gradient(to bottom, rgba(0,0,0,.07) 0 1px, transparent 1px 4px);
   mix-blend-mode: multiply;
 }
 .crt::after {
   content: ""; pointer-events: none; position: fixed; inset: 0; z-index: 81;
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55) 100%);
+  background: radial-gradient(ellipse at center, transparent 65%, rgba(0,0,0,.35) 100%);
 }
 
 /* ピクセル枠（角を欠いたボックス） */
@@ -67,7 +69,7 @@ button { font-family: inherit; }
 .shake-s { animation: shake-s 140ms steps(4) 1; }
 .shake-l { animation: shake-l 480ms steps(12) 1; }
 
-@keyframes flash { from { opacity: .9 } to { opacity: 0 } }
+@keyframes flash { from { opacity: .3 } to { opacity: 0 } }
 .flash { animation: flash 380ms steps(6) forwards; }
 
 @keyframes stamp { 0% { transform: scale(2.6) rotate(-14deg); opacity: 0 } 60% { transform: scale(.92) rotate(-8deg); opacity: 1 } 100% { transform: scale(1) rotate(-8deg); opacity: 1 } }
@@ -85,12 +87,10 @@ button { font-family: inherit; }
 @keyframes pulse-rd { 0%,100% { box-shadow: 0 0 0 2px var(--color-rd) } 50% { box-shadow: 0 0 0 2px var(--color-rd), 0 0 24px 4px rgba(255,64,96,.55) } }
 .pulse-rd { animation: pulse-rd 700ms steps(4) infinite; }
 
-/* グリッチ文字（攻撃者の声） */
-@keyframes glitch { 0%,100% { text-shadow: 2px 0 var(--color-mg), -2px 0 var(--color-cy); transform: none }
-  20% { text-shadow: -3px 0 var(--color-mg), 3px 0 var(--color-cy); transform: translateX(1px) }
-  40% { text-shadow: 1px 0 var(--color-mg), -1px 0 var(--color-cy); transform: translateX(-1px) skewX(-6deg) }
-  60% { text-shadow: 3px 1px var(--color-mg), -2px -1px var(--color-cy) } }
-.glitch { animation: glitch 1.6s steps(1) infinite; color: #ffd6fb; }
+/* 攻撃者の声：読みやすさ優先。色と淡い光だけ。動くグリッチは小さな飾り（.glitch-anim）にだけ使う */
+.glitch { color: #ffc8f8; text-shadow: 0 0 8px rgba(255,61,240,.45); }
+@keyframes glitch-anim { 0%,100% { text-shadow: 2px 0 var(--color-mg), -2px 0 var(--color-cy) } 50% { text-shadow: -1px 0 var(--color-mg), 1px 0 var(--color-cy) } }
+.glitch-anim { animation: glitch-anim 1.6s steps(1) infinite; }
 
 /* 粒子 */
 @keyframes particle { to { transform: translate(var(--dx), var(--dy)); opacity: 0 } }
@@ -104,9 +104,9 @@ button { font-family: inherit; }
 .stream > span { animation: stream 600ms steps(10) infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .shake-s, .shake-l, .stamp, .inject, .rise, .pop, .glitch, .pulse-rd, .blink, .particle, .stream > span { animation: none !important; }
+  .shake-s, .shake-l, .stamp, .inject, .rise, .pop, .glitch-anim, .pulse-rd, .blink, .particle, .stream > span { animation: none !important; }
 }
-.reduce-motion .shake-s, .reduce-motion .shake-l, .reduce-motion .glitch, .reduce-motion .particle { animation: none !important; }
+.reduce-motion .shake-s, .reduce-motion .shake-l, .reduce-motion .glitch-anim, .reduce-motion .particle { animation: none !important; }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #263063; }

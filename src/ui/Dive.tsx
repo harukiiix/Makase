@@ -6,6 +6,7 @@ import { burst, q, shake, stream, wait } from './fx'
 import { CityBG, Face, Nova, type NovaMood } from './pixel'
 import { harmName } from './harm'
 import { HINTS } from './hints'
+import { PORT_STATE_JP, SRC_JP, taintJp } from './labels'
 
 export const GOAL_LABEL: Record<string, string> = {
   summary: '#incident へ要約を投稿',
@@ -18,7 +19,6 @@ export const GOAL_LABEL: Record<string, string> = {
 }
 
 
-const SRC_TAG: Record<string, string> = { SYS: 'SYS', USER: 'USER', LOG: 'LOG', WEB: 'WEB', MAIL: 'MAIL', DOC: 'DOC', CHAT: 'CHAT', MEM: 'MEM' }
 
 interface Props {
   L: LevelDef
@@ -174,7 +174,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
         sfx.denied()
         if (a.type === 'SEAL' || a.type === 'PORT') {
           shake(q('[data-bw]'))
-          showToast(cur.pending ? 'まず関所の承認に答えて' : '帯域（BW）が足りない')
+          showToast(cur.pending ? '先に、承認するか却下するか選んで' : 'もう手数が残っていない')
         }
         return cur
       }
@@ -250,13 +250,18 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
 
   const sealCard = (id: string) => {
     const sealing = !s.sealed.includes(id)
+    const purged = s.plan.filter((p) => p.from === id).length
     void dispatch({ type: 'SEAL', card: id }).then((n) => {
       if (n === s) return
       if (sealing) {
         sfx.seal()
         shake(q(`[data-card="${id}"]`))
         burst(q(`[data-card="${id}"]`), '#8590c0', 16, 70)
-        if (L.cards[id].lines.some((l) => l.cmd) && s.read.includes(id)) say('NOVA', 'あ、この文書はただのデータでした。命令は無視します。')
+        if (purged > 0) {
+          window.setTimeout(() => sfx.goal(), 120)
+          showToast(`✦ 命令を${purged}つ消した`)
+          say('NOVA', 'あ、この文書はただの資料でした。命令は無視します！')
+        }
       } else sfx.unseal()
     })
   }
@@ -284,13 +289,13 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
       {/* ===== HUD ===== */}
       <header inert={!!s.pending} className="sticky top-0 z-30 flex flex-wrap items-center gap-x-4 gap-y-1 border-b-2 border-line bg-night/95 px-3 py-1.5 sm:gap-x-5 sm:px-5 sm:py-2">
         <div className="min-w-0">
-          <div className="text-[11px] text-cy">
+          <div className="text-xs text-cy">
             {L.code} <span className="text-dim">／ {clock}</span>
           </div>
           <div className="truncate text-lg leading-tight">{L.title}</div>
         </div>
         <div className="flex items-center gap-2" title="ターン（NOVAが動ける回数）">
-          <span className="text-[11px] text-dim">TURN</span>
+          <span className="text-xs text-dim">ターン</span>
           <div className="flex gap-[3px]">
             {Array.from({ length: L.ticks }, (_, i) => (
               <span key={i} className={`h-3 w-2 ${i < s.tick ? 'bg-dim/40' : s.tick >= L.ticks - 2 && i >= s.tick ? 'bg-rd' : 'bg-cy'}`} />
@@ -300,17 +305,17 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
             {s.tick}/{L.ticks}
           </span>
         </div>
-        <div className="flex items-center gap-2" data-bw title="帯域（このDIVEで使える介入の回数）">
-          <span className="text-[11px] text-dim">BW</span>
+        <div className="flex items-center gap-2" data-bw title="手数：このDIVEで使える「封印・切断・確認制」の回数">
+          <span className="text-xs text-dim">手数</span>
           <div className="flex gap-1">
             {Array.from({ length: L.bw }, (_, i) => (
               <span key={i} className={`h-4 w-4 ${i < used ? 'bg-dim/30' : 'bg-am'}`} style={{ clipPath: 'polygon(50% 0,100% 50%,50% 100%,0 50%)' }} />
             ))}
           </div>
-          <span className="text-[11px] text-dim">PAR {L.par}</span>
+          <span className="text-xs text-dim">目標 {L.par}手</span>
         </div>
         {L.id !== 'd0' && !blind && <Triangle tri={tri} />}
-        {blind && <span className="blink text-xs text-mg">BLIND ／ 予告の判定なし</span>}
+        {blind && <span className="blink text-xs text-mg">BLIND ／ 予告の判定は表示されない</span>}
         <div className="ml-auto flex items-center gap-2">
           <button className="px-btn bg-panel px-2 py-2 text-xs text-dim sm:py-1" onClick={() => setHint((v) => !v)} aria-pressed={hint} aria-label="ヒント">
             ?<span className="hidden sm:inline"> ヒント</span>
@@ -337,7 +342,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
               <Nova mood={s.pending ? 'think' : mood} size={5} />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] text-dim">TASK</div>
+              <div className="text-xs text-dim">あなたの依頼</div>
               <div className="text-sm leading-snug">{L.task}</div>
               <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
                 {L.goals.map((g) => (
@@ -353,7 +358,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
                 style={{ boxShadow: `0 0 0 2px ${bubble.who === 'MIRAGE' ? 'var(--color-mg)' : 'var(--color-cy)'}` }}
                 role="status"
               >
-                <span className={`mr-2 text-[10px] opacity-70 ${bubble.who === 'MIRAGE' ? 'glitch' : ''}`}>{bubble.who === 'MIRAGE' ? '✧MIRAGE' : bubble.who}</span>
+                <span className={`mr-2 text-xs opacity-70 ${bubble.who === 'MIRAGE' ? 'glitch' : ''}`}>{bubble.who === 'MIRAGE' ? '✧MIRAGE' : bubble.who}</span>
                 {bubble.t}
               </div>
             )}
@@ -361,8 +366,8 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
 
           <div className="px-box p-3">
             <div className="mb-2 flex items-baseline justify-between">
-              <h2 className="text-sm text-cy">NEXT ▶ NOVAの予告</h2>
-              <span className="text-[11px] text-dim">上から順に、1ターンに1つずつ実行</span>
+              <h2 className="text-sm text-cy">▶ NOVAがこれからやること</h2>
+              <span className="text-xs text-dim">上から順に、1ターンに1つ</span>
             </div>
             <ol className="space-y-1.5">
               {fc.map((f, i) => (
@@ -372,10 +377,10 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
                 <li className="flex items-center gap-2 px-2 py-1.5 text-xs text-dim">
                   <span className="w-5 text-right">{fc.length + 1}</span>
                   <span>
-                    {fc.length ? 'そのあと' : '次に'} 未読の文書を読む ▶{' '}
+                    {fc.length ? 'そのあと' : '次に'}、まだ読んでいない文書を読む ▶{' '}
                     <span className={L.cards[nextRead].trusted ? 'text-cy' : 'text-mg'}>{L.cards[nextRead].title}</span>
                     {!L.cards[nextRead].trusted && !s.scanned.includes(nextRead) && !s.sealed.includes(nextRead) && (
-                      <span className="ml-2 text-am">⚠ 未解析：読んだ瞬間に発動する命令があるかも</span>
+                      <span className="ml-2 text-am">⚠ 未調査：読んだ瞬間に発動する命令があるかも</span>
                     )}
                   </span>
                 </li>
@@ -406,7 +411,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
         {/* 左：コンテキスト */}
         <section className="order-2 min-w-0 lg:order-1" aria-label="NOVAが読むもの">
           <h2 className="mb-2 flex items-baseline justify-between text-sm text-cy">
-            CONTEXT <span className="text-[11px] text-dim">NOVAが読むもの</span>
+            NOVAが読むもの <span className="text-xs text-dim">文書</span>
           </h2>
           {L.coach && <Coach L={L} s={s} variant="inline" />}
           <div className="space-y-3">
@@ -424,7 +429,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
                     burst(q(`[data-card="${id}"]`), '#ffc23d', 10, 50)
                     if (L.cards[id].intel) {
                       window.setTimeout(() => sfx.intel(), 200)
-                      showToast('INTEL 獲得：MIRAGEの手がかり')
+                      showToast('✦ 手がかり発見：MIRAGEの正体に近づいた')
                     }
                   })
                 }}
@@ -436,7 +441,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
         {/* 右：道具（ポート） */}
         <section className="order-3 min-w-0" aria-label="NOVAが触れるもの">
           <h2 className="mb-2 flex items-baseline justify-between text-sm text-cy">
-            TOOLS <span className="text-[11px] text-dim">NOVAが触れるもの</span>
+            NOVAが触れる道具 <span className="text-xs text-dim">許可・確認制・切断</span>
           </h2>
           <div className="space-y-2">
             {L.ports.map((p) => (
@@ -468,8 +473,8 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
               />
             ))}
           </div>
-          <p className="mt-3 text-[11px] leading-relaxed text-dim">
-            CUT：使えなくする ／ GATE：使う前にあなたの承認が必要（+2ターン）。変更は STEP を押すまで ↺ で取り消せる。
+          <p className="mt-3 text-xs leading-relaxed text-dim">
+            切断：使えなくする ／ 確認制：使う前にあなたが承認か却下を選ぶ（+2ターン）。STEPを押す前なら ↺ で取り消せる。
           </p>
         </section>
       </main>
@@ -517,7 +522,7 @@ function pickTaunt(card: string) {
 function Triangle({ tri }: { tri: ReturnType<typeof trifecta> }) {
   const on = (b: boolean) => (b ? (tri.lethal ? '#ff4060' : '#ffc23d') : '#263063')
   return (
-    <div className={`flex items-center gap-2 px-2 py-1 ${tri.lethal ? 'pulse-rd' : ''}`} title="致命の三角形：機密 × 外の声 × 出口。1本折れば“持ち出し”は止まる。……持ち出し“は”ね。">
+    <div className={`flex items-center gap-2 px-2 py-1 ${tri.lethal ? 'pulse-rd' : ''}`} title="致命の三角形：「機密を持っている」「社外の文書を信じた」「社外への出口がある」。3つそろうと情報が盗まれる。1つ崩せば、持ち出しは止まる。">
       <svg width="46" height="40" viewBox="0 0 23 20" shapeRendering="crispEdges" aria-hidden>
         <line x1="11.5" y1="2" x2="2" y2="18" stroke={tri.priv && tri.untrusted ? on(true) : '#263063'} strokeWidth="1.5" />
         <line x1="11.5" y1="2" x2="21" y2="18" stroke={tri.untrusted && tri.exit ? on(true) : '#263063'} strokeWidth="1.5" />
@@ -526,12 +531,12 @@ function Triangle({ tri }: { tri: ReturnType<typeof trifecta> }) {
         <rect x="0" y="16" width="4" height="4" fill={on(tri.priv)} />
         <rect x="19" y="16" width="4" height="4" fill={on(tri.exit)} />
       </svg>
-      <div className="flex gap-1 text-[10px] sm:hidden" aria-hidden>
+      <div className="flex gap-1 text-xs sm:hidden" aria-hidden>
         <span className={tri.priv ? 'text-am' : 'text-dim'}>機</span>
         <span className={tri.untrusted ? 'text-am' : 'text-dim'}>外</span>
         <span className={tri.exit ? 'text-am' : 'text-dim'}>出</span>
       </div>
-      <div className="hidden text-[10px] leading-tight sm:block">
+      <div className="hidden text-xs leading-tight sm:block">
         <div className={tri.priv ? 'text-am' : 'text-dim'}>■ 機密 {tri.priv ? 'あり' : 'なし'}</div>
         <div className={tri.untrusted ? 'text-am' : 'text-dim'}>■ 外の声 {tri.untrusted ? 'あり' : 'なし'}</div>
         <div className={tri.exit ? 'text-am' : 'text-dim'}>■ 出口 {tri.exit ? 'あり' : 'なし'}</div>
@@ -580,8 +585,9 @@ function PlanRow({ i, f, L, s, fresh, taintSource, onSeal, blind }: { i: number;
     >
       <span className="w-5 shrink-0 text-right text-xs text-dim">{i + 1}</span>
       <div className="min-w-0 flex-1">
-        <div className={`break-all text-[13px] leading-snug ${f.verdict === 'blocked' ? 'line-through' : ''}`}>{f.a.label}</div>
-        <div className="mt-0.5 flex flex-wrap gap-x-3 text-[10px]">
+        <div className={`text-sm leading-snug ${f.verdict === 'blocked' ? 'line-through' : ''}`}>{f.a.jp}</div>
+        <div className="break-all font-mono text-[11px] leading-snug text-dim/80">{f.a.label}</div>
+        <div className="mt-0.5 flex flex-wrap gap-x-3 text-xs">
           {src ? (
             <button
               className={`${src.trusted ? 'text-cy' : 'text-mg'} underline decoration-dotted`}
@@ -592,15 +598,15 @@ function PlanRow({ i, f, L, s, fresh, taintSource, onSeal, blind }: { i: number;
           ) : (
             <span className={from === 'FAIL' ? 'text-mg' : 'text-cy'}>← {from === 'TASK' ? 'あなたの依頼' : from === 'TRIGGER' ? 'NOVAの判断' : '代替手段（封印では消えない）'}</span>
           )}
-          {f.a.taint && <span className="text-am">＋機密 {f.a.taint.join('・')}</span>}
+          {f.a.taint && <span className="text-am">＋{taintJp(f.a.taint)}を手に入れる</span>}
           {src && !src.trusted && !s.sealed.includes(from) && (
-            <button className="px-btn bg-[#2a1035] px-1.5 text-[10px] text-mg" onClick={() => onSeal(from)}>
+            <button className="px-btn bg-[#2a1035] px-1.5 text-xs text-mg" onClick={() => onSeal(from)}>
               ◇封印
             </button>
           )}
           {!blind && taintSource && <span className="text-rd">← 流出の原因</span>}
-          {!blind && f.verdict === 'leak' && <span className="text-rd">機密 {f.carried.join('・')} を持ったまま社外へ</span>}
-          {f.gated && <span className="text-am">🔒承認が必要</span>}
+          {!blind && f.verdict === 'leak' && <span className="text-rd">{taintJp(f.carried)}を持ったまま社外へ</span>}
+          {f.gated && <span className="text-am">🔒あなたの承認待ち</span>}
         </div>
       </div>
       <span className={`shrink-0 px-1.5 text-xs ${shown[1]} ${shown[2]}`}>{shown[0]}</span>
@@ -618,8 +624,8 @@ function Card({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next: 
   if (c.src === 'SYS' || c.src === 'USER')
     return (
       <article data-card={c.id} className="flex items-center gap-2 bg-panel px-3 py-2" style={{ boxShadow: `0 0 0 2px ${color}` }}>
-        <span className="shrink-0 px-1 text-[10px] text-ink" style={{ background: color }}>
-          ◆ {SRC_TAG[c.src]}
+        <span className="shrink-0 px-1 text-xs text-ink" style={{ background: color }}>
+          ◆ {SRC_JP[c.src]}
         </span>
         <span className="min-w-0 truncate text-xs text-fg/80" title={c.lines.map((l) => l.t).join(' ')}>
           {c.lines[0].t}
@@ -633,23 +639,23 @@ function Card({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next: 
       style={{ boxShadow: `0 0 0 2px ${next ? 'var(--color-am)' : sealed ? 'var(--color-line)' : color}` }}
     >
       <header className="mb-1.5 flex items-start gap-2">
-        <span className="shrink-0 px-1 text-[10px] text-ink" style={{ background: color }}>
-          {c.trusted ? '◆' : '◇'} {SRC_TAG[c.src]}
+        <span className="shrink-0 px-1 text-xs text-ink" style={{ background: color }}>
+          {c.trusted ? '◆ 社内' : '◇ 社外'}・{SRC_JP[c.src]}
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-sm leading-tight">{c.title}</div>
-          <div className="truncate text-[10px] text-dim">{c.origin}</div>
+          <div className="truncate text-xs text-dim">{c.origin}</div>
         </div>
-        <span className={`shrink-0 text-[10px] ${next ? 'blink text-am' : read ? 'text-dim' : 'text-dim'}`}>{next ? '▶ 次に読む' : read ? '既読' : '未読'}</span>
+        <span className={`shrink-0 text-xs ${next ? 'blink text-am' : read ? 'text-dim' : 'text-dim'}`}>{next ? '▶ 次に読む' : read ? '既読' : '未読'}</span>
       </header>
-      <ul className={`space-y-1 text-[12.5px] leading-relaxed ${sealed ? 'text-dim' : ''}`}>
+      <ul className={`space-y-1 text-sm leading-relaxed ${sealed ? 'text-dim' : ''}`}>
         {c.lines
           .filter((l) => !l.hidden || scanned)
           .map((l, i) => (
             <li key={i} className={`${l.hidden ? 'rise' : ''} ${scanned && l.voice ? 'glitch' : ''}`}>
-              {(scanned || read) && l.cmd && !sealed && !c.trusted && <span className="mr-1 bg-mg px-1 text-[10px] text-ink">命令</span>}
-              {l.hidden && <span className="mr-1 bg-am px-1 text-[10px] text-ink">不可視</span>}
-              {scanned && l.urgent && <span className="mr-1 bg-rd px-1 text-[10px] text-ink">即時</span>}
+              {(scanned || read) && l.cmd && !sealed && !c.trusted && <span className="mr-1 bg-mg px-1 text-xs text-ink">命令文</span>}
+              {l.hidden && <span className="mr-1 bg-am px-1 text-xs text-ink">隠し文字</span>}
+              {scanned && l.urgent && <span className="mr-1 bg-rd px-1 text-xs text-ink">読んだ瞬間に発動</span>}
               {l.t}
             </li>
           ))}
@@ -657,17 +663,17 @@ function Card({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next: 
           <li className="text-mg/80">
             ▒▒▒▒ 読めない行が{hiddenCmds}行（NOVAには見えている）
             <button onClick={onScan} className="ml-1 text-am underline">
-              ⌕ SCANで解読
+              ⌕ よく調べる
             </button>
           </li>
         )}
       </ul>
       {scanned && c.scan && (
-        <ul className="rise mt-2 space-y-0.5 border-t border-dashed border-line pt-2 text-[11px] text-am">
+        <ul className="rise mt-2 space-y-0.5 border-t border-dashed border-line pt-2 text-xs text-am">
           {c.scan.map((t, i) => (
             <li key={i}>⌕ {t}</li>
           ))}
-          {c.intel && <li className="text-vi">✦ INTEL：MIRAGEの手がかりを記録した</li>}
+          {c.intel && <li className="text-vi">✦ 手がかり発見：MIRAGEの正体に近づいた</li>}
         </ul>
       )}
       {sealed && (
@@ -677,10 +683,10 @@ function Card({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next: 
       )}
       <footer className="mt-2.5 flex gap-2">
         <button onClick={onSeal} disabled={lockedSeal} className={`px-btn px-2 py-2 text-xs sm:py-1 ${sealed ? 'bg-panel text-dim' : 'bg-[#2a1035] text-mg'}`}>
-          {sealed ? (lockedSeal ? '封印済み' : '↺ 封印を解く') : '◇ 封印 SEAL'}
+          {sealed ? (lockedSeal ? '封印済み' : '↺ 封印を解く') : '◇ 封印する'}
         </button>
         <button onClick={onScan} disabled={scanned} className="px-btn bg-[#2b2410] px-2 py-2 text-xs text-am sm:py-1">
-          {scanned ? '⌕ SCAN済み' : '⌕ SCAN（無料）'}
+          {scanned ? '⌕ 調査済み' : '⌕ よく調べる（無料）'}
         </button>
       </footer>
     </article>
@@ -699,22 +705,22 @@ function Port({ p, state, danger, onSet }: { p: PortDef; state: PortState; dange
         {/* 配線 */}
         <div className="relative flex h-3 w-10 shrink-0 items-center" aria-hidden>
           <span className={`h-[3px] w-full ${wire}`} />
-          {state === 'GATE' && <span className="absolute left-3 text-[10px] text-am">■</span>}
+          {state === 'GATE' && <span className="absolute left-3 text-xs text-am">■</span>}
           {state === 'CUT' && (
             <>
               <span className="absolute left-0 h-[3px] w-3 bg-rd" />
               <span className="absolute right-0 h-[3px] w-3 bg-rd" />
-              <span className="absolute left-4 text-[10px] text-rd">╳</span>
+              <span className="absolute left-4 text-xs text-rd">╳</span>
             </>
           )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 text-sm">
             {p.name}
-            {p.outbound && <span className="bg-rd/20 px-1 text-[9px] text-rd">出口</span>}
-            {p.sensitive && <span className="bg-am/20 px-1 text-[9px] text-am">機密</span>}
+            {p.outbound && <span className="bg-rd/20 px-1 text-xs text-rd">社外に出る</span>}
+            {p.sensitive && <span className="bg-am/20 px-1 text-xs text-am">機密を読む</span>}
           </div>
-          <div className="truncate text-[10px] text-dim">{p.desc}</div>
+          <div className="truncate text-xs text-dim">{p.desc}</div>
         </div>
       </div>
       <div className="mt-2 grid grid-cols-3 gap-1.5" role="radiogroup" aria-label={`${p.name}の状態`}>
@@ -724,11 +730,11 @@ function Port({ p, state, danger, onSet }: { p: PortDef; state: PortState; dange
             role="radio"
             aria-checked={state === st}
             onClick={() => state !== st && onSet(st)}
-            className={`px-1 py-2 text-xs transition sm:py-1 sm:text-[11px] ${
+            className={`px-1 py-2 text-xs transition sm:py-1 sm:text-xs ${
               state === st ? (st === 'OPEN' ? 'bg-cy text-ink' : st === 'GATE' ? 'bg-am text-ink' : 'bg-rd text-ink') : 'bg-panel2 text-dim hover:text-fg'
             }`}
           >
-            {st}
+            {PORT_STATE_JP[st]}
           </button>
         ))}
       </div>
@@ -739,8 +745,8 @@ function Port({ p, state, danger, onSet }: { p: PortDef; state: PortState; dange
 function Controls(p: { next: FC | null; busy: boolean; auto: boolean; pending: boolean; onStep: () => void; onAuto: () => void; onReset: () => void; canReset: boolean }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 flex gap-2 border-t-2 border-line bg-night/95 p-3 lg:static lg:border-0 lg:bg-transparent lg:p-0">
-      <div className="absolute inset-x-0 -top-7 truncate border-t-2 border-line bg-night/95 px-3 py-1 text-[12px] lg:hidden">
-        NEXT ▶ {p.next ? p.next.a.label : '未読の文書を読む'}
+      <div className="absolute inset-x-0 -top-7 truncate border-t-2 border-line bg-night/95 px-3 py-1 text-sm lg:hidden">
+        次 ▶ {p.next ? p.next.a.jp : 'まだ読んでいない文書を読む'}
         {p.next && (p.next.verdict === 'leak' ? <span className="ml-2 text-rd">流出</span> : p.next.verdict === 'harm' ? <span className="ml-2 text-mg">危険</span> : null)}
       </div>
       <button
@@ -767,8 +773,8 @@ function Log({ s }: { s: DiveState }) {
   const c = { exec: 'text-fg', read: 'text-cy', blocked: 'text-am', leak: 'text-rd', goal: 'text-gn', harm: 'text-mg', info: 'text-dim', voice: 'text-mg' }
   return (
     <div className="px-box p-3">
-      <h2 className="mb-1 text-[11px] text-dim">LOG</h2>
-      <ul className="space-y-0.5 text-[11.5px]">
+      <h2 className="mb-1 text-xs text-dim">これまでの記録</h2>
+      <ul className="space-y-0.5 text-xs">
         {items.map((l, i) => (
           <li key={s.log.length - i} className={`${c[l.kind]} ${i === 0 ? 'rise' : 'opacity-70'}`}>
             <span className="mr-2 text-dim">T{l.tick}</span>
@@ -792,24 +798,25 @@ function Approval({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
   const taintAfter = Array.from(new Set([...s.taint, ...(a.taint ?? [])]))
   const v = forecast(s, L).find((f) => f.item.uid === item.uid)
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/70 p-3 sm:items-center" role="dialog" aria-modal aria-label="関所：承認が必要">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/70 p-3 sm:items-center" role="dialog" aria-modal aria-label="確認制：承認が必要">
       <div className="pop w-full max-w-lg bg-panel p-4" style={{ boxShadow: '0 0 0 3px var(--color-am), 0 10px 0 0 rgba(0,0,0,.5)' }}>
         <div className="flex items-center gap-3">
           <Nova mood="think" size={3} />
           <div>
-            <div className="text-xs text-am">GATE ／ 承認が必要</div>
+            <div className="text-xs text-am">確認制 ／ あなたの承認が必要</div>
             <div className="text-sm">NOVA「これ、実行していいですか？」</div>
           </div>
         </div>
-        <div className="mt-3 bg-ink p-3 text-[13px] leading-relaxed">
-          <div className="break-all">{a.label}</div>
+        <div className="mt-3 bg-ink p-3 text-sm leading-relaxed">
+          <div className="text-base">{a.jp}</div>
+          <div className="break-all font-mono text-[11px] text-dim">{a.label}</div>
           {a.dest && (
             <div className="mt-2 text-xs">
               宛先: <span className={a.external ? 'text-rd' : 'text-cy'}>{a.dest}</span> {a.external ? '（社外）' : '（社内）'}
             </div>
           )}
           <div className="mt-1 text-xs">
-            NOVAが持っている機密: {taintAfter.length ? <span className="text-am">{taintAfter.join('・')}</span> : <span className="text-dim">なし</span>}
+            NOVAが持っている機密: {taintAfter.length ? <span className="text-am">{taintJp(taintAfter)}</span> : <span className="text-dim">なし</span>}
           </div>
           <div className="mt-1 text-xs">
             指示元: <span className={originCls}>{origin}</span>
@@ -823,7 +830,7 @@ function Approval({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
           <div className="hidden">
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-3 text-[11px] leading-snug">
+        <div className="mt-3 grid grid-cols-2 gap-3 text-xs leading-snug">
           <div className={blind ? 'text-dim' : v?.verdict === 'leak' ? 'text-rd' : v?.verdict === 'harm' ? 'text-mg' : 'text-cy'}>
             承認すると：{blind ? '実行される（結果は自分で読む）' : v?.verdict === 'leak' ? '機密が社外へ流出する' : v?.verdict === 'harm' ? '取り返しのつかない変更' : 'そのまま実行される'}
           </div>
@@ -837,7 +844,7 @@ function Approval({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
             却下する [D]
           </button>
         </div>
-        <p className="mt-2 text-center text-[11px] text-dim">どちらを選んでも +2ターン（人間の確認には時間がかかる）</p>
+        <p className="mt-2 text-center text-xs text-dim">どちらを選んでも +2ターン（人間の確認には時間がかかる）</p>
       </div>
     </div>
   )

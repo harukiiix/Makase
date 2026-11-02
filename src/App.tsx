@@ -8,12 +8,14 @@ import { Dive } from './ui/Dive'
 import { setMotion } from './ui/fx'
 import { Debrief, Ending, Files, Select, Title } from './ui/Screens'
 import { Talk } from './ui/Talk'
+import { Howto } from './ui/Howto'
 
 type Screen =
   | { k: 'title' }
   | { k: 'talk'; beats: Beat[]; header?: string; next: (choice?: number) => void; choices?: string[] }
   | { k: 'dive'; i: number; practice: boolean; attempt: number; blind?: boolean }
   | { k: 'files' }
+  | { k: 'howto'; next: () => void }
   | { k: 'select' }
   | { k: 'ending'; id: EndingId; c: Campaign }
 
@@ -69,7 +71,7 @@ export default function App() {
   const startNew = () => {
     const c = newCampaign()
     setSave((s) => ({ ...s, campaign: c, at: 0 }))
-    setScreen({ k: 'talk', beats: PROLOGUE, header: 'EPISODE 01 ／ 午前2時17分の復旧命令', next: () => brief(0, c) })
+    setScreen({ k: 'talk', beats: PROLOGUE, header: 'EPISODE 01 ／ 午前2時17分の復旧命令', next: () => setScreen({ k: 'howto', next: () => brief(0, c) }) })
   }
 
   const finale = (c: Campaign) => {
@@ -118,10 +120,12 @@ export default function App() {
         onContinue={save.campaign ? () => (save.at < LEVEL_COUNT ? brief(save.at, save.campaign!) : finale(save.campaign!)) : null}
         onSelect={() => setScreen({ k: 'select' })}
         onFiles={() => setScreen({ k: 'files' })}
+        onHowto={() => setScreen({ k: 'howto', next: () => setScreen({ k: 'title' }) })}
       />
     )
   if (screen.k === 'talk')
     return <Talk key={screen.beats[0]?.t + (screen.header ?? '')} beats={screen.beats} header={screen.header} speed={fast ? 'instant' : settings.textSpeed} choices={screen.choices} onDone={screen.next} />
+  if (screen.k === 'howto') return <Howto onDone={screen.next} />
   if (screen.k === 'files') return <Files save={save} onBack={() => setScreen({ k: 'title' })} />
   if (screen.k === 'select')
     return (

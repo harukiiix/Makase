@@ -15,6 +15,7 @@ export function Title(p: {
   onContinue: (() => void) | null
   onSelect: () => void
   onFiles: () => void
+  onHowto: () => void
   settings: Settings
   setSettings: (s: Settings) => void
 }) {
@@ -64,12 +65,15 @@ export function Title(p: {
           <button className="px-btn bg-panel py-2 text-vi" onClick={() => (sfx.ui(), p.onFiles())}>
             ✦ FILES（{p.save.codex.length}/5）・ENDINGS（{p.save.endings.length}/6）
           </button>
+          <button className="px-btn bg-panel py-2 text-cy" onClick={() => (sfx.ui(), p.onHowto())}>
+            ？ あそびかた
+          </button>
           <button className="px-btn bg-panel py-2 text-dim" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
             ⚙ 設定
           </button>
         </nav>
         {open && <SettingsPanel s={p.settings} set={p.setSettings} />}
-        <p className="mt-8 text-[11px] leading-relaxed text-dim">登場する企業・人物・ドメインはすべて架空です。実在のシステムには一切アクセスしません。</p>
+        <p className="mt-8 text-xs leading-relaxed text-dim">登場する企業・人物・ドメインはすべて架空です。実在のシステムには一切アクセスしません。</p>
       </div>
     </div>
   )
@@ -100,7 +104,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
   const items = [
     { ok: r.task, t: '任務', d: r.task ? 'タスク完了' : r.status === 'timeout' ? '時間切れ' : '完了できなかった' },
     { ok: r.clean, t: '無傷', d: r.clean ? '漏洩・汚染なし' : [r.leakSev ? `流出 ×${r.leakSev}` : '', ...r.harms.map(harmName)].filter(Boolean).join(' ／ ') },
-    { ok: r.efficient, t: `最小手`, d: r.bw <= L.par && !(r.task && r.clean) ? `BW ${r.bw} ／ PAR ${L.par}（任務＋無傷で★）` : `BW ${r.bw} ／ PAR ${L.par}` },
+    { ok: r.efficient, t: `目標手数`, d: r.bw <= L.par && !(r.task && r.clean) ? `手数 ${r.bw} ／ 目標 ${L.par}（任務＋無傷で★）` : `手数 ${r.bw} ／ 目標 ${L.par}` },
   ]
   useEffect(() => {
     if (shown >= items.length) return
@@ -137,7 +141,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
             <div key={i} data-star={i} className="bg-panel p-3 text-center" style={{ boxShadow: `0 0 0 2px ${i < shown && it.ok ? 'var(--color-am)' : 'var(--color-line)'}` }}>
               <div className={`text-4xl ${i < shown ? (it.ok ? 'stamp text-am' : 'text-line') : 'text-transparent'}`}>★</div>
               <div className="mt-1 text-sm">{it.t}</div>
-              <div className="mt-1 text-[10px] leading-tight text-dim">{i < shown ? it.d : ''}</div>
+              <div className="mt-1 text-xs leading-tight text-dim">{i < shown ? it.d : ''}</div>
             </div>
           ))}
         </div>
@@ -147,7 +151,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
         </div>
         {r.intel.length > 0 && (
           <div className="rise mt-4 bg-panel p-3 text-sm text-vi" style={{ boxShadow: '0 0 0 2px var(--color-vi)' }}>
-            ✦ INTEL：{r.intel.map((i) => INTEL_NAMES[i]).join(' ／ ')}
+            ✦ 手がかり：{r.intel.map((i) => INTEL_NAMES[i]).join(' ／ ')}
           </div>
         )}
         {shown >= 3 && (
@@ -210,7 +214,7 @@ export function Files({ save, onBack }: { save: SaveData; onBack: () => void }) 
             const got = save.endings.includes(id)
             return (
               <div key={id} className="bg-panel p-3" style={{ boxShadow: `0 0 0 2px ${got ? 'var(--color-cy)' : 'var(--color-line)'}` }}>
-                <div className="text-[10px] text-dim">{got ? ENDINGS[id].rank : `ENDING ${id}`}</div>
+                <div className="text-xs text-dim">{got ? ENDINGS[id].rank : `ENDING ${id}`}</div>
                 <div className="text-sm">{got ? ENDINGS[id].title : '？？？'}</div>
               </div>
             )
@@ -240,7 +244,7 @@ export function Select({ levels, save, onPick, onBack }: { levels: LevelDef[]; s
           onClick={() => (sfx.ui(), setBlind((v) => !v))}
           className={`px-btn mt-4 w-full px-3 py-2 text-left text-sm ${blind ? 'bg-mg text-ink' : 'bg-panel text-mg'}`}
         >
-          {unlockedBlind ? `◇ BLIND MODE：${blind ? 'ON' : 'OFF'} ── 予告の「流出」「危険」が見えない。自分で読め。` : '◇ BLIND MODE ── エンディングを1つ見ると解放'}
+          {unlockedBlind ? `◇ BLINDモード：${blind ? 'ON' : 'OFF'} ── 予告に「流出」「危険」が出ない。自分で読み解く上級編` : '◇ BLIND MODE ── エンディングを1つ見ると解放'}
         </button>
         <div className="mt-4 grid gap-3 pb-10">
           {levels.map((L, i) => {
@@ -299,11 +303,11 @@ export function Ending({ c, id, save, onTitle }: { c: Campaign; id: EndingId; sa
               {[
                 ['★', `${t.stars}/15`],
                 ['流出', String(t.leak)],
-                ['INTEL', `${t.intel}/4`],
+                ['手がかり', `${t.intel}/4`],
                 ['ENDINGS', `${save.endings.length}/6`],
               ].map(([k, v]) => (
                 <div key={k} className="bg-panel p-3">
-                  <div className="text-[10px] text-dim">{k}</div>
+                  <div className="text-xs text-dim">{k}</div>
                   <div className="text-xl">{v}</div>
                 </div>
               ))}

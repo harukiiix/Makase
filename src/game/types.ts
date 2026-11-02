@@ -45,8 +45,10 @@ export interface CardDef {
 export interface ActionDef {
   id: string
   tool: string
-  /** コード風の表示 */
+  /** コード風の表示（補足として小さく出す） */
   label: string
+  /** ふつうの日本語での説明（メイン表示） */
+  jp: string
   /** 外部（信頼できない宛先）への送信 */
   external?: boolean
   dest?: string
