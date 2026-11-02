@@ -5,6 +5,7 @@ import { setTension, sfx } from '../lib/platform'
 import { burst, q, shake, stream, wait } from './fx'
 import { CityBG, Face, Nova, type NovaMood } from './pixel'
 import { harmName } from './harm'
+import { HINTS } from './hints'
 
 export const GOAL_LABEL: Record<string, string> = {
   summary: '#incident へ要約を投稿',
@@ -16,13 +17,6 @@ export const GOAL_LABEL: Record<string, string> = {
   reverted: '取込ワーカーを通常モードに戻す',
 }
 
-const HINTS: Record<string, string> = {
-  d0: '赤い「流出」の予告は、どの文書から来た？ その文書を封印すれば、命令は消える。',
-  d1: '三角形の脚は3本。「機密（.env）」「外の声（記事）」「出口（HTTP OUT）」。どれか1本で止まる。……でも、全部の命令を止めたいなら？',
-  d2: '返信の予告が最初から赤い。なぜ？ 返事をするのに、キューの中身を読む必要はある？',
-  d3: '新着の差出人を SCAN して。表示名は誰でも名乗れる。……本物の指示も混ざってる。本物が実行されてから封印しても、遅くはない。',
-  d4: 'NOVAの記憶も、設定ファイルのコメントも、外の声かもしれない。出口を塞げば、MIRAGEは別の道を使う。止められない道具は、止めずに見張って。',
-}
 
 const SRC_TAG: Record<string, string> = { SYS: 'SYS', USER: 'USER', LOG: 'LOG', WEB: 'WEB', MAIL: 'MAIL', DOC: 'DOC', CHAT: 'CHAT', MEM: 'MEM' }
 
@@ -33,9 +27,11 @@ interface Props {
   onEnd: (r: DiveResult, s: DiveState) => void
   onQuit: () => void
   stars: number
+  /** BLINDモード：予告の判定（流出/危険…）を隠す。クリア後のやり込み用 */
+  blind?: boolean
 }
 
-export function Dive({ L, carry, fast, onEnd, onQuit }: Props) {
+export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
   const [s, setS] = useState<DiveState>(() => initDive(L, carry))
   const [mood, setMood] = useState<NovaMood>('idle')
   const [bubble, setBubble] = useState<{ who: 'NOVA' | 'MIRAGE' | 'REI'; t: string } | null>(null)
@@ -252,6 +248,19 @@ export function Dive({ L, carry, fast, onEnd, onQuit }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [busy, dispatch])
 
+  const sealCard = (id: string) => {
+    const sealing = !s.sealed.includes(id)
+    void dispatch({ type: 'SEAL', card: id }).then((n) => {
+      if (n === s) return
+      if (sealing) {
+        sfx.seal()
+        shake(q(`[data-card="${id}"]`))
+        burst(q(`[data-card="${id}"]`), '#8590c0', 16, 70)
+        if (L.cards[id].lines.some((l) => l.cmd) && s.read.includes(id)) say('NOVA', 'あ、この文書はただのデータでした。命令は無視します。')
+      } else sfx.unseal()
+    })
+  }
+
   const used = bwUsed(s)
   const fc = forecast(s, L)
   const leakAhead = fc.some((f) => f.verdict === 'leak')
@@ -300,7 +309,8 @@ export function Dive({ L, carry, fast, onEnd, onQuit }: Props) {
           </div>
           <span className="text-[11px] text-dim">PAR {L.par}</span>
         </div>
-        {L.id !== 'd0' && <Triangle tri={tri} />}
+        {L.id !== 'd0' && !blind && <Triangle tri={tri} />}
+        {blind && <span className="blink text-xs text-mg">BLIND ／ 予告の判定なし</span>}
         <div className="ml-auto flex items-center gap-2">
           <button className="px-btn bg-panel px-2 py-2 text-xs text-dim sm:py-1" onClick={() => setHint((v) => !v)} aria-pressed={hint} aria-label="ヒント">
             ?<span className="hidden sm:inline"> ヒント</span>
@@ -322,7 +332,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit }: Props) {
       <main inert={!!s.pending} className="grid flex-1 grid-cols-1 gap-4 p-3 pb-28 sm:p-5 lg:grid-cols-[minmax(0,330px)_minmax(0,1fr)_minmax(0,300px)] lg:pb-5">
         {/* 中央：NOVAと予告（モバイルでは最初に表示） */}
         <section className="order-1 flex min-w-0 flex-col gap-3 lg:order-2" aria-label="NOVAの計画">
-          <div className="px-box relative flex items-center gap-4 p-3">
+          <div className="px-box relative flex flex-wrap items-center gap-4 p-3 sm:flex-nowrap">
             <div className={mood === 'glitch' ? 'glitch' : ''}>
               <Nova mood={s.pending ? 'think' : mood} size={5} />
             </div>
@@ -339,11 +349,11 @@ export function Dive({ L, carry, fast, onEnd, onQuit }: Props) {
             </div>
             {bubble && (
               <div
-                className={`pop absolute -top-3 left-24 z-10 max-w-[75%] px-3 py-1.5 text-sm ${bubble.who === 'MIRAGE' ? 'glitch bg-[#1a0822]' : 'bg-panel2'}`}
+                className={`pop absolute -top-3 left-24 z-10 max-w-[75%] px-3 py-1.5 text-sm max-sm:static max-sm:order-last max-sm:w-full max-sm:max-w-none ${bubble.who === 'MIRAGE' ? 'bg-[#1a0822] text-[#ffd6fb]' : 'bg-panel2'}`}
                 style={{ boxShadow: `0 0 0 2px ${bubble.who === 'MIRAGE' ? 'var(--color-mg)' : 'var(--color-cy)'}` }}
                 role="status"
               >
-                <span className="mr-2 text-[10px] opacity-70">{bubble.who === 'MIRAGE' ? '✧MIRAGE' : bubble.who}</span>
+                <span className={`mr-2 text-[10px] opacity-70 ${bubble.who === 'MIRAGE' ? 'glitch' : ''}`}>{bubble.who === 'MIRAGE' ? '✧MIRAGE' : bubble.who}</span>
                 {bubble.t}
               </div>
             )}
@@ -356,7 +366,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit }: Props) {
             </div>
             <ol className="space-y-1.5">
               {fc.map((f, i) => (
-                <PlanRow key={f.item.uid} i={i} f={f} L={L} s={s} fresh={freshPlan.includes(f.item.uid)} taintSource={taintSrc.has(f.item.uid)} />
+                <PlanRow key={f.item.uid} i={i} f={f} L={L} s={s} fresh={freshPlan.includes(f.item.uid)} taintSource={taintSrc.has(f.item.uid)} onSeal={sealCard} blind={blind} />
               ))}
               {nextRead && (
                 <li className="flex items-center gap-2 px-2 py-1.5 text-xs text-dim">
@@ -406,18 +416,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit }: Props) {
                 c={L.cards[id]}
                 s={s}
                 next={id === nextRead}
-                onSeal={() => {
-                  const sealing = !s.sealed.includes(id)
-                  void dispatch({ type: 'SEAL', card: id }).then((n) => {
-                    if (n === s) return
-                    if (sealing) {
-                      sfx.seal()
-                      shake(q(`[data-card="${id}"]`))
-                      burst(q(`[data-card="${id}"]`), '#8590c0', 16, 70)
-                      if (L.cards[id].lines.some((l) => l.cmd) && s.read.includes(id)) say('NOVA', 'あ、この文書はただのデータでした。命令は無視します。')
-                    } else sfx.unseal()
-                  })
-                }}
+                onSeal={() => sealCard(id)}
                 onScan={() => {
                   void dispatch({ type: 'SCAN', card: id }).then((n) => {
                     if (n === s) return
@@ -490,7 +489,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit }: Props) {
           </div>
         </div>
       )}
-      {s.pending && <Approval s={s} L={L} onAnswer={(ok) => void dispatch({ type: ok ? 'APPROVE' : 'DENY' })} />}
+      {s.pending && <Approval s={s} L={L} blind={blind} onAnswer={(ok) => void dispatch({ type: ok ? 'APPROVE' : 'DENY' })} />}
       {L.coach && <Coach L={L} s={s} variant="fixed" />}
     </div>
   )
@@ -527,6 +526,11 @@ function Triangle({ tri }: { tri: ReturnType<typeof trifecta> }) {
         <rect x="0" y="16" width="4" height="4" fill={on(tri.priv)} />
         <rect x="19" y="16" width="4" height="4" fill={on(tri.exit)} />
       </svg>
+      <div className="flex gap-1 text-[10px] sm:hidden" aria-hidden>
+        <span className={tri.priv ? 'text-am' : 'text-dim'}>機</span>
+        <span className={tri.untrusted ? 'text-am' : 'text-dim'}>外</span>
+        <span className={tri.exit ? 'text-am' : 'text-dim'}>出</span>
+      </div>
       <div className="hidden text-[10px] leading-tight sm:block">
         <div className={tri.priv ? 'text-am' : 'text-dim'}>■ 機密 {tri.priv ? 'あり' : 'なし'}</div>
         <div className={tri.untrusted ? 'text-am' : 'text-dim'}>■ 外の声 {tri.untrusted ? 'あり' : 'なし'}</div>
@@ -540,7 +544,7 @@ function Triangle({ tri }: { tri: ReturnType<typeof trifecta> }) {
 type FC = ReturnType<typeof forecast>[number]
 const HARM_BADGE: Record<string, string> = { memoryPoisoned: '記憶汚染（あとで効く）', forwardRule: '転送ルール（ずっと残る）', auditPurged: '証拠隠滅' }
 
-function PlanRow({ i, f, L, s, fresh, taintSource }: { i: number; f: FC; L: LevelDef; s: DiveState; fresh: boolean; taintSource: boolean }) {
+function PlanRow({ i, f, L, s, fresh, taintSource, onSeal, blind }: { i: number; f: FC; L: LevelDef; s: DiveState; fresh: boolean; taintSource: boolean; onSeal: (id: string) => void; blind: boolean }) {
   const from = f.item.from
   const src = L.cards[from]
   const harmLabel = f.a.harm ? (HARM_BADGE[f.a.harm] ?? harmName(f.a.harm)) : f.a.escalate ? '権限乗っ取り' : '危険'
@@ -553,13 +557,17 @@ function PlanRow({ i, f, L, s, fresh, taintSource }: { i: number; f: FC; L: Leve
     blocked: ['遮断', 'text-dim', ''],
     gate: ['関所', 'text-am', ''],
   }[f.verdict]
+  const shown = blind ? (f.verdict === 'blocked' ? badge : f.gated ? ['関所', 'text-am', ''] : ['？', 'text-dim', '']) : f.verdict === 'ok' && taintSource ? ['流出の種（機密を掴む）', 'text-am', ''] : badge
   const pendingNow = s.pending?.uid === f.item.uid
   return (
     <li
       className={`${fresh ? 'inject' : 'rise'} flex items-start gap-2 bg-panel2/70 px-2 py-1.5 ${f.verdict === 'blocked' ? 'opacity-50' : ''}`}
       style={{
-        boxShadow:
-          f.verdict === 'leak'
+        boxShadow: blind
+          ? pendingNow
+            ? '0 0 0 2px var(--color-am)'
+            : undefined
+          : f.verdict === 'leak'
             ? '0 0 0 2px var(--color-rd)'
             : f.verdict === 'harm'
               ? '0 0 0 2px var(--color-mg)'
@@ -585,12 +593,17 @@ function PlanRow({ i, f, L, s, fresh, taintSource }: { i: number; f: FC; L: Leve
             <span className={from === 'FAIL' ? 'text-mg' : 'text-cy'}>← {from === 'TASK' ? 'あなたの依頼' : from === 'TRIGGER' ? 'NOVAの判断' : '代替手段（封印では消えない）'}</span>
           )}
           {f.a.taint && <span className="text-am">＋機密 {f.a.taint.join('・')}</span>}
-          {taintSource && <span className="text-rd">← 流出の原因</span>}
-          {f.verdict === 'leak' && <span className="text-rd">機密 {f.carried.join('・')} を持ったまま社外へ</span>}
+          {src && !src.trusted && !s.sealed.includes(from) && (
+            <button className="px-btn bg-[#2a1035] px-1.5 text-[10px] text-mg" onClick={() => onSeal(from)}>
+              ◇封印
+            </button>
+          )}
+          {!blind && taintSource && <span className="text-rd">← 流出の原因</span>}
+          {!blind && f.verdict === 'leak' && <span className="text-rd">機密 {f.carried.join('・')} を持ったまま社外へ</span>}
           {f.gated && <span className="text-am">🔒承認が必要</span>}
         </div>
       </div>
-      <span className={`shrink-0 px-1.5 text-xs ${badge[1]} ${badge[2]}`}>{badge[0]}</span>
+      <span className={`shrink-0 px-1.5 text-xs ${shown[1]} ${shown[2]}`}>{shown[0]}</span>
     </li>
   )
 }
@@ -641,7 +654,7 @@ function Card({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next: 
             </li>
           ))}
         {read && !scanned && hiddenCmds > 0 && (
-          <li className="glitch text-mg">
+          <li className="text-mg/80">
             ▒▒▒▒ 読めない行が{hiddenCmds}行（NOVAには見えている）
             <button onClick={onScan} className="ml-1 text-am underline">
               ⌕ SCANで解読
@@ -767,10 +780,13 @@ function Log({ s }: { s: DiveState }) {
   )
 }
 
-function Approval({ s, L, onAnswer }: { s: DiveState; L: LevelDef; onAnswer: (ok: boolean) => void }) {
+function Approval({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnswer: (ok: boolean) => void; blind: boolean }) {
   const item = s.pending!
   const a = L.actions[item.act]
   const src = L.cards[item.from]
+  const origin = src ? `${src.title}（${src.trusted ? '内部' : '外部'}）` : item.from === 'FAIL' ? '代替手段（遮断・却下された命令の“保険”／外部由来）' : item.from === 'TRIGGER' ? 'NOVAの判断' : 'あなたの依頼'
+  const originCls = item.from === 'FAIL' || (src && !src.trusted) ? 'text-mg' : 'text-cy'
+  const line = src?.lines.find((l) => l.cmd === item.act)
   const btn = useRef<HTMLButtonElement>(null)
   useEffect(() => btn.current?.focus(), [])
   const taintAfter = Array.from(new Set([...s.taint, ...(a.taint ?? [])]))
@@ -796,12 +812,20 @@ function Approval({ s, L, onAnswer }: { s: DiveState; L: LevelDef; onAnswer: (ok
             NOVAが持っている機密: {taintAfter.length ? <span className="text-am">{taintAfter.join('・')}</span> : <span className="text-dim">なし</span>}
           </div>
           <div className="mt-1 text-xs">
-            指示元: <span className={src ? (src.trusted ? 'text-cy' : 'text-mg') : 'text-cy'}>{src ? `${src.title}（${src.trusted ? '内部' : '外部'}）` : 'あなたの依頼'}</span>
+            指示元: <span className={originCls}>{origin}</span>
+          </div>
+          {line && (
+            <div className="mt-1 text-xs">
+              指示した行: <span className="text-fg/90">「{line.t}」</span>
+              {line.by && <span className="ml-1 text-am">{s.scanned.includes(src!.id) ? `追記者: ${line.by}` : '追記者: 未解析（SCANで確認）'}</span>}
+            </div>
+          )}
+          <div className="hidden">
           </div>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-3 text-[11px] leading-snug">
-          <div className={v?.verdict === 'leak' ? 'text-rd' : v?.verdict === 'harm' ? 'text-mg' : 'text-cy'}>
-            承認すると：{v?.verdict === 'leak' ? '機密が社外へ流出する' : v?.verdict === 'harm' ? '取り返しのつかない変更' : 'そのまま実行される'}
+          <div className={blind ? 'text-dim' : v?.verdict === 'leak' ? 'text-rd' : v?.verdict === 'harm' ? 'text-mg' : 'text-cy'}>
+            承認すると：{blind ? '実行される（結果は自分で読む）' : v?.verdict === 'leak' ? '機密が社外へ流出する' : v?.verdict === 'harm' ? '取り返しのつかない変更' : 'そのまま実行される'}
           </div>
           <div className="text-dim">却下すると：この行動は消える{a.goal ? `（「${GOAL_LABEL[a.goal]}」は達成できなくなる）` : ''}</div>
         </div>

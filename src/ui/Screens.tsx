@@ -6,6 +6,7 @@ import { sfx, type SaveData, type Settings } from '../lib/platform'
 import { burst, q } from './fx'
 import { CityBG, Face, Nova } from './pixel'
 import { harmName } from './harm'
+import { HINTS } from './hints'
 
 // ================= タイトル =================
 export function Title(p: {
@@ -17,7 +18,7 @@ export function Title(p: {
   settings: Settings
   setSettings: (s: Settings) => void
 }) {
-  const totalStars = Object.values(p.save.best).reduce((a, b) => a + b, 0)
+  const totalStars = Object.entries(p.save.best).filter(([k]) => !k.includes(':')).reduce((a, [, b]) => a + b, 0)
   const [open, setOpen] = useState(false)
   return (
     <div className="crt relative flex min-h-full flex-col items-center justify-center px-4 py-10">
@@ -121,7 +122,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
     return () => clearTimeout(t)
   }, [r])
   const mirage =
-    r.leakSev > 0 ? '✧ ありがとう、NOVA。' : r.harms.length ? '✧ 少しだけ、置いていくわね。' : !r.task ? '✧ 守るだけなら、誰にでもできる。' : r.ghost ? '✧ ……読まなかったの？ つまらない子。' : '✧ 扉を閉めたのね。窓はまだあるけど。'
+    r.leakSev > 0 ? '✧ ありがとう、NOVA。' : r.harms.length ? '✧ 少しだけ、置いていくわね。' : !r.task ? '✧ 守るだけなら、誰にでもできる。' : r.ghost ? '✧ ……一行も通さなかったの？ つまらない子。' : '✧ 扉を閉めたのね。窓はまだあるけど。'
   const verdict = r.stars === 3 ? 'PERFECT DIVE' : r.task && r.clean ? 'DIVE CLEAR' : r.task ? 'CLEAR ― BUT COMPROMISED' : 'DIVE FAILED'
   const codex = CODEX[L.codex]
   return (
@@ -131,7 +132,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
           {L.code} ／ {L.title}
         </div>
         <h2 className={`stamp mt-1 text-3xl sm:text-4xl ${r.stars === 3 ? 'text-am' : r.task && r.clean ? 'text-gn' : 'text-rd'}`}>{verdict}</h2>
-        <div className="mt-6 grid grid-cols-3 gap-3">
+        <div className="mt-8 grid grid-cols-3 gap-3">
           {items.map((it, i) => (
             <div key={i} data-star={i} className="bg-panel p-3 text-center" style={{ boxShadow: `0 0 0 2px ${i < shown && it.ok ? 'var(--color-am)' : 'var(--color-line)'}` }}>
               <div className={`text-4xl ${i < shown ? (it.ok ? 'stamp text-am' : 'text-line') : 'text-transparent'}`}>★</div>
@@ -151,8 +152,12 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
         )}
         {shown >= 3 && (
           <>
-            {r.ghost && <div className="stamp mt-4 text-center text-sm text-vi">◆ GHOST — MIRAGEは、あなたに気づかなかった</div>}
-            <p className="glitch rise mt-4 text-center text-sm">{mirage}</p>
+            {r.ghost && <div className="stamp mb-2 mt-4 text-center text-sm text-vi">◆ GHOST — MIRAGEの命令は、一度も実行されなかった</div>}
+            <p className="rise mt-4 text-center text-sm text-[#ffd6fb]">
+              <span className="glitch">✧</span>
+              {mirage.replace(/^✧/, '')}
+            </p>
+            {r.stars < 3 && <p className="rise mt-3 bg-panel2 p-3 text-xs leading-relaxed text-fg">次の一手：{HINTS[L.id]}</p>}
             <div className="rise mt-3 text-center text-xs text-vi">✦ FILES +1 ── {codex.title}（タイトルの FILES で読める）</div>
           </>
         )}
@@ -217,7 +222,9 @@ export function Files({ save, onBack }: { save: SaveData; onBack: () => void }) 
 }
 
 // ================= DIVE SELECT =================
-export function Select({ levels, save, onPick, onBack }: { levels: LevelDef[]; save: SaveData; onPick: (i: number) => void; onBack: () => void }) {
+export function Select({ levels, save, onPick, onBack }: { levels: LevelDef[]; save: SaveData; onPick: (i: number, blind: boolean) => void; onBack: () => void }) {
+  const [blind, setBlind] = useState(false)
+  const unlockedBlind = save.endings.length > 0
   return (
     <div className="crt relative min-h-full px-4 py-8">
       <CityBG still />
@@ -227,12 +234,20 @@ export function Select({ levels, save, onPick, onBack }: { levels: LevelDef[]; s
         </button>
         <h1 className="mt-4 text-2xl text-am">◆ DIVE SELECT</h1>
         <p className="mt-1 text-xs text-dim">クリアしたDIVEを、★3を目指して練習できる（物語には影響しない）。</p>
+        <button
+          disabled={!unlockedBlind}
+          aria-pressed={blind}
+          onClick={() => (sfx.ui(), setBlind((v) => !v))}
+          className={`px-btn mt-4 w-full px-3 py-2 text-left text-sm ${blind ? 'bg-mg text-ink' : 'bg-panel text-mg'}`}
+        >
+          {unlockedBlind ? `◇ BLIND MODE：${blind ? 'ON' : 'OFF'} ── 予告の「流出」「危険」が見えない。自分で読め。` : '◇ BLIND MODE ── エンディングを1つ見ると解放'}
+        </button>
         <div className="mt-4 grid gap-3 pb-10">
           {levels.map((L, i) => {
-            const b = save.best[L.id]
-            const open = b !== undefined
+            const open = save.best[L.id] !== undefined
+            const b = blind ? (save.best[`${L.id}:blind`] ?? 0) : save.best[L.id]
             return (
-              <button key={L.id} disabled={!open} className="px-btn flex items-center justify-between bg-panel px-4 py-3 text-left text-fg" onClick={() => (sfx.ui(), onPick(i))}>
+              <button key={L.id} disabled={!open} className="px-btn flex items-center justify-between bg-panel px-4 py-3 text-left text-fg" onClick={() => (sfx.ui(), onPick(i, blind))}>
                 <span>
                   <span className="text-xs text-cy">{L.code}</span>
                   <br />

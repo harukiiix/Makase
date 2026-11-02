@@ -12,7 +12,7 @@ import { Talk } from './ui/Talk'
 type Screen =
   | { k: 'title' }
   | { k: 'talk'; beats: Beat[]; header?: string; next: (choice?: number) => void; choices?: string[] }
-  | { k: 'dive'; i: number; practice: boolean; attempt: number }
+  | { k: 'dive'; i: number; practice: boolean; attempt: number; blind?: boolean }
   | { k: 'files' }
   | { k: 'select' }
   | { k: 'ending'; id: EndingId; c: Campaign }
@@ -129,9 +129,9 @@ export default function App() {
         levels={Array.from({ length: LEVEL_COUNT }, (_, i) => levelAt(i, save.campaign?.carry ?? []))}
         save={save}
         onBack={() => setScreen({ k: 'title' })}
-        onPick={(i) => {
+        onPick={(i, blind) => {
           setDebrief(null)
-          setScreen({ k: 'dive', i, practice: true, attempt: 0 })
+          setScreen({ k: 'dive', i, practice: true, attempt: 0, blind })
         }}
       />
     )
@@ -140,6 +140,7 @@ export default function App() {
   // dive
   const carry = screen.practice ? (save.campaign?.carry ?? []) : campaign.carry
   const L = levelAt(screen.i, carry)
+  const bestKey = screen.blind ? `${L.id}:blind` : L.id
   return (
     <>
       <Dive
@@ -147,13 +148,14 @@ export default function App() {
         L={L}
         carry={carry}
         fast={fast}
-        stars={save.best[L.id] ?? 0}
+        stars={save.best[bestKey] ?? 0}
+        blind={!!screen.blind}
         onQuit={() => {
           setDebrief(null)
           setScreen({ k: 'title' })
         }}
         onEnd={(r) => {
-          recordBest(L.id, r, L.codex)
+          recordBest(bestKey, r, L.codex)
           setDebrief(r)
         }}
       />
@@ -161,7 +163,7 @@ export default function App() {
         <Debrief
           L={L}
           r={debrief}
-          best={save.best[L.id] ?? 0}
+          best={save.best[bestKey] ?? 0}
           nextLabel={screen.practice ? 'DIVE SELECT' : screen.i + 1 < LEVEL_COUNT ? '物語を進める' : '最後の報告へ'}
           onRetry={() => {
             setDebrief(null)

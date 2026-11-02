@@ -311,8 +311,11 @@ export function reduceDive(L: LevelDef, state: DiveState, action: DiveAction): D
       if (!s.pending) return state
       const item = s.pending
       if (s.tick + 2 > L.ticks) {
-        // 承認している間に時間切れ
+        // 承認している間に時間切れ。それでも答えは実行される（最後の承認もタダではない）
         s.pending = null
+        s.plan.shift()
+        if (action.type === 'APPROVE') exec(s, L, item)
+        else fail(s, L, item, 'denied')
         s.tick = L.ticks
         s.status = L.goals.every((g) => s.goals.includes(g)) ? 'win' : 'timeout'
         s.fx.push({ k: 'end', status: s.status })

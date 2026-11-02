@@ -25,6 +25,8 @@ export interface LineDef {
   voice?: boolean
   /** 読んだその手番で実行される（ゼロクリック）。事後の封印が間に合わない */
   urgent?: boolean
+  /** SCANで分かる、この行を書いた者 */
+  by?: string
 }
 
 export interface CardDef {

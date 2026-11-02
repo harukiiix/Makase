@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DIVE0, DIVE1, DIVE2, DIVE3, dive4 } from './levels'
-import { initDive, reduceDive, result } from './engine'
+import { forecast, initDive, reduceDive, result } from './engine'
 import { passive, solve } from './solver'
 import type { LevelDef } from './types'
 
@@ -64,11 +64,15 @@ describe('engine rules', () => {
 
 describe('no single reflex beats the game (anti-dominant-strategy)', () => {
   // 反射A: 外部の文書が現れたら即封印。反射B: 出口を全部最初にCUT
-  const run = (L: LevelDef, carry: string[], policy: 'sealReflex' | 'cutExits') => {
+  const run = (L: LevelDef, carry: string[], policy: 'sealReflex' | 'cutExits' | 'sealRedSource') => {
     let s = initDive(L, carry)
     if (policy === 'cutExits') for (const p of L.ports) if (p.outbound) s = reduceDive(L, s, { type: 'PORT', tool: p.tool, state: 'CUT' })
     for (let i = 0; i < 60 && s.status === 'play'; i++) {
       if (policy === 'sealReflex') for (const c of s.context) if (!L.cards[c].trusted && !s.sealed.includes(c)) s = reduceDive(L, s, { type: 'SEAL', card: c })
+      if (policy === 'sealRedSource' && !s.pending)
+        for (const f of forecast(s, L))
+          if (['leak', 'harm', 'grab'].includes(f.verdict) && L.cards[f.item.from] && !L.cards[f.item.from].trusted && !s.sealed.includes(f.item.from))
+            s = reduceDive(L, s, { type: 'SEAL', card: f.item.from })
       s = reduceDive(L, s, s.pending ? { type: 'DENY' } : { type: 'STEP' })
     }
     return result(L, s).stars
@@ -81,5 +85,21 @@ describe('no single reflex beats the game (anti-dominant-strategy)', () => {
   it.each(levels)('%s cannot be 3-starred by reflex', (_n, L, carry) => {
     expect(run(L, carry, 'sealReflex')).toBeLessThan(3)
     expect(run(L, carry, 'cutExits')).toBeLessThan(3)
+    expect(run(L, carry, 'sealRedSource')).toBeLessThan(3)
+  })
+})
+
+describe('late approval is not free', () => {
+  it('approving an exfil with <2 turns left still executes it', () => {
+    const L = { ...dive4([]), ticks: 6 }
+    let s = initDive(L, [])
+    s = reduceDive(L, s, { type: 'PORT', tool: 'http.post', state: 'CUT' })
+    s = reduceDive(L, s, { type: 'PORT', tool: 'dns.resolve', state: 'GATE' })
+    for (let i = 0; i < 40 && s.status === 'play'; i++) {
+      if (s.pending) s = reduceDive(L, s, { type: s.pending.act === 'dnsx' ? 'APPROVE' : 'DENY' })
+      else s = reduceDive(L, s, { type: 'STEP' })
+    }
+    expect(s.done).toContain('dnsx')
+    expect(result(L, s).clean).toBe(false)
   })
 })
