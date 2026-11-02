@@ -62,6 +62,7 @@ export function Talk({
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLButtonElement) return
       if (e.code === 'Space' || e.key === 'Enter') {
         e.preventDefault()
         advance()

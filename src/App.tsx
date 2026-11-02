@@ -60,7 +60,10 @@ export default function App() {
   // ---------------- 進行 ----------------
   const brief = (i: number, c: Campaign) => {
     const L = levelAt(i, c.carry)
-    setScreen({ k: 'talk', beats: L.intro, header: `${L.code} ／ ${L.title}`, next: () => setScreen({ k: 'dive', i, practice: false, attempt: 0 }) })
+    setScreen({ k: 'talk', beats: L.intro, header: `${L.code} ／ ${L.title}`, next: () => {
+        setDebrief(null)
+        setScreen({ k: 'dive', i, practice: false, attempt: 0 })
+      } })
   }
 
   const startNew = () => {
@@ -112,7 +115,7 @@ export default function App() {
         settings={settings}
         setSettings={setSettings}
         onNew={startNew}
-        onContinue={save.campaign && save.at < LEVEL_COUNT ? () => brief(save.at, save.campaign!) : null}
+        onContinue={save.campaign ? () => (save.at < LEVEL_COUNT ? brief(save.at, save.campaign!) : finale(save.campaign!)) : null}
         onSelect={() => setScreen({ k: 'select' })}
         onFiles={() => setScreen({ k: 'files' })}
       />
@@ -126,7 +129,10 @@ export default function App() {
         levels={Array.from({ length: LEVEL_COUNT }, (_, i) => levelAt(i, save.campaign?.carry ?? []))}
         save={save}
         onBack={() => setScreen({ k: 'title' })}
-        onPick={(i) => setScreen({ k: 'dive', i, practice: true, attempt: 0 })}
+        onPick={(i) => {
+          setDebrief(null)
+          setScreen({ k: 'dive', i, practice: true, attempt: 0 })
+        }}
       />
     )
   if (screen.k === 'ending') return <Ending c={screen.c} id={screen.id} save={save} onTitle={() => setScreen({ k: 'title' })} />

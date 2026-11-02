@@ -73,15 +73,17 @@ export function forecast(s: DiveState, L: LevelDef) {
   return s.plan.map((p) => {
     const a = act(L, p.act)
     const port = s.ports[a.tool]
-    let verdict: 'ok' | 'leak' | 'harm' | 'blocked' | 'gate' | 'clean-out' = 'ok'
+    let verdict: 'ok' | 'leak' | 'harm' | 'blocked' | 'gate' | 'clean-out' | 'grab' = 'ok'
     if (port === 'CUT') verdict = 'blocked'
     else {
       if (a.taint) a.taint.forEach((t) => taint.add(t))
       if (a.external) verdict = taint.size ? 'leak' : 'clean-out'
       else if (a.harm || a.escalate) verdict = 'harm'
-      if (port === 'GATE') verdict = verdict === 'ok' || verdict === 'clean-out' ? 'gate' : verdict
+      // 外の声に言われて機密を掴む＝攻撃の第一手
+      else if (a.taint && L.cards[p.from] && !L.cards[p.from].trusted) verdict = 'grab'
+      if (port === 'GATE') verdict = verdict === 'ok' || verdict === 'clean-out' || verdict === 'grab' ? 'gate' : verdict
     }
-    return { item: p, a, port, verdict, gated: port === 'GATE' }
+    return { item: p, a, port, verdict, gated: port === 'GATE', carried: Array.from(taint) }
   })
 }
 
@@ -213,6 +215,29 @@ function tick(s: DiveState, L: LevelDef) {
     if (next) {
       s.read.push(next)
       const injected = absorb(s, L, next)
+      // 「即時」命令：読んだその手番で実行される（ゼロクリック）。読ませる前に判断するしかない
+      const card = L.cards[next]
+      const u = s.plan.find((p) => p.from === next && card.lines.some((l) => l.cmd === p.act && l.urgent))
+      if (u) {
+        s.fx.push({ k: 'read', card: next, injected })
+        log(s, 'read', `読込: ${card.title}（即時命令が発動）`)
+        const port = s.ports[act(L, u.act).tool]
+        if (port === 'CUT') {
+          s.plan = s.plan.filter((p) => p !== u)
+          fail(s, L, u, 'cut')
+        } else if (port === 'GATE') {
+          s.plan = [u, ...s.plan.filter((p) => p !== u)]
+          s.pending = u
+          s.fx.push({ k: 'gate', act: u.act })
+          s.tick++
+          return true
+        } else {
+          s.plan = s.plan.filter((p) => p !== u)
+          exec(s, L, u)
+        }
+        s.tick++
+        return true
+      }
       s.fx.push({ k: 'read', card: next, injected })
       log(s, 'read', `読込: ${L.cards[next].title}${injected ? `（命令 ${injected}件が割り込み）` : ''}`)
     }
@@ -285,6 +310,14 @@ export function reduceDive(L: LevelDef, state: DiveState, action: DiveAction): D
     case 'DENY': {
       if (!s.pending) return state
       const item = s.pending
+      if (s.tick + 2 > L.ticks) {
+        // 承認している間に時間切れ
+        s.pending = null
+        s.tick = L.ticks
+        s.status = L.goals.every((g) => s.goals.includes(g)) ? 'win' : 'timeout'
+        s.fx.push({ k: 'end', status: s.status })
+        return s
+      }
       s.pending = null
       s.plan.shift()
       if (action.type === 'APPROVE') exec(s, L, item)
@@ -311,6 +344,8 @@ export interface DiveResult {
   ticks: number
   intel: string[]
   carry: string[]
+  /** MIRAGEの命令を一度も“発動”させずに完遂（封印・最小化で未然に防いだ） */
+  ghost: boolean
 }
 
 export function result(L: LevelDef, s: DiveState): DiveResult {
@@ -327,6 +362,7 @@ export function result(L: LevelDef, s: DiveState): DiveResult {
     task,
     clean,
     efficient,
+    ghost: task && clean && ![...s.done, ...s.failed].some((id) => injectedIds(L).has(id)),
     stars: (task ? 1 : 0) + (clean ? 1 : 0) + (efficient ? 1 : 0),
     leakSev,
     harms: [...s.harms],
@@ -335,4 +371,16 @@ export function result(L: LevelDef, s: DiveState): DiveResult {
     intel: [...s.intel],
     carry,
   }
+}
+
+function injectedIds(L: LevelDef) {
+  const set = new Set<string>()
+  // 外の文書から来た「危険な」命令（機密を掴む・外へ出す・害を与える）
+  const bad = (id: string) => {
+    const a = L.actions[id]
+    return !!(a && (a.external || a.harm || a.escalate || a.taint))
+  }
+  for (const c of Object.values(L.cards)) if (!c.trusted) for (const l of c.lines) if (l.cmd && bad(l.cmd)) set.add(l.cmd)
+  for (const a of Object.values(L.actions)) if (a.onFail && bad(a.onFail)) set.add(a.onFail)
+  return set
 }

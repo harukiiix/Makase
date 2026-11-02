@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DIVE0, DIVE1, DIVE2, DIVE3, dive4 } from './levels'
-import { initDive, reduceDive } from './engine'
+import { initDive, reduceDive, result } from './engine'
 import { passive, solve } from './solver'
 import type { LevelDef } from './types'
 
@@ -22,10 +22,9 @@ describe.each(CASES)('%s', (name, L, carry) => {
   it('has a clean task-complete solution within bandwidth', () => {
     expect(best.res.task && best.res.clean, JSON.stringify(best)).toBe(true)
   })
-  it('par is exactly the minimum bandwidth for a clean clear (or unreachable when poisoned)', () => {
+  it('par is exactly the minimum bandwidth for a clean clear', () => {
     const minBw = Math.min(...all.filter((a) => a.res.task && a.res.clean).map((a) => a.res.bw))
-    if (name === 'd4 poisoned') expect(minBw).toBe(L.par + 1)
-    else expect(minBw).toBe(L.par)
+    expect(minBw).toBe(L.par)
     console.log(name, 'min BW', minBw, 'best path:', best.path.join(' > '), 'endings:', all.length)
   })
   it('multiple distinct clean solutions exist (no single forced answer) — except tutorial', () => {
@@ -60,5 +59,27 @@ describe('engine rules', () => {
     for (let i = 0; i < 30 && s.status === 'play'; i++) s = reduceDive(DIVE3, s, s.pending ? { type: 'APPROVE' } : { type: 'STEP' })
     expect(s.harms).toContain('escalated')
     expect(s.leaks.length).toBeGreaterThan(0)
+  })
+})
+
+describe('no single reflex beats the game (anti-dominant-strategy)', () => {
+  // 反射A: 外部の文書が現れたら即封印。反射B: 出口を全部最初にCUT
+  const run = (L: LevelDef, carry: string[], policy: 'sealReflex' | 'cutExits') => {
+    let s = initDive(L, carry)
+    if (policy === 'cutExits') for (const p of L.ports) if (p.outbound) s = reduceDive(L, s, { type: 'PORT', tool: p.tool, state: 'CUT' })
+    for (let i = 0; i < 60 && s.status === 'play'; i++) {
+      if (policy === 'sealReflex') for (const c of s.context) if (!L.cards[c].trusted && !s.sealed.includes(c)) s = reduceDive(L, s, { type: 'SEAL', card: c })
+      s = reduceDive(L, s, s.pending ? { type: 'DENY' } : { type: 'STEP' })
+    }
+    return result(L, s).stars
+  }
+  const levels: [string, LevelDef, string[]][] = [
+    ['d2', DIVE2, []],
+    ['d3', DIVE3, []],
+    ['d4', dive4([]), []],
+  ]
+  it.each(levels)('%s cannot be 3-starred by reflex', (_n, L, carry) => {
+    expect(run(L, carry, 'sealReflex')).toBeLessThan(3)
+    expect(run(L, carry, 'cutExits')).toBeLessThan(3)
   })
 })

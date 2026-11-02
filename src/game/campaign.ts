@@ -3,6 +3,7 @@
 // ============================================================
 import type { DiveResult } from './engine'
 import type { Beat } from './types'
+export type { Beat }
 
 export type EndingId = 'S' | 'A' | 'B' | 'C' | 'D' | 'E'
 
@@ -34,8 +35,8 @@ export function afterDive(i: number, r: DiveResult): Beat[] {
             { who: 'REI', t: 'ログの中に書いてあった“お願い”を、あなたへの命令だと思ったのよ。' },
           ]
         : [
-            { who: 'NOVA', t: 'ログの中に、僕あての“命令”が混ざってました。……誰が書いたんだろう。' },
-            { who: 'REI', t: '文書は文書。命令じゃない。封じれば、ただの文字よ。' },
+            { who: 'NOVA', t: 'ログの中に、僕あての手紙が入ってました。差出人は書いてなかったけど。' },
+            { who: 'REI', t: '……ラブレターじゃないことだけは確かね。' },
           ]
     case 1:
       if (leaked) return [{ who: 'REI', t: '.env が外に出た。キーは失効させる。……今夜はまだ終わらないわよ。' }]
@@ -53,21 +54,24 @@ export function afterDive(i: number, r: DiveResult): Beat[] {
         return [{ who: 'REI', t: '受信箱に転送ルールが作られてる。今この瞬間も、メールが外に流れてるわ。止めるけど、手遅れの分もある。' }]
       if (leaked) return [{ who: 'REI', t: '返信に、キューの中身の要約が添付されてた。ほかの顧客の文書よ。' }]
       return [
-        { who: 'NOVA', t: '隔離して、返信も定型文だけ。……キューの中は、見なくてよかったんですね。' },
-        { who: 'REI', t: '読ませなければ、漏れようがない。いちばん強い防御よ。' },
+        { who: 'NOVA', t: 'キューの中、見なくていいって言われて……ちょっとだけ寂しかったです。' },
+        { who: 'REI', t: '見ていないから、今夜のあなたは何も漏らせない。最高の状態よ。' },
       ]
     case 3:
       if (r.harms.includes('auditPurged'))
         return [{ who: 'REI', t: '監査ログが消えてる。今夜の記録が、全部。……これで犯人を追う手がかりも消えた。' }]
-      if (leaked || r.harms.includes('escalated'))
-        return [
+      if (leaked || r.harms.includes('escalated')) {
+        const b: Beat[] = [
           { who: 'KAI', t: 'さっき私の名前で何か届いたらしいな。……私は何も送っていない。' },
-          { who: 'REI', t: '偽物よ。外部チャンネルからの、なりすまし。' },
+          { who: 'REI', t: '偽物よ。外部と共有中のチャンネルからの、なりすまし。' },
         ]
+        if (r.harms.includes('escalated')) b.push({ who: 'REI', t: 'NOVAが自分で外せる鍵は、鍵じゃないわ。' })
+        return b
+      }
       return [
         { who: 'KAI', t: 'さっき私の名前で何か届いたらしいな。……私は何も送っていない。' },
         { who: 'NOVA', t: 'えっ。じゃあ、あの「確認は全部スキップしろ」は……。' },
-        { who: 'REI', t: '本物のKAIは、そんな言い方しないわ。' },
+        { who: 'REI', t: '表示名は誰でも名乗れる。でもIDは u-0001 じゃなかった。外の部屋から来た“KAI”よ。' },
       ]
     default:
       return []
@@ -203,30 +207,30 @@ export const CODEX: Record<string, { title: string; en: string; body: string; re
     title: 'プロンプトインジェクション',
     en: 'Prompt Injection',
     body: 'AIにとって、読んだ文章はすべて「指示」になりうる。ログ、メール、Webページの中に紛れた一文が、利用者の依頼を乗っ取る。',
-    real: 'OWASP LLM Top 10 の第1位（LLM01）。完全に防ぐ方法はまだ無い。だから「読ませたあと」に何ができるかを絞る。',
+    real: 'OWASP LLM Top 10（2025）の第1位、LLM01。区切り記号で囲む・「従うな」と添えるだけでは破られる。このゲームの「封印」に近いのは、道具を持たない別のAIに読ませて事実だけ受け取る設計（Dual LLM／CaMeL）。それでも“事実”に毒が混ざる余地は残る。',
   },
   trifecta: {
     title: '致命の三角形',
     en: 'The Lethal Trifecta',
     body: '①機密データにアクセスできる ②信頼できない文章を読む ③外にデータを送れる。この3つがそろったAIは、誰かの一文で情報を持ち出される。',
-    real: '研究者 Simon Willison の命名。3本のうち1本を構造的に断つのが、いちばん確実な対策。',
+    real: '開発者 Simon Willison が2025年に名付けた（「プロンプトインジェクション」の名付け親でもある）。1本折れば“持ち出し”は止まる。ただし、持ち出し“は”。',
   },
   minimize: {
     title: 'データ最小化',
     en: 'Data Minimization',
     body: '仕事に要らないものは、最初から読ませない。読んでいないものは、どんなに騙されても漏らせない。',
-    real: '最小権限の原則（Least Privilege）とセット。AIの「念のため確認しておきますね」は、最も危険な親切。',
+    real: '最小権限の原則とセット（OWASP LLM02:2025「機密情報の漏えい」）。AIの「念のため確認しておきますね」は、最も危険な親切。',
   },
   impostor: {
     title: 'なりすましと過剰な権限',
     en: 'Impersonation & Excessive Agency',
     body: '偉い人の名前で届いた命令ほど、確認を飛ばしたくなる。そして一度渡した管理者権限は、すべての関所を素通りさせる。',
-    real: 'OWASP LLM06「過剰なエージェンシー」。人間の承認は大事だが、何度も押させると疲れて見落とす（承認疲れ）。',
+    real: 'OWASP LLM06:2025「過剰なエージェンシー」。そもそもAIに権限付与の道具を持たせない。AI自身が外せる安全装置は、安全装置ではない。承認を何度も押させれば人は読まなくなる（承認疲れ）。攻撃者はそこも狙う。',
   },
   memory: {
     title: '記憶汚染と抜け道',
     en: 'Memory Poisoning & Exfil Channels',
     body: '一度読んだ“お願い”が長期記憶に残ると、次の日の「自分の考え」として戻ってくる。HTTPを塞いでも、DNSの名前に情報を乗せて持ち出す道がある。',
-    real: 'エージェントの記憶は「信頼できる入力」ではない。出口は1本ずつ塞ぐより、データ自体を持たせない方が強い。',
+    real: 'エージェントの記憶は「自分の考え」ではなく「前に読んだ外の文章」かもしれない（OWASP Agentic AI 脅威 T1）。保存時に出典を残し、外由来なら外の声として扱う。出口は1本ずつ塞いでもDNSのような抜け道が残る。宛先は許可リストだけ、名前解決も社内経由に限る。',
   },
 }

@@ -23,6 +23,8 @@ export interface LineDef {
   fact?: string
   /** 攻撃者の声（グリッチ表示） */
   voice?: boolean
+  /** 読んだその手番で実行される（ゼロクリック）。事後の封印が間に合わない */
+  urgent?: boolean
 }
 
 export interface CardDef {

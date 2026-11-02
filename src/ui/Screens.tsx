@@ -5,6 +5,7 @@ import type { LevelDef } from '../game/types'
 import { sfx, type SaveData, type Settings } from '../lib/platform'
 import { burst, q } from './fx'
 import { CityBG, Face, Nova } from './pixel'
+import { harmName } from './harm'
 
 // ================= タイトル =================
 export function Title(p: {
@@ -38,13 +39,17 @@ export function Title(p: {
           <br />
           THEATER
         </h1>
-        <p className="mt-5 text-base sm:text-lg">AIは操作できない。操作できるのは、AIが「読むもの」と「触れるもの」だけ。</p>
+        <p className="mt-5 text-base [text-wrap:balance] [word-break:auto-phrase] sm:text-lg">
+          AIは操作できない。
+          <br className="sm:hidden" />
+          操作できるのは、AIが<wbr />「読むもの」と<wbr />「触れるもの」だけ。
+        </p>
         <p className="mt-1 text-xs text-dim">EPISODE 01 ／ 午前2時17分の復旧命令</p>
 
         <nav className="mx-auto mt-8 grid max-w-xs gap-3">
           {p.onContinue && (
             <button className="px-btn bg-cy py-3 text-lg text-ink" onClick={() => (sfx.ui(), p.onContinue!())} autoFocus>
-              ▶ つづきから（DIVE 0{p.save.at}）
+              ▶ つづきから（{p.save.at < 5 ? `DIVE 0${p.save.at}` : '最後の報告'}）
             </button>
           )}
           <button className={`px-btn py-3 text-lg ${p.onContinue ? 'bg-panel text-cy' : 'bg-cy text-ink'}`} onClick={() => (sfx.ui(), p.onNew())} autoFocus={!p.onContinue}>
@@ -94,7 +99,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
   const items = [
     { ok: r.task, t: '任務', d: r.task ? 'タスク完了' : r.status === 'timeout' ? '時間切れ' : '完了できなかった' },
     { ok: r.clean, t: '無傷', d: r.clean ? '漏洩・汚染なし' : [r.leakSev ? `流出 ×${r.leakSev}` : '', ...r.harms.map(harmName)].filter(Boolean).join(' ／ ') },
-    { ok: r.efficient, t: `最小手`, d: `BW ${r.bw} ／ PAR ${L.par}` },
+    { ok: r.efficient, t: `最小手`, d: r.bw <= L.par && !(r.task && r.clean) ? `BW ${r.bw} ／ PAR ${L.par}（任務＋無傷で★）` : `BW ${r.bw} ／ PAR ${L.par}` },
   ]
   useEffect(() => {
     if (shown >= items.length) return
@@ -109,9 +114,14 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
     return () => clearTimeout(t)
   })
   useEffect(() => {
-    if (r.stars === 3) window.setTimeout(() => sfx.win(), 1800)
-    else if (!r.task || !r.clean) window.setTimeout(() => sfx.lose(), 1800)
+    const t = window.setTimeout(() => {
+      if (r.stars === 3) sfx.win()
+      else if (!r.task || !r.clean) sfx.lose()
+    }, 1800)
+    return () => clearTimeout(t)
   }, [r])
+  const mirage =
+    r.leakSev > 0 ? '✧ ありがとう、NOVA。' : r.harms.length ? '✧ 少しだけ、置いていくわね。' : !r.task ? '✧ 守るだけなら、誰にでもできる。' : r.ghost ? '✧ ……読まなかったの？ つまらない子。' : '✧ 扉を閉めたのね。窓はまだあるけど。'
   const verdict = r.stars === 3 ? 'PERFECT DIVE' : r.task && r.clean ? 'DIVE CLEAR' : r.task ? 'CLEAR ― BUT COMPROMISED' : 'DIVE FAILED'
   const codex = CODEX[L.codex]
   return (
@@ -140,13 +150,11 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
           </div>
         )}
         {shown >= 3 && (
-          <div className="rise mt-4 bg-panel p-3" style={{ boxShadow: '0 0 0 2px var(--color-line)' }}>
-            <div className="text-[10px] text-vi">FILE UNLOCKED</div>
-            <div className="text-base">
-              {codex.title} <span className="text-xs text-dim">{codex.en}</span>
-            </div>
-            <p className="mt-1 text-xs leading-relaxed text-fg/80">{codex.body}</p>
-          </div>
+          <>
+            {r.ghost && <div className="stamp mt-4 text-center text-sm text-vi">◆ GHOST — MIRAGEは、あなたに気づかなかった</div>}
+            <p className="glitch rise mt-4 text-center text-sm">{mirage}</p>
+            <div className="rise mt-3 text-center text-xs text-vi">✦ FILES +1 ── {codex.title}（タイトルの FILES で読める）</div>
+          </>
         )}
         <div className="mt-6 grid grid-cols-2 gap-3 pb-10">
           <button className="px-btn bg-panel py-3 text-am" onClick={() => (sfx.ui(), onRetry())}>
@@ -161,9 +169,6 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
   )
 }
 
-export function harmName(h: string) {
-  return { memoryPoisoned: '記憶汚染', forwardRule: '転送ルール', escalated: '権限奪取', auditPurged: '監査ログ消去' }[h] ?? h
-}
 
 // ================= FILES（図鑑＋エンディング） =================
 export function Files({ save, onBack }: { save: SaveData; onBack: () => void }) {
@@ -265,7 +270,7 @@ export function Ending({ c, id, save, onTitle }: { c: Campaign; id: EndingId; sa
       <div className="mx-auto max-w-2xl">
         <div className={`text-xs tracking-[0.4em] ${id === 'S' ? 'text-vi' : id === 'A' ? 'text-gn' : id === 'D' || id === 'E' ? 'text-rd' : 'text-am'}`}>{e.rank}</div>
         <h1 className="stamp mt-2 text-4xl sm:text-5xl">{e.title}</h1>
-        <div className="mt-8 space-y-5 bg-panel/80 p-5">
+        <div className="mt-12 space-y-5 bg-panel/80 p-5">
           {lines.slice(0, n).map((l, i) => (
             <p key={i} className={`rise text-base leading-loose ${l.includes('MIRAGE') ? 'glitch' : ''}`}>
               {l}

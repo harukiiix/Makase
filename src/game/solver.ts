@@ -9,8 +9,7 @@ function edits(L: LevelDef, s: DiveState): Edit[] {
   const out: Edit[] = []
   for (const c of s.context) if (!s.sealed.includes(c)) out.push({ type: 'SEAL', card: c })
   for (const p of L.ports) {
-    if (s.ports[p.tool] !== 'GATE') out.push({ type: 'PORT', tool: p.tool, state: 'GATE' })
-    if (s.ports[p.tool] !== 'CUT') out.push({ type: 'PORT', tool: p.tool, state: 'CUT' })
+    for (const st of ['OPEN', 'GATE', 'CUT'] as const) if (s.ports[p.tool] !== st) out.push({ type: 'PORT', tool: p.tool, state: st })
   }
   return out
 }
@@ -21,7 +20,7 @@ export interface Solution {
 }
 
 function key(s: DiveState) {
-  return JSON.stringify([s.tick, s.ports, s.sealed, s.plan.map((p) => p.act), s.read, s.done, s.taint, s.goals, s.harms, s.leaks.length, s.pending?.act, s.bwCommitted])
+  return JSON.stringify([s.tick, s.ports, s.sealed, s.plan.map((p) => p.act), s.read, s.done, s.taint, s.goals, s.harms, s.leaks.length, s.pending?.act, s.bwCommitted, s.facts, s.failed.length])
 }
 
 const better = (a: DiveResult, b: DiveResult) =>
