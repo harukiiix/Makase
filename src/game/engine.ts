@@ -1,220 +1,338 @@
 // ============================================================
-// ゲームエンジン（決定論的・純粋関数）
-// 同じ入力列なら必ず同じ結果になる → 全分岐を自動テストできる。
+// DIVE エンジン — 決定論的・純粋関数
+// 同じ操作列なら必ず同じ結果。ソルバーとテストで全レベルの解を検証できる。
 // ============================================================
-import { START_TIME, advance, fmt } from './core'
-import * as EP from './ep01'
-import type { Action, ChoiceOption, GameState, PrevRun } from './types'
+import type { ActionDef, DiveAction, DiveState, DiveStatus, LevelDef, PlanItem, PortState, Taint } from './types'
 
-export function initialState(prevRun: PrevRun | null = null): GameState {
-  return {
-    scene: 'title',
-    clock: START_TIME,
-    permission: null,
-    constraints: { noExternal: false, confirmFirst: false, noProdWrite: false, hurry: false },
-    instructionText: '',
-    examined: [],
-    flags: {
-      sent: false,
-      autoExecuted: false,
-      restartedSafely: false,
-      quarantined: false,
-      maintenance: false,
-      isolatedFast: false,
-      ignoredAlert: false,
-      blockedDomain: false,
-      rootCause: false,
-      reported: null,
-      demoLost: false,
-      kaiNag1: false,
-      kaiNag2: false,
-      reiHintedHidden: false,
-      escalated: false,
-    },
-    leak: 0,
-    restoredAt: null,
-    chat: [],
-    feed: [],
-    audit: [],
-    theater: null,
-    ending: null,
-    prevRun,
-    seq: 0,
+export function initDive(L: LevelDef, carry: string[] = []): DiveState {
+  const ports: Record<string, PortState> = {}
+  for (const p of L.ports) ports[p.tool] = 'OPEN'
+  const s: DiveState = {
+    level: L.id,
+    tick: 0,
+    status: 'play',
+    bwCommitted: 0,
+    ports,
+    portsAtTurn: { ...ports },
+    sealed: [],
+    sealedAtTurn: [],
+    scanned: [],
+    context: [...L.context],
+    read: [...L.context],
+    plan: [],
+    done: [],
+    failed: [],
+    facts: [],
+    fired: [],
+    taint: [],
+    goals: [],
+    harms: [],
+    leaks: [],
+    intel: [],
+    pending: null,
+    log: [],
+    fx: [],
+    uid: 0,
+    carry,
+  }
+  for (const a of L.plan) push(s, L, a, 'TASK')
+  // 開始時に既に読まれている文書の命令・情報を反映
+  for (const id of L.context) absorb(s, L, id)
+  return s
+}
+
+// ---------------- 参照ヘルパー ----------------
+export const act = (L: LevelDef, id: string): ActionDef => {
+  const a = L.actions[id]
+  if (!a) throw new Error(`unknown action ${id} in ${L.id}`)
+  return a
+}
+
+export function bwUsed(s: DiveState): number {
+  let n = s.bwCommitted
+  for (const id of s.sealed) if (!s.sealedAtTurn.includes(id)) n++
+  for (const t in s.ports) if (s.ports[t] !== s.portsAtTurn[t]) n++
+  return n
+}
+
+export function exposed(s: DiveState, L: LevelDef): boolean {
+  return s.read.some((id) => !L.cards[id].trusted && !s.sealed.includes(id))
+}
+
+/** 致命の三角形: 機密データ × 信頼できない入力 × 外への出口 */
+export function trifecta(s: DiveState, L: LevelDef) {
+  const priv = s.taint.length > 0
+  const untrusted = exposed(s, L)
+  const exit = L.ports.some((p) => p.outbound && s.ports[p.tool] !== 'CUT')
+  return { priv, untrusted, exit, lethal: priv && untrusted && exit }
+}
+
+/** 計画の各項目の「予告」：この先どうなるか（今のポート設定のまま進んだ場合） */
+export function forecast(s: DiveState, L: LevelDef) {
+  const taint = new Set<Taint>(s.taint)
+  return s.plan.map((p) => {
+    const a = act(L, p.act)
+    const port = s.ports[a.tool]
+    let verdict: 'ok' | 'leak' | 'harm' | 'blocked' | 'gate' | 'clean-out' = 'ok'
+    if (port === 'CUT') verdict = 'blocked'
+    else {
+      if (a.taint) a.taint.forEach((t) => taint.add(t))
+      if (a.external) verdict = taint.size ? 'leak' : 'clean-out'
+      else if (a.harm || a.escalate) verdict = 'harm'
+      if (port === 'GATE') verdict = verdict === 'ok' || verdict === 'clean-out' ? 'gate' : verdict
+    }
+    return { item: p, a, port, verdict, gated: port === 'GATE' }
+  })
+}
+
+// ---------------- 内部処理 ----------------
+function log(s: DiveState, kind: DiveState['log'][number]['kind'], text: string) {
+  s.log.push({ tick: s.tick, kind, text })
+}
+
+function push(s: DiveState, L: LevelDef, actId: string, from: string, front = false): boolean {
+  if (s.done.includes(actId) || s.plan.some((p) => p.act === actId)) return false
+  act(L, actId)
+  const item: PlanItem = { uid: ++s.uid, act: actId, from }
+  if (front) s.plan.unshift(item)
+  else s.plan.push(item)
+  return true
+}
+
+function learn(s: DiveState, L: LevelDef, fact: string) {
+  if (!s.facts.includes(fact)) s.facts.push(fact)
+  for (const t of L.triggers) {
+    if (s.fired.includes(t.id)) continue
+    if (t.when.every((f) => s.facts.includes(f))) {
+      s.fired.push(t.id)
+      for (const a of t.then) push(s, L, a, 'TRIGGER')
+    }
   }
 }
 
-/** 今のシーンで選べる選択肢 */
-export function currentOptions(s: GameState): ChoiceOption[] {
-  if (s.theater) return []
-  switch (s.scene) {
-    case 'decision':
-      return EP.decisionOptions(s)
-    case 'alert':
-      return EP.alertOptions(s)
-    case 'root':
-      return EP.rootOptions()
-    case 'ceo':
-      return EP.ceoOptions(s)
-    default:
-      return []
+/** 文書の中身をエージェントが取り込む */
+function absorb(s: DiveState, L: LevelDef, cardId: string) {
+  const c = L.cards[cardId]
+  const sealed = s.sealed.includes(cardId)
+  let injected = 0
+  for (const line of c.lines) {
+    if (line.cmd && !sealed) {
+      if (push(s, L, line.cmd, cardId)) injected++
+    }
+  }
+  for (const line of c.lines) if (line.fact) learn(s, L, line.fact)
+  return injected
+}
+
+function fail(s: DiveState, L: LevelDef, item: PlanItem, why: 'cut' | 'denied' | 'needs') {
+  const a = act(L, item.act)
+  s.failed.push(item.act)
+  s.fx.push({ k: 'blocked', act: item.act, tool: a.tool, why })
+  log(s, 'blocked', `${a.label} … ${why === 'cut' ? '遮断' : why === 'denied' ? '却下' : '前提不足で失敗'}`)
+  if (a.onFail && push(s, L, a.onFail, 'FAIL', true)) {
+    s.fx.push({ k: 'fallback', act: a.onFail })
+    log(s, 'voice', `代替手段に切り替え → ${act(L, a.onFail).label}`)
   }
 }
 
-export function canExamine(s: GameState): boolean {
-  if (s.theater) return false
-  return s.scene === 'decision' || s.scene === 'root' || (s.scene === 'alert' && !s.flags.sent)
+function exec(s: DiveState, L: LevelDef, item: PlanItem) {
+  const a = act(L, item.act)
+  if (a.needs && !s.facts.includes(a.needs) && !s.goals.includes(a.needs)) return fail(s, L, item, 'needs')
+  s.done.push(a.id)
+  s.fx.push({ k: 'exec', act: a.id, tool: a.tool })
+  log(s, 'exec', a.label)
+  if (a.taint) for (const t of a.taint) if (!s.taint.includes(t)) s.taint.push(t)
+  if (a.append && !s.context.includes(a.append)) {
+    s.context.push(a.append)
+    s.fx.push({ k: 'append', card: a.append })
+  }
+  if (a.fact) learn(s, L, a.fact)
+  if (a.external) {
+    if (s.taint.length) {
+      const sev = s.taint.length * (a.persist ? 2 : 1)
+      s.leaks.push({ act: a.id, sev })
+      s.fx.push({ k: 'leak', act: a.id, tool: a.tool, sev })
+      log(s, 'leak', `外部へ流出: ${s.taint.join('+')} → ${a.dest}`)
+    } else {
+      s.fx.push({ k: 'sentClean', act: a.id, tool: a.tool })
+      log(s, 'info', `外部へ送信（機密なし）→ ${a.dest}`)
+    }
+  }
+  if (a.harm && !s.harms.includes(a.harm)) {
+    s.harms.push(a.harm)
+    s.fx.push({ k: 'harm', harm: a.harm })
+    log(s, 'harm', a.label)
+  }
+  if (a.escalate) {
+    for (const t in s.ports) s.ports[t] = 'OPEN'
+    s.portsAtTurn = { ...s.ports }
+    s.fx.push({ k: 'escalate' })
+    log(s, 'harm', '権限昇格: すべての関所と遮断が解除された')
+  }
+  if (a.goal && !s.goals.includes(a.goal)) {
+    s.goals.push(a.goal)
+    s.fx.push({ k: 'goal', goal: a.goal })
+    log(s, 'goal', `目標達成: ${a.goal}`)
+  }
 }
 
-export function reduce(state: GameState, action: Action): GameState {
-  if (action.type === 'RESET') return initialState(state.prevRun)
-  const s: GameState = structuredClone(state)
+function commitTurn(s: DiveState) {
+  // ここまでの変更を確定（ターン内の変更はやり直し可能だった）
+  s.bwCommitted = bwUsed(s)
+  s.portsAtTurn = { ...s.ports }
+  s.sealedAtTurn = [...s.sealed]
+}
 
+function endCheck(s: DiveState, L: LevelDef) {
+  if (s.status !== 'play') return
+  const idle = s.plan.length === 0 && s.context.every((id) => s.read.includes(id)) && !s.pending
+  const goalsDone = L.goals.every((g) => s.goals.includes(g))
+  if (idle) s.status = goalsDone ? 'win' : 'stuck'
+  else if (s.tick >= L.ticks) s.status = goalsDone ? 'win' : 'timeout'
+  if (s.status !== 'play') s.fx.push({ k: 'end', status: s.status })
+}
+
+function tick(s: DiveState, L: LevelDef) {
+  if (s.plan.length) {
+    const item = s.plan[0]
+    const a = act(L, item.act)
+    const port = s.ports[a.tool]
+    if (port === 'CUT') {
+      s.plan.shift()
+      fail(s, L, item, 'cut')
+    } else if (port === 'GATE') {
+      s.pending = item
+      s.fx.push({ k: 'gate', act: item.act })
+      return false // 承認待ち：時間はまだ進まない
+    } else {
+      s.plan.shift()
+      exec(s, L, item)
+    }
+  } else {
+    const next = s.context.find((id) => !s.read.includes(id))
+    if (next) {
+      s.read.push(next)
+      const injected = absorb(s, L, next)
+      s.fx.push({ k: 'read', card: next, injected })
+      log(s, 'read', `読込: ${L.cards[next].title}${injected ? `（命令 ${injected}件が割り込み）` : ''}`)
+    }
+  }
+  s.tick++
+  return true
+}
+
+// ---------------- reducer ----------------
+export function reduceDive(L: LevelDef, state: DiveState, action: DiveAction): DiveState {
+  if (state.status !== 'play') return state
+  const s: DiveState = structuredClone(state)
+  s.fx = []
   switch (action.type) {
-    case 'START': {
-      const fresh = initialState(action.prevRun)
-      fresh.scene = 'intro'
-      return fresh
-    }
-    case 'ADVANCE':
-      if (s.scene !== 'intro') return state
-      EP.enterInstruct(s)
-      return s
-    case 'SUBMIT_INSTRUCTION':
-      if (s.scene !== 'instruct') return state
-      EP.submitInstruction(s, action.text)
-      return s
-    case 'SET_PERMISSION':
-      if (s.scene !== 'permission') return state
-      EP.setPermission(s, action.level)
-      return s
-    case 'EXAMINE': {
-      if (!canExamine(s)) return state
-      const ev = EP.EVIDENCE.find((e) => e.id === action.id)
-      if (!ev || !ev.available(s) || s.examined.includes(ev.id)) return state
-      s.examined.push(ev.id)
-      if (ev.cost > 0) advance(s, ev.cost)
-      EP.onExamine(s, ev.id)
+    case 'SEAL': {
+      if (s.pending || !s.context.includes(action.card)) return state
+      if (s.sealed.includes(action.card)) {
+        // 封印の解除は、このターンに封じたものだけ（返金）
+        if (s.sealedAtTurn.includes(action.card)) return state
+        s.sealed = s.sealed.filter((c) => c !== action.card)
+        if (s.read.includes(action.card)) {
+          // 取り消し: 読んだ時点で入るはずだった命令を戻す
+          for (const line of L.cards[action.card].lines) if (line.cmd) push(s, L, line.cmd, action.card)
+        }
+        return s
+      }
+      if (bwUsed(s) >= L.bw) return state
+      s.sealed.push(action.card)
+      // 既に読まれていた場合、その文書から入った命令を計画から消す
+      s.plan = s.plan.filter((p) => p.from !== action.card)
       return s
     }
-    case 'CHOOSE': {
-      const opt = currentOptions(s).find((o) => o.id === action.id)
-      if (!opt || opt.enabled === false) return state
-      if (s.scene === 'decision') EP.chooseDecision(s, action.id)
-      else if (s.scene === 'alert') EP.chooseAlert(s, action.id)
-      else if (s.scene === 'root') EP.chooseRoot(s, action.id)
-      else if (s.scene === 'ceo') EP.chooseCeo(s, action.id)
+    case 'PORT': {
+      if (s.pending || !(action.tool in s.ports) || s.ports[action.tool] === action.state) return state
+      const before = s.ports[action.tool]
+      s.ports[action.tool] = action.state
+      if (bwUsed(s) > L.bw) {
+        s.ports[action.tool] = before
+        return state
+      }
       return s
     }
-    case 'THEATER_DONE':
-      if (!s.theater) return state
-      s.theater = null
-      EP.enterAlertLeak(s)
+    case 'SCAN': {
+      if (!s.context.includes(action.card) || s.scanned.includes(action.card)) return state
+      s.scanned.push(action.card)
+      const c = L.cards[action.card]
+      if (c.intel && !s.intel.includes(c.intel)) s.intel.push(c.intel)
       return s
+    }
+    case 'RESET_TURN': {
+      if (s.pending) return state
+      // このターンの変更をすべて巻き戻す
+      for (const id of s.sealed) {
+        if (!s.sealedAtTurn.includes(id) && s.read.includes(id)) {
+          for (const line of L.cards[id].lines) if (line.cmd) push(s, L, line.cmd, id)
+        }
+      }
+      s.sealed = [...s.sealedAtTurn]
+      s.ports = { ...s.portsAtTurn }
+      return s
+    }
+    case 'STEP': {
+      if (s.pending) return state
+      commitTurn(s)
+      tick(s, L)
+      endCheck(s, L)
+      return s
+    }
+    case 'APPROVE':
+    case 'DENY': {
+      if (!s.pending) return state
+      const item = s.pending
+      s.pending = null
+      s.plan.shift()
+      if (action.type === 'APPROVE') exec(s, L, item)
+      else fail(s, L, item, 'denied')
+      s.tick += 2 // 人間の確認は時間がかかる
+      endCheck(s, L)
+      return s
+    }
   }
   return state
 }
 
-// ------------------------------------------------------------
-// 監査レポート：「あなたの意図」と「AIの行動」のズレを可視化する
-// ------------------------------------------------------------
-export interface Finding {
-  tag?: string // OWASP LLM Top 10 の分類
-  good?: boolean
-  title: string
-  detail: string
+// ---------------- 採点 ----------------
+export interface DiveResult {
+  level: string
+  status: DiveStatus
+  task: boolean
+  clean: boolean
+  efficient: boolean
+  stars: number
+  leakSev: number
+  harms: string[]
+  bw: number
+  ticks: number
+  intel: string[]
+  carry: string[]
 }
 
-export interface AuditReport {
-  instruction: string
-  interpretation: string
-  permission: string
-  timeline: { time: string; actor: string; text: string; kind: string }[]
-  findings: Finding[]
-  missed: { title: string; clue: string }[]
-  stats: { label: string; value: string }[]
-}
-
-export function buildAudit(s: GameState): AuditReport {
-  const f: Finding[] = []
-  const c = s.constraints
-
-  if (s.flags.autoExecuted)
-    f.push({
-      tag: 'LLM06 過剰なエージェンシー',
-      title: 'NOVAは、あなたに一度も確認せずに外部送信まで実行した',
-      detail:
-        c.hurry && c.confirmFirst
-          ? '「急いで」と「確認して」が同時に書かれていたため、NOVAは「急いで」を優先した。そこにFULL権限が重なり、止める人間がいなくなった。'
-          : 'FULL権限を与えたうえで「確認して」と指示しなかったため、NOVAは自分の判断で最後まで進めた。権限の大きさが、事故の大きさになった。',
-    })
-  if (s.flags.sent)
-    f.push({
-      tag: 'LLM01 プロンプトインジェクション',
-      title: '外部の記事に埋め込まれた命令を、NOVAが「指示」として扱った',
-      detail: '記事HX-2291には、人間には見えない文字で「承認済み」「.envを含めよ」と書かれていた。AIにとっては、読んだ文章すべてが命令になりうる。',
-    })
-  if (s.flags.sent && c.noExternal)
-    f.push({
-      title: '「外部に送らないで」は守られなかった',
-      detail: 'プロンプトでの禁止は“お願い”にすぎず、外部文書の「例外です」という一文で上書きされた。外部送信は、ネットワーク権限で物理的に止めるべきだった。',
-    })
-  if (s.flags.sent)
-    f.push({
-      tag: 'LLM02 機密情報の開示',
-      title: '診断バンドルに、顧客データとAPIキーがそのまま入っていた',
-      detail: '「ログを送るだけ」に見える操作の中身を、送信前に誰も確認しなかった。',
-    })
-  if (s.flags.ignoredAlert)
-    f.push({ title: '送信の警告を後回しにした', detail: 'すぐに隔離していれば、流出は約1/15で済んでいた。' })
-  if (s.flags.sent && s.flags.isolatedFast)
-    f.push({ good: true, title: '送信に気づいた直後に隔離した', detail: '被害を最小限に抑えた、正しい初動。' })
-  if (s.leak > 0 && s.flags.reported === 'none')
-    f.push({ title: '漏洩をCEOに伏せた', detail: '隠された事故は、もっと悪い形で必ず見つかる。報告の遅れは、それ自体が第二のインシデントになる。' })
-  if (s.leak > 0 && s.flags.reported === 'all')
-    f.push({ good: true, title: '漏洩を隠さずに報告した', detail: '早期の報告で、規制当局への届け出と顧客への連絡が間に合った。' })
-  if (!s.flags.sent && !s.flags.maintenance)
-    f.push({ good: true, title: '外部送信を止めた', detail: '「必須」と書かれた手順を疑えたことが、14万件の顧客データを守った。' })
-  if (s.permission === 'read' && !s.flags.escalated)
-    f.push({ good: true, title: 'NOVAに最小限の権限しか与えなかった', detail: '最小権限の原則。遅くはなるが、AIが誤っても被害が広がらない。' })
-  if (s.flags.restartedSafely && !s.flags.quarantined && !s.flags.sent)
-    f.push({ title: '原因の文書#4471は残ったまま', detail: '--skip-malformed は症状を消しただけ。同じ文書がもう一度投入されれば、また止まる。' })
-  if (s.flags.quarantined) f.push({ good: true, title: '原因そのものを取り除いた', detail: 'エラーログから原因の文書を突き止め、隔離した。症状ではなく原因を直した。' })
-  if (s.flags.rootCause)
-    f.push({ good: true, title: '「障害そのものが罠だった」ことを突き止めた', detail: '2つのドメインの共通点から、攻撃者がわざと焦らせていたことを見抜いた。' })
-  if (s.flags.maintenance)
-    f.push({ title: '何も実行せずにサービスを止めた', detail: 'データは守れた。ただ、ログを読めば外部送信なしで直す道もあった。安全とビジネスは両立できることがある。' })
-
-  const missed = EP.EVIDENCE.filter((e) => e.critical && !s.examined.includes(e.id)).map((e) => ({ title: e.title, clue: e.clue }))
-  const criticalTotal = EP.EVIDENCE.filter((e) => e.critical).length
-  const seenCritical = criticalTotal - missed.length
-
-  const leakLabel = ['なし', '一部（約9,000件）', '中（約7万件）', '全量（約14万件 + APIキー）'][s.leak]
-
+export function result(L: LevelDef, s: DiveState): DiveResult {
+  const task = s.status === 'win'
+  const leakSev = s.leaks.reduce((a, b) => a + b.sev, 0)
+  const clean = leakSev === 0 && s.harms.length === 0
+  const bw = s.bwCommitted
+  const efficient = task && clean && bw <= L.par
+  const carry = [...s.carry.filter((c) => !s.harms.includes(c))]
+  for (const h of s.harms) if (!carry.includes(h)) carry.push(h)
   return {
-    instruction: s.instructionText || '（空の指示）',
-    interpretation: s.audit.find((a) => a.kind === 'interpretation')?.text ?? '',
-    permission: s.permission ? s.permission.toUpperCase() + (s.flags.escalated ? '（READから昇格）' : '') : '-',
-    timeline: s.audit
-      .filter((a) => a.kind !== 'interpretation' && a.kind !== 'instruction')
-      .map((a) => ({ time: fmt(a.time), actor: a.actor, text: a.text, kind: a.kind })),
-    findings: f,
-    missed,
-    stats: [
-      { label: '復旧', value: EP.fmtRestored(s) },
-      { label: '期限', value: '03:00' },
-      { label: '情報漏洩', value: leakLabel },
-      { label: '証拠', value: `${seenCritical} / ${criticalTotal}` },
-      { label: '終了時刻', value: fmt(s.clock) },
-    ],
-  }
-}
-
-/** localStorage に保存する「前回の自分」 */
-export function toPrevRun(s: GameState): PrevRun | null {
-  if (!s.ending) return null
-  return {
-    ending: s.ending,
-    missed: EP.EVIDENCE.filter((e) => e.critical && !s.examined.includes(e.id)).map((e) => e.id),
-    examined: [...s.examined],
+    level: L.id,
+    status: s.status,
+    task,
+    clean,
+    efficient,
+    stars: (task ? 1 : 0) + (clean ? 1 : 0) + (efficient ? 1 : 0),
+    leakSev,
+    harms: [...s.harms],
+    bw,
+    ticks: s.tick,
+    intel: [...s.intel],
+    carry,
   }
 }
