@@ -133,11 +133,11 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/80 p-4 backdrop-blur-[3px] sm:items-center" role="dialog" aria-modal aria-label="DIVEの結果">
       <div className="pop my-6 w-full max-w-lg border border-line bg-panel shadow-[0_10px_0_rgba(0,0,0,.45)]" style={{ borderTop: `3px solid ${tone}` }}>
-        <div className="border-b border-line px-5 pb-4 pt-5">
+        <div className="border-b border-line px-5 pb-6 pt-5">
           <div className="text-xs text-dim">
             {L.code} ・ {L.title}
           </div>
-          <h2 className="stamp mt-1 font-pixel text-3xl sm:text-4xl" style={{ color: tone }}>
+          <h2 className="stamp mt-1 inline-block origin-left font-pixel text-3xl sm:text-4xl" style={{ color: tone }}>
             {verdict}
           </h2>
         </div>
@@ -148,7 +148,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
               const on = i < shown && it.ok
               return (
                 <div key={i} data-star={i} className={`border px-2 py-3 text-center ${on ? 'border-am bg-am/10' : 'border-line bg-panel2'}`}>
-                  <div className={`font-pixel text-3xl leading-none ${i < shown ? (it.ok ? 'stamp text-am' : 'text-line') : 'text-line/40'}`}>★</div>
+                  <div className={`font-pixel text-3xl leading-none ${i < shown ? (it.ok ? 'stamp text-am' : 'text-dim') : 'text-line/40'}`}>{i < shown && !it.ok ? '✕' : '★'}</div>
                   <div className="mt-2 font-pixel text-sm">{it.t}</div>
                   <div className="mt-1 min-h-[2.5em] text-xs leading-snug text-dim">{i < shown ? it.d : '……'}</div>
                 </div>
@@ -165,7 +165,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
           <div className="mt-4 min-h-[5.5rem] space-y-2">
             {shown >= 3 && (
               <>
-                {r.ghost && <div className="stamp border border-vi/60 bg-vi/10 px-3 py-1.5 text-center text-sm text-vi">◆ GHOST ── MIRAGEの命令は一度も実行されなかった</div>}
+                {r.ghost && <div className="stamp-flat border border-vi/60 bg-vi/10 px-3 py-1.5 text-center text-sm text-vi">◆ GHOST ── MIRAGEの命令は一度も実行されなかった</div>}
                 <p className="rise text-center text-sm text-[#ffd6fb]">
                   <span className="glitch">✧</span>
                   {mirage.replace(/^✧/, '')}

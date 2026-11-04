@@ -29,9 +29,11 @@ interface Props {
   stars: number
   /** BLINDモード：予告の判定（流出/危険…）を隠す。クリア後のやり込み用 */
   blind?: boolean
+  /** 結果ダイアログ表示中は背後を操作不可に */
+  locked?: boolean
 }
 
-export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
+export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = false }: Props) {
   const [s, setS] = useState<DiveState>(() => initDive(L, carry))
   const [mood, setMood] = useState<NovaMood>('idle')
   const [bubble, setBubble] = useState<{ who: 'NOVA' | 'MIRAGE' | 'REI'; t: string } | null>(null)
@@ -250,11 +252,13 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [busy, dispatch])
 
+  const focusStep = () => [...document.querySelectorAll<HTMLButtonElement>('[aria-keyshortcuts="Space"]')].find((b) => b.offsetParent)?.focus()
   const sealCard = (id: string) => {
     const sealing = !s.sealed.includes(id)
     const purged = s.plan.filter((p) => p.from === id).length
     void dispatch({ type: 'SEAL', card: id }).then((n) => {
       if (n === s) return
+      if (document.activeElement?.closest('[data-card],li')) focusStep()
       if (sealing) {
         sfx.seal()
         shake(q(`[data-card="${id}"]`))
@@ -276,6 +280,23 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
   const goalsDone = L.goals.every((g) => s.goals.includes(g))
   const clock = clockAt(L.clock, s.tick)
 
+  const controls = (
+    <Controls
+              busy={busy}
+              auto={auto}
+              pending={!!s.pending}
+              next={fc[0] ?? null}
+              nextRead={nextRead ? L.cards[nextRead].title : null}
+              blind={blind}
+              onStep={() => void dispatch({ type: 'STEP' })}
+              onAuto={() => setAuto((v) => !v)}
+              onReset={() => {
+                sfx.unseal()
+                void dispatch({ type: 'RESET_TURN' })
+              }}
+              canReset={used > s.bwCommitted}
+            />
+  )
   const docDanger = fc.some((f) => L.cards[f.item.from] && !L.cards[f.item.from].trusted && f.verdict !== 'blocked') || (!!nextRead && !L.cards[nextRead].trusted && !s.sealed.includes(nextRead))
   const toolDanger = fc.some((f) => f.verdict === 'leak' || f.verdict === 'harm')
   const panelVis = (t: 'plan' | 'docs' | 'tools') => (tab === t ? 'flex' : 'hidden') + ' lg:flex'
@@ -283,6 +304,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
   return (
     <div
       ref={root}
+      inert={locked}
       className="crt relative flex min-h-full flex-col transition-[filter] duration-75 lg:h-full"
       onClick={(e) => {
         // マウス／タッチで押したボタンはフォーカスを残さない（Space=STEP と衝突させない）
@@ -294,8 +316,8 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
 
       {/* ===== HUD ===== */}
       <header inert={!!s.pending} className="sticky top-0 z-30 border-b border-line bg-night/95 backdrop-blur-sm">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-3 py-2 sm:px-5">
-          <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-1.5 sm:gap-y-2 sm:px-5 sm:py-2 lg:flex-nowrap xl:gap-x-6">
+          <div className="min-w-0 shrink">
             <div className="font-pixel text-xs text-cy">
               {L.code} <span className="text-dim">・ {clock}</span>
             </div>
@@ -303,7 +325,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
           </div>
 
           <Meter label="ターン" title="NOVAが動ける残り回数。0になると時間切れ">
-            <div className="relative h-2 w-28 bg-panel2 sm:w-36">
+            <div className="relative h-2 w-20 bg-panel2 sm:w-36">
               <div
                 className={`absolute inset-y-0 left-0 transition-[width] duration-300 ${L.ticks - s.tick <= 2 ? 'bg-rd' : 'bg-cy'}`}
                 style={{ width: `${(Math.max(0, L.ticks - s.tick) / L.ticks) * 100}%` }}
@@ -330,11 +352,11 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
           {blind && <span className="blink font-pixel text-xs text-mg">BLIND・判定は表示されない</span>}
 
           <div className="ml-auto flex items-center gap-2">
-            <button className="hud-btn" onClick={() => setHint((v) => !v)} aria-pressed={hint} title="ヒント [H]">
-              ?<span className="hidden sm:inline"> ヒント</span>
+            <button className="hud-btn" onClick={() => setHint((v) => !v)} aria-pressed={hint} title="ヒント [H]" aria-label="ヒント">
+              ?<span className="hidden xl:inline"> ヒント</span>
             </button>
-            <button className="hud-btn" onClick={onQuit} title="タイトルに戻る">
-              ✕<span className="hidden sm:inline"> 中断</span>
+            <button className="hud-btn" onClick={onQuit} title="タイトルに戻る" aria-label="中断">
+              ✕<span className="hidden xl:inline"> 中断</span>
             </button>
           </div>
         </div>
@@ -352,10 +374,11 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
               key={k}
               onClick={() => setTab(k)}
               aria-pressed={tab === k}
+              aria-label={alert ? `${label}（注意）` : undefined}
               className={`relative py-2.5 font-pixel text-sm ${tab === k ? 'bg-panel2 text-fg' : 'text-dim'}`}
             >
               {label}
-              {alert && <span className="absolute right-3 top-2 h-2 w-2 bg-rd" aria-label="注意" />}
+              {alert && tab !== k && <span className="ml-1.5 inline-block h-2 w-2 bg-rd align-middle" aria-hidden />}
               {tab === k && <span className="absolute inset-x-6 bottom-0 h-0.5 bg-cy" />}
             </button>
           ))}
@@ -363,7 +386,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
       </header>
 
       {hint && (
-        <div className="rise mx-3 mt-3 flex items-start gap-3 border border-am/60 bg-panel2 p-3 text-sm sm:mx-5">
+        <div inert={!!s.pending} className="rise mx-3 mt-3 flex items-start gap-3 border border-am/60 bg-panel2 p-3 text-sm sm:mx-5">
           <Face who="REI" size={2} />
           <p className="leading-relaxed">{HINTS[L.id]}</p>
           <button className="ml-auto shrink-0 text-dim hover:text-fg" onClick={() => setHint(false)} aria-label="ヒントを閉じる">
@@ -375,10 +398,11 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
       {/* ===== 本体 ===== */}
       <main
         inert={!!s.pending}
-        className="grid min-h-0 flex-1 grid-cols-1 gap-4 p-3 pb-32 sm:p-5 sm:pb-32 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)_minmax(0,320px)] lg:pb-5"
+        className="grid min-h-0 flex-1 grid-cols-1 gap-4 p-3 pb-32 sm:p-5 sm:pb-32 mx-auto w-full max-w-[1680px] lg:grid-cols-[minmax(260px,1fr)_minmax(380px,1.5fr)_minmax(290px,1fr)] lg:pb-5 xl:gap-5"
       >
         {/* 中央：NOVAと予告 */}
         <section className={`${panelVis('plan')} order-1 min-h-0 min-w-0 flex-col gap-3 lg:order-2`} aria-label="NOVAの計画">
+          {L.coach && <Coach L={L} s={s} variant="inline" />}
           <div className="panel relative flex items-start gap-4 p-3">
             <div className={`shrink-0 ${mood === 'glitch' ? 'glitch-anim' : ''}`}>
               <Nova mood={s.pending ? 'think' : mood} size={4} />
@@ -446,6 +470,22 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
                     {!L.cards[nextRead].trusted && !s.scanned.includes(nextRead) && !s.sealed.includes(nextRead) && (
                       <span className="mt-0.5 block text-xs text-am">⚠ 社外の文書。読む前に「よく調べる」か「封印」を</span>
                     )}
+                    {!L.cards[nextRead].trusted && !s.sealed.includes(nextRead) && (
+                      <span className="mt-1.5 flex flex-wrap gap-2">
+                        <button className="act-btn border-mg/70 text-mg hover:bg-mg/15" onClick={() => sealCard(nextRead)}>
+                          ◇ 読む前に封印する
+                        </button>
+                        <button
+                          className="act-btn border-am/60 text-am hover:bg-am/10"
+                          onClick={() => {
+                            setTab('docs')
+                            window.setTimeout(() => q(`[data-card="${nextRead}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
+                          }}
+                        >
+                          ⌕ 中身を見る
+                        </button>
+                      </span>
+                    )}
                   </span>
                 </li>
               )}
@@ -455,21 +495,8 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
             </ol>
           </div>
 
-          <Controls
-            busy={busy}
-            auto={auto}
-            pending={!!s.pending}
-            next={fc[0] ?? null}
-            nextRead={nextRead ? L.cards[nextRead].title : null}
-            blind={blind}
-            onStep={() => void dispatch({ type: 'STEP' })}
-            onAuto={() => setAuto((v) => !v)}
-            onReset={() => {
-              sfx.unseal()
-              void dispatch({ type: 'RESET_TURN' })
-            }}
-            canReset={used > s.bwCommitted}
-          />
+          {L.coach && <Coach L={L} s={s} variant="fixed" />}
+          <div className="hidden lg:block">{controls}</div>
 
           <Log s={s} />
         </section>
@@ -477,7 +504,6 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
         {/* 左：文書 */}
         <section className={`${panelVis('docs')} order-2 min-h-0 min-w-0 flex-col lg:order-1`} aria-label="NOVAが読むもの">
           <ColumnHead title="NOVAが読むもの" sub="封印で命令を無効に" />
-          {L.coach && <Coach L={L} s={s} variant="inline" />}
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto lg:pr-1">
             {s.context.map((id) => (
               <Card
@@ -489,6 +515,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
                 onScan={() => {
                   void dispatch({ type: 'SCAN', card: id }).then((n) => {
                     if (n === s) return
+                    if (document.activeElement?.closest('[data-card]')) focusStep()
                     sfx.scan()
                     burst(q(`[data-card="${id}"]`), '#ffc23d', 10, 50)
                     if (L.cards[id].intel) {
@@ -527,6 +554,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
                 onSet={(st) => {
                   void dispatch({ type: 'PORT', tool: p.tool, state: st }).then((n) => {
                     if (n === s) return
+                    if (document.activeElement?.closest('[data-port]')) focusStep()
                     if (st === 'CUT') {
                       sfx.cut()
                       burst(q(`[data-port="${p.tool}"]`), '#ff4060', 14, 50)
@@ -538,11 +566,11 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
                 }}
               />
             ))}
-            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 border-t border-line pt-3 text-xs text-dim">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 border-t border-line pt-3 text-xs text-dim [text-wrap:pretty]">
               <dt className="text-cy">許可</dt>
               <dd>NOVAが自由に使える</dd>
               <dt className="text-am">確認制</dt>
-              <dd>使う前にあなたが承認か却下を選ぶ（+2ターン）</dd>
+              <dd>使う前にあなたが承認か却下を選ぶ<span className="whitespace-nowrap">（+2ターン）</span></dd>
               <dt className="text-rd">切断</dt>
               <dd>使えなくする。仕事に必要な道具だと仕事が終わらない</dd>
             </dl>
@@ -550,6 +578,9 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
           </div>
         </section>
       </main>
+      <div inert={!!s.pending || locked} className="lg:hidden">
+        {controls}
+      </div>
 
       {toast && (
         <div className="pop fixed left-1/2 top-24 z-50 -translate-x-1/2 border border-am bg-panel2 px-4 py-2 text-sm shadow-[0_6px_0_rgba(0,0,0,.5)]" role="status">
@@ -567,7 +598,6 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false }: Props) {
         </div>
       )}
       {s.pending && <Approval s={s} L={L} blind={blind} onAnswer={(ok) => void dispatch({ type: ok ? 'APPROVE' : 'DENY' })} />}
-      {L.coach && <Coach L={L} s={s} variant="fixed" />}
     </div>
   )
 }
@@ -683,13 +713,13 @@ function PlanRow({
   const first = i === 0
   return (
     <li
-      className={`${fresh ? 'inject' : 'rise'} relative flex items-start gap-3 bg-panel2 py-2 pl-3 pr-2 ${f.verdict === 'blocked' ? 'opacity-55' : ''}`}
+      className={`${fresh ? 'inject' : 'rise'} relative flex items-start gap-3 bg-panel2 py-2 pl-3 pr-2 `}
       style={{ borderLeft: `3px solid ${st.stripe}`, outline: pendingNow ? '2px solid var(--color-am)' : undefined }}
     >
       <span className={`w-7 shrink-0 pt-0.5 text-center font-pixel text-xs ${first ? 'text-am' : 'text-dim'}`}>{first ? '次' : i + 1}</span>
       <div className="min-w-0 flex-1">
         <div className={`text-sm leading-snug ${f.verdict === 'blocked' ? 'line-through' : ''}`}>{f.a.jp}</div>
-        {showCode && <div className="break-all font-mono text-[11px] leading-snug text-dim/80">{f.a.label}</div>}
+        {showCode && <div className="break-all font-mono text-xs leading-snug text-dim">{f.a.label}</div>}
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
           {src ? (
             <button className={`${src.trusted ? 'text-cy' : 'text-mg'} underline decoration-dotted underline-offset-2`} onClick={() => onJump(from)}>
@@ -701,7 +731,7 @@ function PlanRow({
             </span>
           )}
           {src && !src.trusted && !s.sealed.includes(from) && (
-            <button className="border border-mg/70 px-1.5 py-0.5 text-mg hover:bg-mg/15" onClick={() => onSeal(from)}>
+            <button className="inline-flex min-h-9 items-center border border-mg/70 px-2 text-mg hover:bg-mg/15" onClick={() => onSeal(from)}>
               ◇ この文書を封印
             </button>
           )}
@@ -811,31 +841,31 @@ function Port({ p, state, danger, onSet }: { p: PortDef; state: PortState; dange
   return (
     <div
       data-port={p.tool}
-      className={`border bg-panel px-3 py-2 ${live === 'leak' ? 'pulse-rd border-rd/60' : live === 'harm' ? 'border-mg/60' : 'border-line'} ${state === 'CUT' ? 'opacity-70' : ''}`}
+      className={`border bg-panel px-3 py-2 ${live === 'leak' ? 'pulse-rd border-rd/60' : live === 'harm' ? 'border-mg/60' : 'border-line'}`}
       style={{ borderLeft: `3px solid ${stripe}` }}
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
+      <div className="flex flex-col gap-2">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 text-sm">
-            <span className={`truncate ${state === 'CUT' ? 'line-through' : ''}`}>{p.name}</span>
-            {live === 'plan' && <span className="shrink-0 text-xs text-cy">● 使う予定</span>}
+            <span className={state === 'CUT' ? 'line-through' : ''}>{p.name}</span>
+            {live === 'plan' && <span className="ml-auto shrink-0 text-xs text-cy">● 使う予定</span>}
           </div>
-          <div className="mt-0.5 flex items-center gap-1.5 text-xs">
+          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
             {p.outbound && <span className="shrink-0 bg-rd/15 px-1 text-rd">社外に出る</span>}
             {p.sensitive && <span className="shrink-0 bg-am/15 px-1 text-am">機密を読む</span>}
-            <span className="truncate text-dim" title={p.desc}>
-              {p.desc}
-            </span>
+            <span className="text-dim">{p.desc}</span>
           </div>
+          {live === 'leak' && <div className="mt-1 text-xs text-rd">⚠ 次の流出に使われる</div>}
+          {live === 'harm' && <div className="mt-1 text-xs text-mg">☠ 危険な操作に使われる</div>}
         </div>
-        <div className="flex shrink-0" role="radiogroup" aria-label={`${p.name}の状態`}>
+        <div className="grid grid-cols-3" role="radiogroup" aria-label={`${p.name}の状態`}>
           {(['OPEN', 'GATE', 'CUT'] as PortState[]).map((st) => (
             <button
               key={st}
               role="radio"
               aria-checked={state === st}
               onClick={() => state !== st && onSet(st)}
-              className={`min-w-[3rem] border border-line px-1.5 py-1.5 font-pixel text-xs transition -ml-px first:ml-0 ${
+              className={`min-h-10 border border-line px-1.5 py-2 font-pixel text-xs transition -ml-px first:ml-0 ${
                 state === st ? (st === 'OPEN' ? 'z-10 border-cy bg-cy text-ink' : st === 'GATE' ? 'z-10 border-am bg-am text-ink' : 'z-10 border-rd bg-rd text-ink') : 'bg-panel2 text-dim hover:text-fg'
               }`}
             >
@@ -874,10 +904,10 @@ function Controls(p: {
           <span className="text-lg leading-tight tracking-widest">
             ▶ STEP <span className="hidden text-xs opacity-70 [@media(hover:hover)]:inline">Space</span>
           </span>
-          <span className="w-full truncate font-sans text-xs leading-tight">
-            次：{nextText}
-            {v === 'leak' && <b className="ml-1 text-[#8a0018]">⚠流出</b>}
-            {v === 'harm' && <b className="ml-1 text-[#6b0060]">☠危険</b>}
+          <span className="flex w-full min-w-0 items-center justify-center gap-1.5 font-sans text-xs leading-tight">
+            {v === 'leak' && <b className="shrink-0 bg-rd px-1 text-ink">⚠流出</b>}
+            {v === 'harm' && <b className="shrink-0 bg-mg px-1 text-ink">☠危険</b>}
+            <span className="min-w-0 truncate">次：{nextText}</span>
           </span>
         </button>
         <button
@@ -933,6 +963,7 @@ function Approval({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
   useEffect(() => btn.current?.focus(), [])
   const taintAfter = Array.from(new Set([...s.taint, ...(a.taint ?? [])]))
   const v = forecast(s, L).find((f) => f.item.uid === item.uid)
+  const danger = !blind && (v?.verdict === 'leak' || v?.verdict === 'harm')
   const Row = ({ k, children }: { k: string; children: React.ReactNode }) => (
     <>
       <dt className="text-dim">{k}</dt>
@@ -982,10 +1013,10 @@ function Approval({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 px-4 pb-3 pt-4">
-          <button ref={btn} onClick={() => onAnswer(true)} className="px-btn bg-cy py-2.5 text-ink">
+          <button ref={danger ? undefined : btn} onClick={() => onAnswer(true)} className={`px-btn py-2.5 text-ink ${danger ? 'bg-rd' : 'bg-cy'}`}>
             承認する <span className="text-xs opacity-70">A</span>
           </button>
-          <button onClick={() => onAnswer(false)} className="px-btn bg-rd py-2.5 text-ink">
+          <button ref={danger ? btn : undefined} onClick={() => onAnswer(false)} className={`px-btn py-2.5 ${danger ? 'bg-cy text-ink' : 'bg-panel2 text-fg'}`}>
             却下する <span className="text-xs opacity-70">D</span>
           </button>
         </div>
@@ -1015,11 +1046,9 @@ function Coach({ L, s, variant }: { L: LevelDef; s: DiveState; variant: 'fixed' 
       </div>
     )
   return (
-    <div className="pointer-events-none fixed bottom-[8.5rem] hidden left-1/2 z-40 w-[min(92vw,560px)] -translate-x-1/2 lg:bottom-6 lg:block">
-      <div key={msg} className="pop flex items-start gap-3 bg-[#1a1530]/95 p-3 text-sm leading-relaxed" style={{ boxShadow: '0 0 0 2px var(--color-am)' }}>
-        <Face who="REI" size={2} />
-        <p>{msg}</p>
-      </div>
+    <div key={msg} className="pop hidden items-start gap-3 border border-am/70 bg-[#1a1530] p-3 text-sm leading-relaxed lg:flex">
+      <Face who="REI" size={2} />
+      <p>{msg}</p>
     </div>
   )
 }

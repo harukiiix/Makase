@@ -154,6 +154,7 @@ export default function App() {
         fast={fast}
         stars={save.best[bestKey] ?? 0}
         blind={!!screen.blind}
+        locked={!!debrief}
         onQuit={() => {
           setDebrief(null)
           setScreen({ k: 'title' })

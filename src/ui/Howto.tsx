@@ -12,7 +12,7 @@ export function Howto({ onDone }: { onDone: () => void }) {
           <div>
             <div className="text-xs text-cy">あそびかた</div>
             <h1 className="text-2xl leading-snug">NOVAは、言われたことを全部やる。</h1>
-            <p className="text-sm text-dim">あなたはNOVAを直接は動かせない。動かせるのは「読ませるもの」と「使わせる道具」だけ。</p>
+            <p className="text-sm text-dim [text-wrap:balance]">あなたはNOVAを直接は動かせない。動かせるのは「読ませるもの」と「使わせる道具」だけ。</p>
           </div>
         </div>
 

@@ -96,7 +96,12 @@ export function Talk({
             {!full && <span className="blink">▌</span>}
           </p>
           <div className="mt-2 flex justify-end text-xs text-dim">
-            {full && !(last && choices) && <span className="blink">▼ クリック／Space</span>}
+            {full && !(last && choices) && (
+              <span className="blink">
+                ▼ <span className="[@media(hover:none)]:hidden">クリック／Space</span>
+                <span className="hidden [@media(hover:none)]:inline">タップで次へ</span>
+              </span>
+            )}
           </div>
         </div>
         {last && full && choices && (
@@ -117,7 +122,7 @@ export function Talk({
           </div>
         )}
         <button
-          className="mt-3 text-xs text-dim underline"
+          className="hud-btn mt-3 ml-auto flex w-fit"
           onClick={(e) => {
             e.stopPropagation()
             if (choices) {
