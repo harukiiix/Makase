@@ -144,7 +144,7 @@ export function Face({ who, size = 3 }: { who: string; size?: number }) {
 }
 
 // ---------------- 背景：雨の湾岸の夜景（低解像度キャンバス） ----------------
-export function CityBG({ intensity = 0, still = false }: { intensity?: number; still?: boolean }) {
+export function CityBG({ intensity = 0, still = false, dim = false }: { intensity?: number; still?: boolean; dim?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null)
   const inten = useRef(intensity)
   inten.current = intensity
@@ -169,10 +169,11 @@ export function CityBG({ intensity = 0, still = false }: { intensity?: number; s
       }
     }
     const drops = Array.from({ length: 140 }, () => ({ x: rnd() * W, y: rnd() * H, s: 2 + rnd() * 3 }))
+    // ネオンは細い線で。大きな四角は表示崩れに見えるので避ける
     const neon = [
-      { x: 38, y: 62, w: 10, h: 3, c: '#ff3df0' },
-      { x: 150, y: 48, w: 6, h: 10, c: '#3ef0ff' },
-      { x: 200, y: 74, w: 12, h: 3, c: '#ffc23d' },
+      { x: 38, y: 64, w: 7, h: 1, c: 'rgba(255,61,240,.55)' },
+      { x: 152, y: 50, w: 1, h: 6, c: 'rgba(62,240,255,.5)' },
+      { x: 202, y: 76, w: 8, h: 1, c: 'rgba(255,194,61,.5)' },
     ]
     let t = 0
     let raf = 0
@@ -188,11 +189,11 @@ export function CityBG({ intensity = 0, still = false }: { intensity?: number; s
       g.addColorStop(1, k > 0.66 ? '#2a0a1a' : '#0d1430')
       ctx.fillStyle = g
       ctx.fillRect(0, 0, W, H)
-      // 月
-      ctx.fillStyle = '#1d2550'
-      ctx.fillRect(196, 14, 10, 10)
-      ctx.fillStyle = '#26306a'
-      ctx.fillRect(197, 15, 8, 8)
+      // 月（ドットで丸く）
+      ctx.fillStyle = '#2a3366'
+      ctx.fillRect(198, 14, 4, 1)
+      ctx.fillRect(197, 15, 6, 4)
+      ctx.fillRect(198, 19, 4, 1)
       for (const b of bs) {
         const shade = ['#0b1026', '#080c1d', '#05070f'][b.layer]
         ctx.fillStyle = shade
@@ -210,7 +211,7 @@ export function CityBG({ intensity = 0, still = false }: { intensity?: number; s
       }
       for (const n of neon) {
         const on = (t + n.x) % 53 > 2
-        ctx.fillStyle = on ? n.c : '#20152a'
+        ctx.fillStyle = on ? n.c : 'rgba(32,21,42,.6)'
         ctx.fillRect(n.x, n.y, n.w, n.h)
       }
       // 雨
@@ -233,5 +234,5 @@ export function CityBG({ intensity = 0, still = false }: { intensity?: number; s
     raf = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(raf)
   }, [still])
-  return <canvas ref={ref} className="pixelated pointer-events-none fixed inset-0 -z-10 h-full w-full object-cover opacity-50" aria-hidden />
+  return <canvas ref={ref} className={`pixelated pointer-events-none fixed inset-0 -z-10 h-full w-full object-cover ${dim ? 'opacity-25' : 'opacity-50'}`} aria-hidden />
 }

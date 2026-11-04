@@ -129,43 +129,61 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
     r.leakSev > 0 ? '✧ ありがとう、NOVA。' : r.harms.length ? '✧ 少しだけ、置いていくわね。' : !r.task ? '✧ 守るだけなら、誰にでもできる。' : r.ghost ? '✧ ……一行も通さなかったの？ つまらない子。' : '✧ 扉を閉めたのね。窓はまだあるけど。'
   const verdict = r.stars === 3 ? 'PERFECT DIVE' : r.task && r.clean ? 'DIVE CLEAR' : r.task ? 'CLEAR ― BUT COMPROMISED' : 'DIVE FAILED'
   const codex = CODEX[L.codex]
+  const tone = r.stars === 3 ? 'var(--color-am)' : r.task && r.clean ? 'var(--color-gn)' : 'var(--color-rd)'
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-ink/85 p-4 backdrop-blur-[2px]">
-      <div className="mx-auto mt-[6vh] max-w-lg">
-        <div className="text-xs text-cy">
-          {L.code} ／ {L.title}
-        </div>
-        <h2 className={`stamp mt-1 text-3xl sm:text-4xl ${r.stars === 3 ? 'text-am' : r.task && r.clean ? 'text-gn' : 'text-rd'}`}>{verdict}</h2>
-        <div className="mt-8 grid grid-cols-3 gap-3">
-          {items.map((it, i) => (
-            <div key={i} data-star={i} className="bg-panel p-3 text-center" style={{ boxShadow: `0 0 0 2px ${i < shown && it.ok ? 'var(--color-am)' : 'var(--color-line)'}` }}>
-              <div className={`text-4xl ${i < shown ? (it.ok ? 'stamp text-am' : 'text-line') : 'text-transparent'}`}>★</div>
-              <div className="mt-1 text-sm">{it.t}</div>
-              <div className="mt-1 text-xs leading-tight text-dim">{i < shown ? it.d : ''}</div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 flex justify-between text-xs text-dim">
-          <span>使ったターン {r.ticks}／{L.ticks}</span>
-          <span>このDIVEの最高 ★{Math.max(best, r.stars)}</span>
-        </div>
-        {r.intel.length > 0 && (
-          <div className="rise mt-4 bg-panel p-3 text-sm text-vi" style={{ boxShadow: '0 0 0 2px var(--color-vi)' }}>
-            ✦ 手がかり：{r.intel.map((i) => INTEL_NAMES[i]).join(' ／ ')}
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/80 p-4 backdrop-blur-[3px] sm:items-center" role="dialog" aria-modal aria-label="DIVEの結果">
+      <div className="pop my-6 w-full max-w-lg border border-line bg-panel shadow-[0_10px_0_rgba(0,0,0,.45)]" style={{ borderTop: `3px solid ${tone}` }}>
+        <div className="border-b border-line px-5 pb-4 pt-5">
+          <div className="text-xs text-dim">
+            {L.code} ・ {L.title}
           </div>
-        )}
-        {shown >= 3 && (
-          <>
-            {r.ghost && <div className="stamp mb-2 mt-4 text-center text-sm text-vi">◆ GHOST — MIRAGEの命令は、一度も実行されなかった</div>}
-            <p className="rise mt-4 text-center text-sm text-[#ffd6fb]">
-              <span className="glitch">✧</span>
-              {mirage.replace(/^✧/, '')}
-            </p>
-            {r.stars < 3 && <p className="rise mt-3 bg-panel2 p-3 text-xs leading-relaxed text-fg">次の一手：{HINTS[L.id]}</p>}
-            <div className="rise mt-3 text-center text-xs text-vi">✦ FILES +1 ── {codex.title}（タイトルの FILES で読める）</div>
-          </>
-        )}
-        <div className="mt-6 grid grid-cols-2 gap-3 pb-10">
+          <h2 className="stamp mt-1 font-pixel text-3xl sm:text-4xl" style={{ color: tone }}>
+            {verdict}
+          </h2>
+        </div>
+
+        <div className="px-5 py-5">
+          <div className="grid grid-cols-3 gap-2">
+            {items.map((it, i) => {
+              const on = i < shown && it.ok
+              return (
+                <div key={i} data-star={i} className={`border px-2 py-3 text-center ${on ? 'border-am bg-am/10' : 'border-line bg-panel2'}`}>
+                  <div className={`font-pixel text-3xl leading-none ${i < shown ? (it.ok ? 'stamp text-am' : 'text-line') : 'text-line/40'}`}>★</div>
+                  <div className="mt-2 font-pixel text-sm">{it.t}</div>
+                  <div className="mt-1 min-h-[2.5em] text-xs leading-snug text-dim">{i < shown ? it.d : '……'}</div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-2 flex justify-between text-xs text-dim">
+            <span>
+              使ったターン {r.ticks}／{L.ticks}
+            </span>
+            <span>このDIVEの最高 ★{Math.max(best, r.stars)}</span>
+          </div>
+
+          <div className="mt-4 min-h-[5.5rem] space-y-2">
+            {shown >= 3 && (
+              <>
+                {r.ghost && <div className="stamp border border-vi/60 bg-vi/10 px-3 py-1.5 text-center text-sm text-vi">◆ GHOST ── MIRAGEの命令は一度も実行されなかった</div>}
+                <p className="rise text-center text-sm text-[#ffd6fb]">
+                  <span className="glitch">✧</span>
+                  {mirage.replace(/^✧/, '')}
+                </p>
+                {r.stars < 3 && (
+                  <p className="rise border-l-2 border-am bg-panel2 px-3 py-2 text-sm leading-relaxed">
+                    <span className="mr-1 font-pixel text-xs text-am">次の一手</span>
+                    {HINTS[L.id]}
+                  </p>
+                )}
+                {r.intel.length > 0 && <p className="rise text-sm text-vi">✦ 手がかり：{r.intel.map((i) => INTEL_NAMES[i]).join(' ／ ')}</p>}
+                <p className="rise text-xs text-dim">✦ FILES に「{codex.title}」が追加された（タイトル画面で読める）</p>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 border-t border-line px-5 py-4">
           <button className="px-btn bg-panel py-3 text-am" onClick={() => (sfx.ui(), onRetry())}>
             ↺ もう一度{r.stars < 3 ? '（★を狙う）' : ''}
           </button>
