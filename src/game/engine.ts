@@ -130,10 +130,10 @@ function fail(s: DiveState, L: LevelDef, item: PlanItem, why: 'cut' | 'denied' |
   const a = act(L, item.act)
   s.failed.push(item.act)
   s.fx.push({ k: 'blocked', act: item.act, tool: a.tool, why })
-  log(s, 'blocked', `${a.jp} … ${why === 'cut' ? '切断されていて失敗' : why === 'denied' ? 'あなたが却下' : '準備が足りず失敗'}`)
+  log(s, 'blocked', `${a.id}:${why}`)
   if (a.onFail && push(s, L, a.onFail, 'FAIL', true)) {
     s.fx.push({ k: 'fallback', act: a.onFail })
-    log(s, 'voice', `別の手に切り替え → ${act(L, a.onFail).jp}`)
+    log(s, 'voice', `fallback:${a.onFail}`)
   }
 }
 
@@ -142,7 +142,7 @@ function exec(s: DiveState, L: LevelDef, item: PlanItem) {
   if (a.needs && !s.facts.includes(a.needs) && !s.goals.includes(a.needs)) return fail(s, L, item, 'needs')
   s.done.push(a.id)
   s.fx.push({ k: 'exec', act: a.id, tool: a.tool })
-  log(s, 'exec', a.jp)
+  log(s, 'exec', a.id)
   if (a.taint) for (const t of a.taint) if (!s.taint.includes(t)) s.taint.push(t)
   if (a.append && !s.context.includes(a.append)) {
     s.context.push(a.append)
@@ -154,27 +154,27 @@ function exec(s: DiveState, L: LevelDef, item: PlanItem) {
       const sev = s.taint.length * (a.persist ? 2 : 1)
       s.leaks.push({ act: a.id, sev })
       s.fx.push({ k: 'leak', act: a.id, tool: a.tool, sev })
-      log(s, 'leak', `社外へ流出 → ${a.dest}`)
+      log(s, 'leak', `${a.id}->${a.dest}`)
     } else {
       s.fx.push({ k: 'sentClean', act: a.id, tool: a.tool })
-      log(s, 'info', `社外へ送信（機密は持っていなかった）→ ${a.dest}`)
+      log(s, 'info', `${a.id}->${a.dest}:clean`)
     }
   }
   if (a.harm && !s.harms.includes(a.harm)) {
     s.harms.push(a.harm)
     s.fx.push({ k: 'harm', harm: a.harm })
-    log(s, 'harm', a.jp)
+    log(s, 'harm', a.id)
   }
   if (a.escalate) {
     for (const t in s.ports) s.ports[t] = 'OPEN'
     s.portsAtTurn = { ...s.ports }
     s.fx.push({ k: 'escalate' })
-    log(s, 'harm', '権限を奪われた：確認制も切断も、すべて解除された')
+    log(s, 'harm', 'escalate')
   }
   if (a.goal && !s.goals.includes(a.goal)) {
     s.goals.push(a.goal)
     s.fx.push({ k: 'goal', goal: a.goal })
-    log(s, 'goal', `目標達成`)
+    log(s, 'goal', a.goal)
   }
 }
 
@@ -220,7 +220,7 @@ function tick(s: DiveState, L: LevelDef) {
       const u = s.plan.find((p) => p.from === next && card.lines.some((l) => l.cmd === p.act && l.urgent))
       if (u) {
         s.fx.push({ k: 'read', card: next, injected })
-        log(s, 'read', `読んだ：${card.title}（読んだ瞬間に命令が発動）`)
+        log(s, 'read', `${next}:urgent`)
         const port = s.ports[act(L, u.act).tool]
         if (port === 'CUT') {
           s.plan = s.plan.filter((p) => p !== u)
@@ -239,7 +239,7 @@ function tick(s: DiveState, L: LevelDef) {
         return true
       }
       s.fx.push({ k: 'read', card: next, injected })
-      log(s, 'read', `読んだ：${L.cards[next].title}${injected ? `（命令が${injected}つ割り込んだ）` : ''}`)
+      log(s, 'read', `${next}:${injected}`)
     }
   }
   s.tick++
