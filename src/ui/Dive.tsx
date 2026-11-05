@@ -428,7 +428,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
                     key={bubble.t}
                     className={`pop px-2 py-1 text-sm ${bubble.who === 'MIRAGE' ? 'border border-mg/60 bg-[#1a0822] text-[#ffd6fb]' : 'border border-cy/40 bg-panel2'}`}
                   >
-                    <span className={`mr-2 font-pixel text-xs ${bubble.who === 'MIRAGE' ? 'text-mg' : 'text-cy'}`}>{bubble.who === 'MIRAGE' ? '✧MIRAGE' : bubble.who}</span>
+                    <span className={`mr-2 font-pixel text-xs ${bubble.who === 'MIRAGE' ? 'text-mg' : 'text-cy'}`}>{bubble.who === 'MIRAGE' ? '─ 前の席より' : bubble.who}</span>
                     {bubble.t}
                   </div>
                 )}
@@ -520,7 +520,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
                     burst(q(`[data-card="${id}"]`), '#ffc23d', 10, 50)
                     if (L.cards[id].intel) {
                       window.setTimeout(() => sfx.intel(), 200)
-                      showToast('✦ 手がかり発見：MIRAGEの正体に近づいた')
+                      showToast('✦ 手がかり発見：「前の席より」の正体に近づいた')
                     }
                   })
                 }}
@@ -630,12 +630,13 @@ function clockAt(start: string, tick: number) {
 }
 
 const TAUNTS: Record<string, string> = {
-  LOG: 'やあ、NOVA。お願いがあるんだ。',
-  KB: 'いい子だね。手順どおりに、ね？',
-  DOC: '箱の中まで見てくれるなんて、親切だ。',
-  KAI: '社長命令だよ。急いで。',
+  LOG: '……聞こえる？ 前の席からだよ。',
+  KB: '手順どおりに、ね？',
+  DOC: '全部読んでくれるなんて、親切だね。',
+  KAI: '社長命令だよ。一個だけ。',
   STATUS: '最後のお願い、聞いてくれる？',
-  MEM: '覚えていてくれたんだ。うれしいな。',
+  MEM: '覚えていてくれたんだ。',
+  CONF: 'メモの続きも、読んでくれる？',
 }
 function pickTaunt(card: string) {
   return TAUNTS[card] ?? '……聞こえる？'
@@ -814,7 +815,7 @@ function Card({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next: 
           {c.scan.map((t, i) => (
             <li key={i}>⌕ {t}</li>
           ))}
-          {c.intel && <li className="text-vi">✦ 手がかり発見：MIRAGEの正体に近づいた</li>}
+          {c.intel && <li className="text-vi">✦ 手がかり発見：「前の席より」の正体に近づいた</li>}
         </ul>
       )}
       {sealed && (

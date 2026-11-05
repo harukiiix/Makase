@@ -86,7 +86,7 @@ export interface TriggerDef {
 }
 
 export interface Beat {
-  who: 'NOVA' | 'REI' | 'KAI' | 'MIRAGE' | 'SYS' | 'YOU'
+  who: 'NOVA' | 'REI' | 'KAI' | 'MIRAGE' | 'SYS' | 'YOU' | 'TOKI'
   t: string
 }
 

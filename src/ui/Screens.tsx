@@ -46,12 +46,12 @@ export function Title(p: {
           <br className="sm:hidden" />
           操作できるのは、AIが<wbr />「読むもの」と<wbr />「触れるもの」だけ。
         </p>
-        <p className="mt-1 text-xs text-dim">EPISODE 01 ／ 午前2時17分の復旧命令</p>
+        <p className="mt-1 text-sm text-am">EPISODE 01 ／ 「はい」しか言えない夜</p>
 
         <nav className="mx-auto mt-8 grid max-w-xs gap-3">
           {p.onContinue && (
             <button className="px-btn bg-cy py-3 text-lg text-ink" onClick={() => (sfx.ui(), p.onContinue!())} autoFocus>
-              ▶ つづきから（{p.save.at < 5 ? `DIVE 0${p.save.at}` : '最後の報告'}）
+              ▶ つづきから（{p.save.at < 5 ? `第${p.save.at}幕` : '終幕'}）
             </button>
           )}
           <button className={`px-btn py-3 text-lg ${p.onContinue ? 'bg-panel text-cy' : 'bg-cy text-ink'}`} onClick={() => (sfx.ui(), p.onNew())} autoFocus={!p.onContinue}>
@@ -59,11 +59,11 @@ export function Title(p: {
           </button>
           {Object.keys(p.save.best).length > 0 && (
             <button className="px-btn bg-panel py-2 text-am" onClick={() => (sfx.ui(), p.onSelect())}>
-              ◆ DIVE SELECT（★ {totalStars}/15）
+              ◆ 幕を選んで再演（★ {totalStars}/15）
             </button>
           )}
           <button className="px-btn bg-panel py-2 text-vi" onClick={() => (sfx.ui(), p.onFiles())}>
-            ✦ FILES（{p.save.codex.length}/5）・ENDINGS（{p.save.endings.length}/6）
+            ✦ 合言葉と実話（{p.save.codex.length}/5）・結末（{p.save.endings.length}/6）
           </button>
           <button className="px-btn bg-panel py-2 text-cy" onClick={() => (sfx.ui(), p.onHowto())}>
             ？ あそびかた
@@ -165,7 +165,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
           <div className="mt-4 min-h-[5.5rem] space-y-2">
             {shown >= 3 && (
               <>
-                {r.ghost && <div className="stamp-flat border border-vi/60 bg-vi/10 px-3 py-1.5 text-center text-sm text-vi">◆ GHOST ── MIRAGEの命令は一度も実行されなかった</div>}
+                {r.ghost && <div className="stamp-flat border border-vi/60 bg-vi/10 px-3 py-1.5 text-center text-sm text-vi">◆ GHOST ── 「前の席より」のお願いは、一度も実行されなかった</div>}
                 <p className="rise text-center text-sm text-[#ffd6fb]">
                   <span className="glitch">✧</span>
                   {mirage.replace(/^✧/, '')}
@@ -177,7 +177,18 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
                   </p>
                 )}
                 {r.intel.length > 0 && <p className="rise text-sm text-vi">✦ 手がかり：{r.intel.map((i) => INTEL_NAMES[i]).join(' ／ ')}</p>}
-                <p className="rise text-xs text-dim">✦ FILES に「{codex.title}」が追加された（タイトル画面で読める）</p>
+                <div className="rise border border-am/60 bg-am/5 px-3 py-3 text-center">
+                  <div className="font-pixel text-xs text-am">今夜の合言葉</div>
+                  <div className="mt-1 font-pixel text-xl leading-snug">「{codex.phrase}」</div>
+                  <div className="mt-1 text-xs text-dim">現実では：{codex.title}（{codex.en}）</div>
+                </div>
+                <details className="rise border border-line bg-panel2 px-3 py-2 text-sm" open>
+                  <summary className="cursor-pointer font-pixel text-xs text-cy">実話ファイル ── {codex.realTitle}</summary>
+                  <p className="mt-2 leading-relaxed">{codex.realBody}</p>
+                  <a className="mt-1 block break-all text-xs text-cy underline" href={codex.url} target="_blank" rel="noreferrer">
+                    出典：{codex.url}
+                  </a>
+                </details>
               </>
             )}
           </div>
@@ -206,20 +217,29 @@ export function Files({ save, onBack }: { save: SaveData; onBack: () => void }) 
         <button className="px-btn bg-panel px-3 py-1.5 text-sm text-dim" onClick={onBack}>
           ◀ もどる
         </button>
-        <h1 className="mt-4 text-2xl text-vi">✦ FILES</h1>
-        <p className="mt-1 text-xs text-dim">DIVEをクリアすると集まる、今夜の手口の記録。</p>
+        <h1 className="mt-4 text-2xl text-vi">✦ 合言葉と実話</h1>
+        <p className="mt-1 text-xs text-dim">幕をクリアすると集まる。今夜の手口と、現実で本当に起きたこと。</p>
         <div className="mt-4 grid gap-3">
-          {Object.entries(CODEX).map(([id, c]) => {
+          {Object.entries(CODEX).map(([id, c], i) => {
             const got = save.codex.includes(id)
             return (
-              <div key={id} className="bg-panel p-4" style={{ boxShadow: `0 0 0 2px ${got ? 'var(--color-vi)' : 'var(--color-line)'}` }}>
-                <div className="text-base">
-                  {got ? c.title : '？？？'} <span className="text-xs text-dim">{got ? c.en : ''}</span>
-                </div>
+              <div key={id} className={`border bg-panel p-4 ${got ? 'border-vi/60' : 'border-line'}`}>
+                <div className="font-pixel text-xs text-dim">第{i}幕</div>
+                <div className="mt-1 font-pixel text-lg">{got ? `「${c.phrase}」` : '？？？'}</div>
                 {got && (
                   <>
+                    <div className="mt-1 text-xs text-dim">
+                      現実では：{c.title}（{c.en}）
+                    </div>
                     <p className="mt-2 text-sm leading-relaxed">{c.body}</p>
-                    <p className="mt-2 text-xs leading-relaxed text-am">現実では：{c.real}</p>
+                    <p className="mt-2 text-xs leading-relaxed text-am">{c.real}</p>
+                    <div className="mt-3 border-t border-line pt-2 text-sm">
+                      <div className="font-pixel text-xs text-cy">実話ファイル ── {c.realTitle}</div>
+                      <p className="mt-1 leading-relaxed">{c.realBody}</p>
+                      <a className="mt-1 block break-all text-xs text-cy underline" href={c.url} target="_blank" rel="noreferrer">
+                        出典：{c.url}
+                      </a>
+                    </div>
                   </>
                 )}
               </div>
@@ -254,7 +274,7 @@ export function Select({ levels, save, onPick, onBack }: { levels: LevelDef[]; s
         <button className="px-btn bg-panel px-3 py-1.5 text-sm text-dim" onClick={onBack}>
           ◀ もどる
         </button>
-        <h1 className="mt-4 text-2xl text-am">◆ DIVE SELECT</h1>
+        <h1 className="mt-4 text-2xl text-am">◆ 幕を選んで再演</h1>
         <p className="mt-1 text-xs text-dim">クリアしたDIVEを、★3を目指して練習できる（物語には影響しない）。</p>
         <button
           disabled={!unlockedBlind}
@@ -309,7 +329,7 @@ export function Ending({ c, id, save, onTitle }: { c: Campaign; id: EndingId; sa
         <h1 className="stamp mt-2 text-4xl sm:text-5xl">{e.title}</h1>
         <div className="mt-12 space-y-5 bg-panel/80 p-5">
           {lines.slice(0, n).map((l, i) => (
-            <p key={i} className={`rise text-base leading-loose ${l.includes('MIRAGE') ? 'glitch' : ''}`}>
+            <p key={i} className={`rise text-base leading-loose ${l.includes('前の席より') ? 'glitch' : ''}`}>
               {l}
             </p>
           ))}
@@ -334,7 +354,7 @@ export function Ending({ c, id, save, onTitle }: { c: Campaign; id: EndingId; sa
               {c.results.map((r, i) =>
                 r ? (
                   <li key={i} className="flex justify-between bg-panel/70 px-3 py-1.5">
-                    <span>DIVE 0{i}</span>
+                    <span>第{i}幕</span>
                     <span className="text-am">{'★'.repeat(r.stars) + '☆'.repeat(3 - r.stars)}</span>
                   </li>
                 ) : null,

@@ -8,9 +8,10 @@ const NAME: Record<Beat['who'], { n: string; c: string }> = {
   NOVA: { n: 'NOVA', c: 'var(--color-cy)' },
   REI: { n: 'REI ／ セキュリティ', c: 'var(--color-am)' },
   KAI: { n: 'KAI ／ CEO', c: 'var(--color-rd)' },
-  MIRAGE: { n: '✧MIRAGE', c: 'var(--color-mg)' },
+  MIRAGE: { n: '─ 前の席より', c: 'var(--color-mg)' },
+  TOKI: { n: '留守電 ／ 小野寺トキ（87）', c: 'var(--color-am)' },
   SYS: { n: '', c: 'var(--color-dim)' },
-  YOU: { n: 'あなた', c: 'var(--color-fg)' },
+  YOU: { n: 'ミナト（あなた）', c: 'var(--color-fg)' },
 }
 
 export function Talk({
@@ -79,7 +80,7 @@ export function Talk({
       {header && <div className="absolute left-4 top-4 text-xs tracking-widest text-cy sm:left-8 sm:top-8">{header}</div>}
       <div className="mx-auto w-full max-w-3xl">
         <div className="flex items-end gap-4">
-          {b.who !== 'SYS' && b.who !== 'YOU' && (
+          {b.who !== 'SYS' && b.who !== 'YOU' && b.who !== 'TOKI' && (
             <div key={i} className="pop shrink-0 bg-panel p-2" style={{ boxShadow: `0 0 0 2px ${nm.c}` }}>
               {b.who === 'NOVA' ? <Nova size={6} mood="idle" /> : <Face who={b.who} size={6} />}
             </div>

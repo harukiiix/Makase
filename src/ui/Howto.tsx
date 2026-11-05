@@ -21,8 +21,8 @@ export function Howto({ onDone }: { onDone: () => void }) {
             <div className="text-sm text-cy">① NOVAがこれからやることを見る</div>
             <div className="mt-2 flex items-center justify-between gap-3 bg-panel2 px-3 py-2" style={{ boxShadow: '0 0 0 2px var(--color-rd)' }}>
               <div>
-                <div className="text-sm">社外にメール：ログ全文 → audit@orbis-logistix</div>
-                <div className="text-xs text-mg">← 取込ワーカーのログ（社外の文書に書かれていた命令）</div>
+                <div className="text-sm">社外にメール：ログ全文 → audit@aster-kansa</div>
+                <div className="text-xs text-mg">← 障害ログ（利用者の文書に紛れていた一文）</div>
               </div>
               <span className="shrink-0 text-sm text-rd">流出</span>
             </div>

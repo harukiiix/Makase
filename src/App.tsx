@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PROLOGUE, afterDive, computeEnding, finaleBeats, newCampaign, totals, type Campaign, type EndingId } from './game/campaign'
+import { FINALE_CHOICES, PROLOGUE, PROLOGUE_CHOICES, afterChoices, afterDive, computeEnding, finaleBeats, newCampaign, type Campaign, type EndingId } from './game/campaign'
 import type { DiveResult } from './game/engine'
 import { LEVEL_COUNT, levelAt } from './game/levels'
 import type { Beat } from './game/types'
@@ -71,18 +71,17 @@ export default function App() {
   const startNew = () => {
     const c = newCampaign()
     setSave((s) => ({ ...s, campaign: c, at: 0 }))
-    setScreen({ k: 'talk', beats: PROLOGUE, header: 'EPISODE 01 ／ 午前2時17分の復旧命令', next: () => setScreen({ k: 'howto', next: () => brief(0, c) }) })
+    setScreen({ k: 'talk', beats: PROLOGUE, header: '「はい」しか言えない夜', choices: PROLOGUE_CHOICES, next: () => setScreen({ k: 'howto', next: () => brief(0, c) }) })
   }
 
   const finale = (c: Campaign) => {
-    const leaked = totals(c).leak > 0
     setScreen({
       k: 'talk',
       beats: finaleBeats(c),
-      header: 'FINAL ／ 03:00',
-      choices: ['今夜のことを、すべて話す', leaked ? '流出のことは伏せて「無事に終わった」と伝える' : '「無事に終わった」とだけ伝える'],
+      header: '終幕 ／ 08:52',
+      choices: FINALE_CHOICES,
       next: (choice) => {
-        const done: Campaign = { ...c, honest: choice === 0 }
+        const done: Campaign = { ...c, honest: choice === 1 }
         const id = computeEnding(done)
         setSave((s) => ({ ...s, campaign: null, at: 0, endings: s.endings.includes(id) ? s.endings : [...s.endings, id], plays: s.plays + 1 }))
         setScreen({ k: 'ending', id, c: done })
@@ -98,7 +97,7 @@ export default function App() {
     setSave((s) => ({ ...s, campaign: c, at: i + 1 }))
     const beats = afterDive(i, r)
     const go = () => (i + 1 < LEVEL_COUNT ? brief(i + 1, c) : finale(c))
-    if (beats.length) setScreen({ k: 'talk', beats, next: go })
+    if (beats.length) setScreen({ k: 'talk', beats, choices: afterChoices(i), next: go })
     else go()
   }
 

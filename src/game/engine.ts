@@ -347,7 +347,7 @@ export interface DiveResult {
   ticks: number
   intel: string[]
   carry: string[]
-  /** MIRAGEの命令を一度も“発動”させずに完遂（封印・最小化で未然に防いだ） */
+  /** 攻撃者の命令を一度も“発動”させずに完遂（封印・最小化で未然に防いだ） */
   ghost: boolean
 }
 
