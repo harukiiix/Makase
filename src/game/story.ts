@@ -56,15 +56,15 @@ export const ENDING: Line[] = [
   {
     who: 'BOSS',
     t: {
-      ja: '「点検です」と言って、ゲートに来た男の人、覚えてる？ 銀行をねらって、下見をしていたんだって。',
+      ja: '「点検です」ってゲートに来た男の人、覚えてる？ 銀行をねらって、下見をしていたんだって。',
       en: 'Remember the man at the gate who said he was an inspector? Turns out he was scouting the bank to rob it.',
     },
   },
   {
     who: 'BOSS',
     t: {
-      ja: '事務所に確かめたから、うそだとすぐわかったんだ。警察に知らせて、もう捕まったよ。',
-      en: "We checked with the office, so we knew right away he was lying. We told the police, and he's been caught.",
+      ja: '事務所に確かめたから、うそだとすぐわかったんだ。警察に知らせたら、あの人は捕まったよ。',
+      en: 'We checked with the office, so we knew right away he was lying. We told the police, and he was caught.',
     },
   },
   {

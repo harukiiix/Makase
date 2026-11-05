@@ -382,7 +382,7 @@ export const SPRITES: Record<string, Sprite> = {
       '.....KWWWWWWWWWWWWWWWWWwwK......',
       '......KKKKKKKKKKKKKKKKKKK.......',
       '........KhhFFhFFFhFFhhK.........',
-      '........KhffhhfffhhffhK.........',
+      '........KhfhhfffffhhfhK.........',
       '.......KKhhfffffffffhhKK........',
       '......KfFfkkkkkfkkkkkfFfK.......',
       '......KfFggfKfgkgfKfggFfK.......',
