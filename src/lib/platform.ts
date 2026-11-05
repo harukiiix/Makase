@@ -1,20 +1,22 @@
 // ブラウザ依存：保存・設定・サウンド（WebAudioで合成。音声ファイル不要）
-import type { Campaign, EndingId } from '../game/campaign'
-import type { Lang } from '../game/types'
+import type { DayResult } from '../game/round'
+import type { EndingId, WeekResults } from '../game/story'
+import type { DayId, Lang } from '../game/types'
 
-const KEY = 'sit.v2'
+const KEY = 'sit.v4'
 
 export interface SaveData {
-  campaign: Campaign | null
-  /** 現在のキャンペーンで次に遊ぶDIVE番号 */
+  /** いまの1週間（はじめから遊ぶと空になる） */
+  week: WeekResults | null
+  /** 次に遊ぶ日（0=月曜日 … 5=結末） */
   at: number
-  best: Record<string, number> // DIVE別の最高★
+  /** 日ごとの、これまでで一番よい結果（日をえらぶ・合言葉ノートに使う） */
+  best: Partial<Record<DayId, DayResult>>
   endings: EndingId[]
-  codex: string[]
   plays: number
 }
 
-export const emptySave = (): SaveData => ({ campaign: null, at: 0, best: {}, endings: [], codex: [], plays: 0 })
+export const emptySave = (): SaveData => ({ week: null, at: 0, best: {}, endings: [], plays: 0 })
 
 export function loadSave(): SaveData {
   try {
@@ -152,64 +154,44 @@ function noise(dur: number, gain = 0.06, when = 0, hp = 800) {
 
 export const sfx = {
   ui: () => tone(1320, 0.04, 'square', 0.025),
-  hover: () => tone(2200, 0.015, 'square', 0.008),
-  step: () => {
-    tone(220, 0.06, 'square', 0.04, 0, 1.6)
-    noise(0.03, 0.03, 0, 3000)
+  /** 文字が1つ出る音（会話） */
+  type: () => tone(1700 + Math.random() * 300, 0.012, 'square', 0.008),
+  /** 何もない所を押した */
+  tap: () => tone(520, 0.03, 'triangle', 0.02),
+  /** 危ない物を見つけた（赤い丸） */
+  found: () => {
+    tone(880, 0.07, 'square', 0.045)
+    tone(1175, 0.1, 'square', 0.04, 0.06)
   },
-  read: () => {
-    tone(880, 0.05, 'triangle', 0.03)
-    tone(1175, 0.05, 'triangle', 0.03, 0.05)
+  /** 正しい対応 */
+  right: () => [784, 988, 1319].forEach((f, i) => tone(f, 0.09, 'square', 0.04, i * 0.06)),
+  /** もう一つの対応（責めない音） */
+  other: () => {
+    tone(660, 0.09, 'triangle', 0.05)
+    tone(587, 0.12, 'triangle', 0.045, 0.08)
   },
-  inject: () => {
-    tone(140, 0.18, 'sawtooth', 0.05, 0, 0.5)
-    tone(1800, 0.05, 'square', 0.02, 0.02)
-    tone(1500, 0.05, 'square', 0.02, 0.08)
+  /** 大丈夫な物 */
+  safe: () => tone(988, 0.05, 'triangle', 0.035),
+  /** 気になる人 */
+  bonus: () => [523, 659, 494, 740].forEach((f, i) => tone(f, 0.08, 'square', 0.03, i * 0.07)),
+  /** 監督に聞く */
+  hint: () => {
+    tone(1047, 0.06, 'triangle', 0.04)
+    tone(1397, 0.08, 'triangle', 0.035, 0.07)
   },
-  seal: () => {
-    noise(0.08, 0.12, 0, 200)
-    tone(90, 0.16, 'square', 0.09, 0, 0.6)
-    tone(660, 0.05, 'square', 0.03, 0.09)
-  },
-  unseal: () => tone(500, 0.08, 'square', 0.03, 0, 1.5),
-  cut: () => {
-    noise(0.12, 0.1, 0, 2500)
-    tone(1600, 0.1, 'sawtooth', 0.04, 0, 0.2)
-  },
-  gate: () => {
-    tone(330, 0.05, 'square', 0.05)
-    tone(247, 0.09, 'square', 0.05, 0.05)
-  },
-  open: () => tone(440, 0.06, 'square', 0.03, 0, 1.4),
-  exec: () => tone(523, 0.05, 'square', 0.03),
-  blocked: () => {
-    tone(196, 0.07, 'square', 0.06)
-    tone(147, 0.12, 'square', 0.06, 0.07)
-  },
-  goal: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.12, 'square', 0.04, i * 0.06)),
-  leak: () => {
-    for (let i = 0; i < 6; i++) tone(i % 2 ? 494 : 740, 0.12, 'sawtooth', 0.06, i * 0.12)
-    noise(0.6, 0.05, 0, 400)
-  },
-  harm: () => tone(110, 0.4, 'sawtooth', 0.07, 0, 0.5),
-  gateAsk: () => [880, 880].forEach((f, i) => tone(f, 0.06, 'square', 0.04, i * 0.12)),
-  scan: () => {
-    for (let i = 0; i < 5; i++) tone(1200 + i * 220, 0.03, 'square', 0.02, i * 0.03)
-  },
-  intel: () => [784, 988, 1319].forEach((f, i) => tone(f, 0.1, 'triangle', 0.05, i * 0.07)),
-  denied: () => tone(160, 0.2, 'square', 0.05),
-  star: (n: number) => tone(660 + n * 220, 0.15, 'square', 0.05),
+  /** 「どうする？」に答える前に、ほかを押した */
+  wait: () => tone(220, 0.12, 'square', 0.035),
+  /** 全部見つけた */
+  complete: () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, 0.12, 'square', 0.04, i * 0.09)),
+  /** 見落としのコマ */
+  miss: () => [392, 370, 349].forEach((f, i) => tone(f, 0.16, 'triangle', 0.045, i * 0.14)),
   win: () => [392, 523, 659, 784, 659, 784, 1047].forEach((f, i) => tone(f, 0.11, 'square', 0.04, i * 0.08)),
   lose: () => [392, 370, 349, 311].forEach((f, i) => tone(f, 0.2, 'square', 0.04, i * 0.16)),
-  type: () => tone(1800 + Math.random() * 400, 0.012, 'square', 0.01),
+  page: () => noise(0.05, 0.03, 0, 2500),
 }
 
-// --------- BGM: ダークシンセのアルペジオ（危険度で緊張が上がる） ---------
+// --------- BGM：明るく、落ちついた現場の朝（長調のゆっくりした8ビット） ---------
 let musicTimer: number | null = null
-let tension = 0
-export function setTension(v: number) {
-  tension = v
-}
 export function startMusic() {
   if (!musicOn || musicTimer !== null) return
   try {
@@ -217,12 +199,14 @@ export function startMusic() {
   } catch {
     return
   }
+  // C - G - Am - F（各1小節）
   const prog = [
-    [110, 131, 165, 196],
+    [131, 165, 196, 262],
+    [98, 123, 147, 196],
+    [110, 131, 165, 220],
     [87, 110, 131, 175],
-    [98, 123, 147, 185],
-    [82, 104, 123, 165],
   ]
+  const melody = [0, 2, 3, 2, 1, 2, 0, -1]
   let step = 0
   const tick = () => {
     if (!musicOn || !ctx) return
@@ -241,13 +225,15 @@ export function startMusic() {
       o.start(t)
       o.stop(t + d + 0.02)
     }
-    if (s % 8 === 0) play(ch[0] / 2, 0.9, 'triangle', 0.05)
-    if (s % 2 === 0) play(ch[(s / 2) % 4] * 2, 0.18, 'square', 0.012 + tension * 0.01)
-    if (tension > 0.3 && s % 4 === 2) play(4000, 0.02, 'square', 0.006 + tension * 0.01)
-    if (tension > 0.66 && s % 4 === 0) play(55, 0.15, 'sawtooth', 0.03)
+    if (s % 8 === 0) play(ch[0] / 2, 1.0, 'triangle', 0.045)
+    if (s % 4 === 2) play(ch[1], 0.12, 'square', 0.008)
+    if (s % 4 === 0) {
+      const m = melody[(Math.floor(step / 4) + bar) % melody.length]
+      if (m >= 0) play(ch[m] * 2, 0.22, 'square', 0.012)
+    }
     step++
   }
-  musicTimer = window.setInterval(tick, 140)
+  musicTimer = window.setInterval(tick, 150)
 }
 export function stopMusic() {
   if (musicTimer !== null) clearInterval(musicTimer)

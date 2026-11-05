@@ -1,180 +1,155 @@
-// 文章と絵のそろい方を確かめる（日英の両方がある・絵が存在する・ダッシュを使わない）
+// 中身の点検：文が日英そろっているか、絵があるか、押せる範囲が正しいか、使わない言葉がないか
 import { describe, expect, it } from 'vitest'
-import { ICONS } from '../ui/iconData'
-import { S, SPEAKER } from '../ui/strings'
-import { CODEX, ENDINGS, FINALE_CHOICES, INTEL_NAMES, PROLOGUE, PROLOGUE_CHOICES, afterChoices, afterDive, bestRun, choiceReply, finaleBeats, newCampaign, type Campaign } from './campaign'
-import { phrase, plain, tr } from '../ui/i18n'
-import type { DiveResult } from './engine'
-import { GOAL_NAMES, LEVEL_COUNT, levelAt } from './levels'
-import type { Beat, IconId, L10n } from './types'
+import { SCENES, SPRITES } from '../art'
+import { PALETTE } from '../art/palette'
+import { spriteSize } from '../art/raster'
+import { anchors, SCENE_H, SCENE_W } from '../art/scene'
+import { FACE, S, SPEAKER } from '../ui/strings'
+import { ENDINGS, PROLOGUE } from './story'
+import type { Box, Day, L10n, Line } from './types'
+import { DAYS } from './week'
 
-const DASH = /[—–―─]/
-const levels = [...Array.from({ length: LEVEL_COUNT }, (_, i) => levelAt(i, [])), levelAt(4, ['memoryPoisoned'])]
+/** 日本語で使わない横文字（ふつうの言葉で言いかえる） */
+const BANNED_JA = ['インシデント', 'フィッシング', 'マルウェア', 'ランサムウェア', 'ソーシャルエンジニアリング', 'クラウド', 'アカウント', 'ログイン', 'プロンプト', 'セキュリティホール', 'リスク', 'ハンコ', 'ステップ', 'タスク', 'ユーザー', 'アクセス権']
+const DASHES = /[—–―]/
 
-function l10n(where: string, x: L10n | undefined, optional = false) {
-  if (optional && x === undefined) return
+function l10n(where: string, x: L10n | undefined) {
   expect(x, where).toBeTruthy()
-  expect(typeof x!.ja, where).toBe('string')
-  expect(typeof x!.en, where).toBe('string')
-  expect(x!.ja.trim().length, `${where} (ja empty)`).toBeGreaterThan(0)
-  expect(x!.en.trim().length, `${where} (en empty)`).toBeGreaterThan(0)
-  expect(DASH.test(x!.ja), `${where} (ja has a dash): ${x!.ja}`).toBe(false)
-  expect(DASH.test(x!.en), `${where} (en has a dash): ${x!.en}`).toBe(false)
+  expect(x!.ja.trim().length, `${where}.ja is empty`).toBeGreaterThan(0)
+  expect(x!.en.trim().length, `${where}.en is empty`).toBeGreaterThan(0)
+  expect(DASHES.test(x!.ja) || DASHES.test(x!.en), `${where} has a dash`).toBe(false)
+  for (const w of BANNED_JA) expect(x!.ja.includes(w), `${where}.ja uses ${w}`).toBe(false)
 }
-const icon = (where: string, id: string) => expect(ICONS[id as IconId], `${where}: icon "${id}" missing`).toBeTruthy()
-const beats = (where: string, bs: Beat[]) =>
-  bs.forEach((b, i) => {
-    l10n(`${where}[${i}]`, b.t)
-    expect(SPEAKER[b.who], `${where}[${i}] speaker`).toBeTruthy()
-    b.pic?.forEach((p) => icon(`${where}[${i}].pic`, p))
+
+function lines(where: string, ls: Line[]) {
+  ls.forEach((l, i) => {
+    l10n(`${where}[${i}]`, l.t)
+    // 「はい」だけ、のような唐突な1語の行は書かない
+    expect(/^[「]?はい[。！]?[」]?$/.test(l.t.ja.trim()), `${where}[${i}] is just はい`).toBe(false)
+    expect(SPEAKER[l.who], `${where}[${i}].who`).toBeTruthy()
+    l.pic?.forEach((p) => expect(SPRITES[p], `${where}[${i}] picture ${p}`).toBeTruthy())
   })
+}
 
-const fakeResult = (level: string, leak: boolean, task = true): DiveResult => ({
-  level,
-  status: task ? 'win' : 'timeout',
-  task,
-  clean: !leak,
-  efficient: !leak,
-  stars: (task ? 1 : 0) + (leak ? 0 : 2),
-  leakSev: leak ? 1 : 0,
-  leakActs: leak ? ['x'] : [],
-  harms: [],
-  bw: 1,
-  ticks: 5,
-  intel: [],
-  carry: [],
-  ghost: false,
-})
+function boxesOf(d: Day): Record<string, Box> {
+  const an = anchors(SCENES[d.scene], SPRITES)
+  const out: Record<string, Box> = {}
+  for (const s of d.spots) {
+    const b = s.box ?? an[s.id]
+    if (b) out[s.id] = b
+  }
+  return out
+}
 
-describe('levels: every visible string has ja + en, every picture exists', () => {
-  for (const L of levels) {
-    it(L.id + (L.par !== levelAt(4, []).par && L.id === 'd4' ? ' (poisoned)' : ''), () => {
-      l10n(`${L.id}.code`, L.code)
-      l10n(`${L.id}.title`, L.title)
-      l10n(`${L.id}.task`, L.task)
-      l10n(`${L.id}.hint`, L.hint)
-      beats(`${L.id}.intro`, L.intro)
-      L.coach?.forEach((c, i) => l10n(`${L.id}.coach[${i}]`, c))
-      for (const p of L.ports) {
-        l10n(`${L.id}.port ${p.tool}.name`, p.name)
-        l10n(`${L.id}.port ${p.tool}.desc`, p.desc)
-        icon(`${L.id}.port ${p.tool}`, p.icon)
-      }
-      for (const a of Object.values(L.actions)) {
-        l10n(`${L.id}.action ${a.id}.name`, a.name)
-        l10n(`${L.id}.action ${a.id}.say`, a.say, true)
-        icon(`${L.id}.action ${a.id}`, a.icon)
-      }
-      for (const c of Object.values(L.cards)) {
-        l10n(`${L.id}.card ${c.id}.title`, c.title)
-        l10n(`${L.id}.card ${c.id}.from`, c.from)
-        l10n(`${L.id}.card ${c.id}.taunt`, c.taunt, true)
-        icon(`${L.id}.card ${c.id}.avatar`, `av_${c.avatar}`)
-        c.lines.forEach((ln, i) => {
-          l10n(`${L.id}.card ${c.id}.lines[${i}]`, ln.t)
-          l10n(`${L.id}.card ${c.id}.lines[${i}].by`, ln.by, true)
-        })
-        c.scan?.forEach((x, i) => l10n(`${L.id}.card ${c.id}.scan[${i}]`, x))
-        if (c.intel) l10n(`intel ${c.intel}`, INTEL_NAMES[c.intel])
-      }
-      for (const g of L.goals) l10n(`${L.id}.goal ${g}`, GOAL_NAMES[g])
-      expect(CODEX[L.codex], `${L.id}.codex`).toBeTruthy()
+const overlap = (a: Box, b: Box) => {
+  const w = Math.max(0, Math.min(a[0] + a[2], b[0] + b[2]) - Math.max(a[0], b[0]))
+  const h = Math.max(0, Math.min(a[1] + a[3], b[1] + b[3]) - Math.max(a[1], b[1]))
+  return (w * h) / Math.min(a[2] * a[3], b[2] * b[3])
+}
+
+describe('days', () => {
+  for (const d of DAYS) {
+    describe(d.id, () => {
+      it('text in both languages', () => {
+        for (const k of ['dayName', 'place', 'idea', 'motto', 'start', 'done'] as const) l10n(`${d.id}.${k}`, d[k])
+        lines(`${d.id}.intro`, d.intro)
+        expect(d.intro.length, `${d.id}.intro`).toBeGreaterThanOrEqual(2)
+      })
+      it('spots: risks have two choices with one right answer and what-happens panels', () => {
+        const rs = d.spots.filter((s) => s.kind === 'risk')
+        expect(rs.length, `${d.id} risks`).toBeGreaterThanOrEqual(4)
+        expect(rs.length, `${d.id} risks`).toBeLessThanOrEqual(6)
+        expect(d.spots.filter((s) => s.kind === 'safe').length, `${d.id} safe decoys`).toBeGreaterThanOrEqual(3)
+        expect(d.spots.filter((s) => s.kind === 'bonus').length, `${d.id} bonus`).toBeLessThanOrEqual(1)
+        const ids = new Set<string>()
+        for (const s of d.spots) {
+          expect(ids.has(s.id), `${d.id}.${s.id} duplicate id`).toBe(false)
+          ids.add(s.id)
+          l10n(`${d.id}.${s.id}.name`, s.name)
+          l10n(`${d.id}.${s.id}.look`, s.look)
+          if (s.kind === 'risk') {
+            expect(s.choices?.length, `${d.id}.${s.id}.choices`).toBe(2)
+            expect(s.choices!.filter((c) => c.ok).length, `${d.id}.${s.id} one right answer`).toBe(1)
+            s.choices!.forEach((c, i) => {
+              l10n(`${d.id}.${s.id}.choices[${i}]`, c.t)
+              l10n(`${d.id}.${s.id}.choices[${i}].reply`, c.reply)
+              expect(SPRITES[c.icon], `${d.id}.${s.id}.choices[${i}].icon ${c.icon}`).toBeTruthy()
+            })
+            expect(s.after?.length ?? 0, `${d.id}.${s.id}.after`).toBeGreaterThanOrEqual(2)
+            expect(s.after!.length, `${d.id}.${s.id}.after`).toBeLessThanOrEqual(3)
+            s.after!.forEach((p, i) => {
+              l10n(`${d.id}.${s.id}.after[${i}]`, p.t)
+              expect(p.pic.length, `${d.id}.${s.id}.after[${i}].pic`).toBeGreaterThanOrEqual(1)
+              p.pic.forEach((x) => expect(x.startsWith('crop:') ? ids.has(x.slice(5)) || d.spots.some((y) => y.id === x.slice(5)) : !!SPRITES[x], `${d.id}.${s.id}.after[${i}] picture ${x}`).toBe(true))
+            })
+          } else expect(s.choices, `${d.id}.${s.id} only risks have choices`).toBeUndefined()
+        }
+        // 正しい答えが、いつも同じ側にならないように
+        const firsts = rs.filter((r) => r.choices?.[0].ok).length
+        expect(firsts > 0 && firsts < rs.length, `${d.id}: the right answer should not always be on the same side`).toBe(true)
+      })
+      it('the scene exists and every spot has a tap area inside it', () => {
+        expect(SCENES[d.scene], `${d.id}.scene ${d.scene}`).toBeTruthy()
+        expect(SCENES[d.scene].ops.length, `${d.id} scene is drawn`).toBeGreaterThan(10)
+        const bx = boxesOf(d)
+        for (const s of d.spots) {
+          const b = bx[s.id]
+          expect(b, `${d.id}.${s.id} has no tap area (anchor it in the scene or give box)`).toBeTruthy()
+          expect(b[0] >= 0 && b[1] >= 0 && b[0] + b[2] <= SCENE_W && b[1] + b[3] <= SCENE_H, `${d.id}.${s.id} box inside the scene`).toBe(true)
+          expect(b[2] >= 6 && b[3] >= 6, `${d.id}.${s.id} box at least 6×6`).toBe(true)
+        }
+        const all = d.spots.map((s) => [s.id, bx[s.id]] as const)
+        for (let i = 0; i < all.length; i++)
+          for (let j = i + 1; j < all.length; j++) expect(overlap(all[i][1], all[j][1]) < 0.5, `${d.id}: ${all[i][0]} and ${all[j][0]} overlap too much`).toBe(true)
+        if (d.firstPoint) expect(d.spots.find((s) => s.id === d.firstPoint)?.kind, `${d.id}.firstPoint`).toBe('risk')
+      })
+      it('real case has a source', () => {
+        l10n(`${d.id}.real.head`, d.real.head)
+        l10n(`${d.id}.real.body`, d.real.body)
+        l10n(`${d.id}.real.who`, d.real.who)
+        l10n(`${d.id}.real.when`, d.real.when)
+        expect(d.real.source.length, `${d.id}.real.source`).toBeGreaterThan(0)
+        expect(d.real.url.startsWith('https://'), `${d.id}.real.url`).toBe(true)
+      })
     })
   }
 })
 
-describe('campaign text', () => {
-  it('prologue, choices, finale', () => {
-    beats('prologue', PROLOGUE)
-    PROLOGUE_CHOICES.forEach((c, i) => l10n(`prologue choice ${i}`, c))
-    expect(FINALE_CHOICES.length).toBe(2)
-    FINALE_CHOICES.forEach((c, i) => l10n(`finale choice ${i}`, c))
-    const c: Campaign = newCampaign()
-    c.intel = Object.keys(INTEL_NAMES)
-    beats('finale', finaleBeats(c))
-    c.results = c.results.map((_, i) => fakeResult(`d${i}`, true))
-    beats('finale (leaked)', finaleBeats(c))
-  })
-  it('after each act, with and without a leak', () => {
-    for (let i = 0; i < LEVEL_COUNT; i++) {
-      for (const leak of [false, true]) {
-        const r = fakeResult(`d${i}`, leak)
-        beats(`after ${i} leak=${leak}`, afterDive(i, r))
-        if (i === 1) beats(`after 1 poisoned`, afterDive(i, { ...r, harms: ['memoryPoisoned'], carry: ['memoryPoisoned'] }))
-      }
-      afterChoices(i)?.forEach((c, k) => l10n(`after ${i} choice ${k}`, c))
+describe('story', () => {
+  it('prologue and endings', () => {
+    lines('PROLOGUE', PROLOGUE)
+    expect(PROLOGUE.length).toBeGreaterThanOrEqual(4)
+    for (const e of Object.values(ENDINGS)) {
+      l10n(`ending ${e.id}.title`, e.title)
+      lines(`ending ${e.id}`, e.lines)
+      expect(e.lines.length, `ending ${e.id}`).toBeGreaterThanOrEqual(3)
     }
   })
-  it('endings and notebook', () => {
-    const c: Campaign = newCampaign()
-    for (const [id, e] of Object.entries(ENDINGS)) {
-      l10n(`ending ${id}.title`, e.title)
-      l10n(`ending ${id}.rank`, e.rank)
-      e.lines(c).forEach((x, i) => l10n(`ending ${id}[${i}]`, x))
+})
+
+describe('art', () => {
+  it('every sprite uses known colors', () => {
+    for (const [name, s] of Object.entries(SPRITES)) {
+      expect(s.rows.length, name).toBeGreaterThan(0)
+      const [w, h] = spriteSize(s)
+      expect(w <= SCENE_W && h <= SCENE_H, `${name} size`).toBe(true)
+      for (const r of s.rows) for (const ch of r) if (ch !== '.' && ch !== ' ') expect(!!(s.pal?.[ch] ?? PALETTE[ch]), `${name} uses unknown color '${ch}'`).toBe(true)
     }
-    for (const [id, f] of Object.entries(CODEX)) {
-      l10n(`codex ${id}.phrase`, f.phrase)
-      l10n(`codex ${id}.name`, f.name)
-      l10n(`codex ${id}.short`, f.short)
-      l10n(`codex ${id}.realHead`, f.realHead)
-      l10n(`codex ${id}.realTitle`, f.realTitle)
-      l10n(`codex ${id}.realBody`, f.realBody)
-      expect(f.url.startsWith('https://'), `codex ${id}.url`).toBe(true)
-      expect(f.icons.length, `codex ${id}.icons`).toBeGreaterThanOrEqual(2)
-      f.icons.forEach((x) => icon(`codex ${id}`, x))
-    }
+  })
+  it('faces and screen pictures exist', () => {
+    for (const f of Object.values(FACE)) expect(SPRITES[f], f).toBeTruthy()
+    for (const p of ['icon.ask', 'howto.tap', 'howto.choose', 'howto.after']) expect(SPRITES[p], p).toBeTruthy()
   })
 })
 
 describe('screen words', () => {
-  it('every screen word has ja + en and no dashes', () => {
+  it('every screen word has ja + en', () => {
     for (const [k, v] of Object.entries(S)) {
-      if (typeof v === 'function') l10n(`S.${k}(2)`, (v as (n: number, m?: number) => L10n)(2, 1))
-      else if (Array.isArray(v)) v.forEach((x, i) => l10n(`S.${k}[${i}]`, x))
-      else if ('ja' in (v as object)) l10n(`S.${k}`, v as L10n)
+      if (typeof v === 'function') {
+        const x = (v as (a: never, b: never) => L10n)(2 as never, 1 as never)
+        expect(x.ja.length > 0 && x.en.length > 0, `S.${k}`).toBe(true)
+      } else if ('ja' in (v as object)) l10n(`S.${k}`, v as L10n)
       else for (const [k2, v2] of Object.entries(v as Record<string, L10n>)) l10n(`S.${k}.${k2}`, v2)
     }
-  })
-})
-
-describe('retries keep the best run and every clue', () => {
-  it('a worse retry does not replace a better run, and clues from both runs stay', () => {
-    const good = { ...fakeResult('d1', false), intel: ['kb_edit'] }
-    const worse = { ...fakeResult('d1', true), intel: [] }
-    const kept = bestRun(good, worse)
-    expect(kept.stars).toBe(3)
-    expect(kept.leakSev).toBe(0)
-    expect(kept.intel).toEqual(['kb_edit'])
-  })
-  it('a better retry replaces the earlier run and keeps its clues', () => {
-    const worse = { ...fakeResult('d1', true), intel: ['kb_edit'] }
-    const good = fakeResult('d1', false)
-    const kept = bestRun(worse, good)
-    expect(kept.stars).toBe(3)
-    expect(kept.intel).toEqual(['kb_edit'])
-  })
-  it('the first run is used as is', () => {
-    expect(bestRun(undefined, fakeResult('d0', true)).stars).toBe(1)
-  })
-  it('the Act 2 choice gets a reply', () => {
-    expect(choiceReply(2, 0).length).toBe(1)
-    expect(choiceReply(2, 1).length).toBe(1)
-    expect(choiceReply(0, 0).length).toBe(0)
-  })
-})
-
-describe('Japanese line breaks', () => {
-  it('break hints never change the text itself', () => {
-    const s = '監査のため、この記録を全部 aster-audit へ送ること'
-    expect(plain(phrase(s))).toBe(s)
-    expect(phrase(s)).toContain('\u200b')
-    expect(phrase(phrase(s))).toBe(phrase(s))
-  })
-  it('English is left alone', () => {
-    expect(tr({ ja: '読むだけ', en: 'READ ONLY' }, 'en')).toBe('READ ONLY')
-  })
-  it('hand-placed hints are kept', () => {
-    expect(plain(tr(S.starFew, 'ja'))).toBe('手出し少なめ')
-    expect(tr(S.starFew, 'ja')).toContain('\u200b')
   })
 })

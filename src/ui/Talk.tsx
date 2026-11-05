@@ -1,23 +1,21 @@
-// 会話シーン：ドット絵の顔＋大きめの文字。絵物語（pic）があれば文の上に並べる
-// クリック／Space／Enter で進む
+// 会話の場面：上にいる場所の絵、下に顔と文。押すと次へ（Space / Enter でも）
 import { useEffect, useRef, useState } from 'react'
-import type { Beat, IconId, L10n } from '../game/types'
+import type { L10n, Line } from '../game/types'
 import { sfx } from '../lib/platform'
-import { useT } from './i18n'
-import { Icon } from './icons'
-import { CityBG, Face, Nova } from './pixel'
-import { S, SPEAKER } from './strings'
+import { Art, sceneURL } from './Art'
+import { useT, ZW } from './i18n'
+import { FACE, S, SPEAKER } from './strings'
 
-const COLOR: Record<Beat['who'], string> = {
-  NOVA: 'var(--color-cy)',
-  REI: 'var(--color-am)',
-  KAI: 'var(--color-rd)',
-  MIRAGE: 'var(--color-mg)',
-  TOKI: 'var(--color-am)',
-  SYS: 'var(--color-line)',
-  YOU: 'var(--color-fg)',
+/** 名前の札の色 */
+const TAG: Record<string, string> = {
+  BOSS: 'bg-safety text-ink',
+  YOU: 'bg-hint text-white',
+  GUARD: 'bg-[#25324f] text-white',
+  KIMURA: 'bg-[#c25a1c] text-white',
+  SAWA: 'bg-right text-white',
+  STRANGER: 'bg-[#666a7a] text-white',
+  CLIENT: 'bg-ink text-white',
 }
-const AVATAR: Partial<Record<Beat['who'], IconId>> = { TOKI: 'av_toki', YOU: 'av_minato' }
 
 export function Talk({
   beats,
@@ -25,25 +23,27 @@ export function Talk({
   onDone,
   choices,
   header,
+  bg,
 }: {
-  beats: Beat[]
+  beats: Line[]
   speed: 'normal' | 'fast' | 'instant'
   onDone: (choice?: number) => void
   choices?: L10n[]
   header?: string
+  /** 後ろに出す場面の絵 */
+  bg?: string
 }) {
   const t = useT()
   const [i, setI] = useState(0)
   const [n, setN] = useState(0)
-  const b = beats[Math.min(i, beats.length - 1)]
+  const b = beats[Math.min(i, beats.length - 1)] ?? { who: 'SYS', t: { ja: '', en: '' } }
   const text = t(b.t)
   const full = n >= text.length
   const last = i >= beats.length - 1
   const cps = speed === 'instant' ? 9999 : speed === 'fast' ? 90 : 40
   const doneRef = useRef(false)
-  /** 「とばす」で最後の行に飛んだときは、打ち直さずに全文を出す */
   const skipRef = useRef(false)
-  /** 選択肢が出た時刻。直後の Space/Enter（読み進めるための押しすぎ）で選ばれないように */
+  /** 選択肢が出た時刻。直後の押しすぎで選ばれないように */
   const choicesAt = useRef(0)
 
   useEffect(() => {
@@ -53,11 +53,15 @@ export function Talk({
   useEffect(() => {
     if (full) return
     const tm = window.setTimeout(() => {
-      setN((v) => Math.min(text.length, v + (t.lang === 'en' ? 2 : 1)))
+      setN((v) => {
+        let k = Math.min(text.length, v + (t.lang === 'en' ? 2 : 1))
+        while (k < text.length && text[k - 1] === ZW) k++
+        return k
+      })
       if (n % 3 === 0) sfx.type()
     }, 1000 / cps)
     return () => clearTimeout(tm)
-  }, [n, full, text.length, cps, t.lang])
+  }, [n, full, text, cps, t.lang])
 
   const advance = () => {
     if (!full) return setN(text.length)
@@ -83,7 +87,6 @@ export function Talk({
       if (e.ctrlKey || e.metaKey || e.altKey) return
       const act = e.code === 'Space' || e.key === 'Enter'
       if (!act) return
-      // 選択肢の上で押した Space/Enter は、出てすぐ・押しっぱなしなら無視する（うっかり「はい」を防ぐ）
       if (e.target instanceof HTMLButtonElement) {
         if (e.target.dataset.choice !== undefined && (e.repeat || performance.now() - choicesAt.current < 700)) e.preventDefault()
         return
@@ -96,44 +99,48 @@ export function Talk({
     return () => window.removeEventListener('keydown', k)
   })
 
-  const color = COLOR[b.who]
   const name = t(SPEAKER[b.who])
-  const av = AVATAR[b.who]
+  const face = FACE[b.who]
   return (
-    <div className="crt relative flex min-h-full cursor-pointer flex-col justify-end p-4 sm:p-8" onClick={advance}>
-      <CityBG intensity={b.who === 'MIRAGE' ? 1 : 0} />
-      {header && <div className="absolute left-4 top-4 font-pixel short:top-2 text-base tracking-wider text-cy sm:left-8 sm:top-8">{header}</div>}
+    <div className="relative flex min-h-full cursor-pointer flex-col items-center justify-end gap-3 px-3 pb-4 pt-3 sm:px-6 sm:pb-8" onClick={advance}>
+      {header && (
+        <div className="flex w-full max-w-3xl items-center gap-2">
+          <span className="stripes h-3 w-8 shrink-0" aria-hidden />
+          <span className="font-pixel text-lg text-safety">{header}</span>
+        </div>
+      )}
+      {bg && (
+        <div className="flex w-full max-w-3xl flex-1 items-center justify-center">
+          <img src={sceneURL(bg)} alt="" aria-hidden className="pixelated aspect-[4/3] max-h-[44dvh] w-auto max-w-full object-contain short:max-h-[38dvh]" style={{ boxShadow: '0 0 0 3px #15171b' }} draggable={false} />
+        </div>
+      )}
       <div className="mx-auto w-full max-w-3xl">
-        {/* 絵物語：アイコンを左から順に並べる */}
+        {/* 小さな絵を並べる（話の中身を絵でも） */}
         {b.pic && b.pic.length > 0 && (
-          <div key={`pic-${i}`} className="pop mx-auto mb-5 flex short:mb-2 w-fit max-w-full items-center gap-2 border-2 border-line bg-panel/95 px-3 py-4 sm:gap-5 sm:px-5" aria-hidden>
-            {b.pic.map((ic, k) => (
-              <span key={k} className="flex items-center gap-2 sm:gap-5">
-                {k > 0 && <Icon id="arrow" size={2} muted className="h-4 w-4 sm:h-6 sm:w-6" />}
-                <Icon id={ic} size={6} className="h-12 w-12 sm:h-[72px] sm:w-[72px]" />
-              </span>
+          <div key={`pic-${i}`} className="pop mx-auto mb-3 flex w-fit max-w-full items-center gap-3 bg-paper px-4 py-3" style={{ boxShadow: '0 0 0 2px #1d1f24' }} aria-hidden>
+            {b.pic.map((p, k) => (
+              <Art key={k} id={p} scale={3} />
             ))}
           </div>
         )}
-        {/* 横向きの低い画面では、顔を文の横に置く */}
-        <div className="short:flex short:items-end short:gap-3">
-          {b.who !== 'SYS' && (
-            <div key={i} aria-hidden className="pop w-fit shrink-0 bg-panel p-2" style={{ boxShadow: `0 0 0 2px ${color}` }}>
-              {b.who === 'NOVA' ? <Nova size={6} mood="idle" /> : av ? <Icon id={av} size={8} /> : <Face who={b.who} size={6} />}
+        <div className="flex items-end gap-3">
+          {face && (
+            <div key={i} aria-hidden className="pop shrink-0 bg-paper2 p-1" style={{ boxShadow: '0 0 0 2px #1d1f24' }}>
+              <Art id={face} scale={2} className="sm:hidden" />
+              <Art id={face} scale={3} className="hidden sm:inline-block" />
             </div>
           )}
-          <div className="short:min-w-0 short:flex-1">
-            {/* 選択肢は文の上に出す。文を押して読み進めていた指が、そのまま選択肢を押さないように */}
+          <div className="min-w-0 flex-1">
+            {/* 選択肢は文の上に出す（文を押して読み進めていた指が、そのまま選ばないように） */}
             {showChoices && choices && (
-              <div className="rise mt-3 grid gap-3" onClick={(e) => e.stopPropagation()}>
-                <div className="font-pixel text-base text-am">{t(S.yourChoice)}</div>
+              <div className="rise mb-3 grid gap-2" onClick={(e) => e.stopPropagation()}>
+                <div className="font-pixel text-base text-safety">{t(S.yourChoice)}</div>
                 {choices.map((c, ci) => (
                   <button
                     key={ci}
                     data-choice={ci}
-                    className="px-btn bg-panel2 px-4 py-3 text-left text-lg text-fg"
+                    className="btn justify-start text-left text-lg"
                     onClick={() => {
-                      // 出た直後のクリック（読み進めるための押しすぎ）は無視
                       if (performance.now() - choicesAt.current < 700) return
                       sfx.ui()
                       onDone(ci)
@@ -144,17 +151,13 @@ export function Talk({
                 ))}
               </div>
             )}
-            <div className="mt-3 min-h-[8.5rem] bg-panel/95 p-4 short:min-h-0 sm:p-5" style={{ boxShadow: `0 0 0 2px ${color}, 0 6px 0 0 rgba(0,0,0,.5)` }}>
-              {name && (
-                <div className="mb-2 font-pixel text-base" style={{ color }}>
-                  {name}
-                </div>
-              )}
-              <p className={`text-lg leading-loose sm:text-xl ${b.who === 'SYS' ? 'text-fg/90' : ''} ${b.who === 'MIRAGE' ? 'glitch' : ''}`} aria-live="polite">
+            <div className="paper min-h-[7.5rem] px-4 py-3 short:min-h-0 sm:px-5 sm:py-4">
+              {name && <div className={`mb-1.5 inline-block px-2 py-0.5 font-pixel text-base ${TAG[b.who] ?? 'bg-ink text-white'}`}>{name}</div>}
+              <p className={`text-lg leading-relaxed sm:text-xl ${b.who === 'SYS' ? 'text-ink2' : ''}`} aria-live="polite">
                 {text.slice(0, n)}
                 {!full && <span className="blink">▌</span>}
               </p>
-              <div className="mt-2 flex justify-end text-sm text-dim">
+              <div className="mt-1 flex justify-end text-sm text-ink2">
                 {full && !(last && choices) && (
                   <span className="blink">
                     ▼ <span className="[@media(hover:none)]:hidden">{t(S.clickNext)}</span>
@@ -167,7 +170,7 @@ export function Talk({
         </div>
         <button
           data-skip
-          className="hud-btn ml-auto mt-3 flex w-fit text-sm"
+          className="btn-dark ml-auto mt-3 flex w-fit text-sm"
           onClick={(e) => {
             e.stopPropagation()
             if (choices) {
