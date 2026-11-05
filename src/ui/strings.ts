@@ -37,6 +37,8 @@ export const S = {
   // ---- 紙
   fromInside: L('社内', 'Inside'),
   fromOutside: L('外から', 'Outside'),
+  mixedOutside: L('外の文が混ざる', 'Has outside text'),
+  noPapers: L('まだ届いていない', 'Nothing yet'),
   readsNext: L('次に読む', 'Next to read'),
   wasRead: L('読んだ', 'Read'),
   unread: L('まだ', 'Unread'),
@@ -134,6 +136,8 @@ export const S = {
   starJobNo: L('終わらなかった', 'Not finished'),
   starSafeNo: L('守れなかった', 'Not kept safe'),
   movesUsed: (n: number, par: number) => L(`${n}回（目標${par}回）`, `${n} (goal ${par})`),
+  movesN: (n: number) => L(`${n}回`, `${n} used`),
+  goalN: (n: number) => L(`目標${n}回`, `goal ${n}`),
   ghost: L('お願いを一度も通さなかった', 'Not one request got through'),
   motto: L('今夜の合言葉', "Tonight's motto"),
   realName: L('ほんとうの呼び名', 'Real name'),
@@ -158,7 +162,7 @@ export const S = {
   chooseAct: L('幕をえらぶ', 'Choose an act'),
   notebook: L('合言葉ノート', 'Motto notebook'),
   howto: L('あそびかた', 'How to play'),
-  howto1: L('外から来た紙の「お願い」も、NOVAはやってしまう。', 'NOVA even does what papers from outside ask.'),
+  howto1: L('外の紙のお願いも、NOVAはやってしまう。', 'NOVA even does what papers from outside ask.'),
   howto2: L('あやしい紙にはハンコ。NOVAは読むだけになる。', 'Stamp a shady paper. NOVA will only read it.'),
   howto3: L('道具ごとに、使わせ方を選べる。', 'Pick how NOVA may use each tool.'),
   howto4: L('「次へ」で1つずつ進む。★3つをめざそう。', 'Press Next to go one step at a time. Aim for 3 stars.'),
@@ -175,6 +179,7 @@ export const S = {
   fiction: L('登場する会社・人物・あて先はすべて架空です。実在のシステムには一切アクセスしません。', 'All companies, people and addresses are fictional. Nothing real is accessed.'),
   endingsCount: (n: number) => L(`結末 ${n}/6`, `Endings ${n}/6`),
   endingsWord: L('結末', 'Endings'),
+  starsWord: L('★の数', 'Stars'),
   mottoCount: (n: number) => L(`合言葉 ${n}/5`, `Mottos ${n}/5`),
   stars: (n: number) => L(`★ ${n}/15`, `★ ${n}/15`),
   expert: L('上級：予告の色を消す', 'Expert: hide the warning colors'),
@@ -189,7 +194,7 @@ export const S = {
 
   // ---- 結末
   toTitle: L('タイトルへ', 'Back to title'),
-  trueHint: L('本当の結末は、あの夜のどこかに隠れている。', 'The true ending is hidden somewhere in that night.'),
+  trueHint: L('紙を「よく調べる」と手がかりが見つかる。集めると、別の結末がある。', 'Inspecting papers turns up clues. Collect them to find another ending.'),
   leaksTotal: L('漏れた回数', 'Leaks'),
   cluesTotal: L('手がかり', 'Clues'),
 }

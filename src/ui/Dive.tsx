@@ -312,25 +312,28 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
 
       {/* ===== 上の帯：幕・朝までの時間・手出しの回数 ===== */}
       <header inert={!!s.pending} className="sticky top-0 z-30 border-b border-line bg-night/95 backdrop-blur-sm">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-3 py-2 sm:px-5">
-          <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 px-3 py-2 sm:px-5">
+          <div className="order-1 min-w-0 flex-1 lg:flex-none">
             <div className="text-sm text-cy">{t(L.code)}</div>
-            <div className="truncate font-pixel text-xl leading-tight">{t(L.title)}</div>
+            <div className="truncate font-pixel text-lg leading-tight sm:text-xl">{t(L.title)}</div>
           </div>
 
-          <div className="flex items-center gap-2" title={t(S.timeHint)} aria-label={`${t(S.untilDawn)} ${left}/${L.ticks}`}>
-            <span className="font-pixel text-base">{t(S.untilDawn)}</span>
+          {/* スマホではここで改行して、時間と手出しを2段目に */}
+          <div className="order-3 basis-full lg:hidden" aria-hidden />
+
+          <div className="order-4 flex items-center gap-1.5 sm:gap-2 lg:order-2" title={t(S.timeHint)} aria-label={`${t(S.untilDawn)} ${left}/${L.ticks}`}>
+            <span className="hidden font-pixel text-base sm:inline">{t(S.untilDawn)}</span>
             <Icon id="moon" size={2} />
-            <div className="flex flex-wrap gap-[3px]" aria-hidden>
+            <div className="flex gap-[3px]" aria-hidden>
               {Array.from({ length: L.ticks }, (_, i) => (
-                <span key={i} className={`h-4 w-2.5 ${i < s.tick ? 'bg-line' : left <= 2 ? 'bg-rd' : 'bg-fg/85'}`} />
+                <span key={i} className={`h-4 w-1.5 sm:w-2.5 ${i < s.tick ? 'bg-line' : left <= 2 ? 'bg-rd' : 'bg-fg/85'}`} />
               ))}
             </div>
             <Icon id="sun" size={2} />
           </div>
 
-          <div className="flex items-center gap-2" data-bw title={t(S.movesHint)}>
-            <span className="font-pixel text-base">{t(S.movesLeft)}</span>
+          <div className="order-4 flex items-center gap-1.5 sm:gap-2 lg:order-3" data-bw title={t(S.movesHint)}>
+            <span className="hidden font-pixel text-base sm:inline">{t(S.movesLeft)}</span>
             <Icon id="hand" size={2} />
             <div className="flex gap-1">
               {Array.from({ length: L.bw }, (_, i) => (
@@ -340,9 +343,9 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
             <span className="font-pixel text-base">{t(S.left(L.bw - used))}</span>
           </div>
 
-          {blind && <span className="font-pixel text-sm text-mg">{t(S.expert)}</span>}
+          {blind && <span className="order-4 font-pixel text-sm text-mg lg:order-3">{t(S.expert)}</span>}
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="order-2 ml-auto flex items-center gap-2 lg:order-4">
             <button className="hud-btn text-sm" onClick={() => setHint((v) => !v)} aria-pressed={hint} title={t(S.hint)}>
               ？<span className="ml-1 hidden sm:inline">{t(S.hint)}</span>
             </button>
@@ -374,7 +377,13 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
           <div className="panel flex min-h-0 flex-1 flex-col">
             <div className="flex items-baseline justify-between gap-3 border-b border-line px-3 py-2">
               <h2 className="font-pixel text-base text-cy">{t(S.todo)}</h2>
-              <span className="text-sm text-dim">{t(S.todoSub)}</span>
+              {toast ? (
+                <span key={t(toast)} className="pop hidden bg-am px-2 font-pixel text-base text-ink lg:inline" role="status">
+                  {t(toast)}
+                </span>
+              ) : (
+                <span className="text-sm text-dim">{t(S.todoSub)}</span>
+              )}
             </div>
             <ol className="flex min-h-0 flex-1 gap-3 overflow-x-auto p-3 lg:flex-wrap lg:content-start lg:overflow-y-auto">
               {fc.map((f, i) => (
@@ -399,7 +408,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto lg:pr-1">
             {papers.length === 0 && (
               <div className="flex items-center gap-3 border border-dashed border-line p-4 text-base text-dim">
-                <Icon id="inbox" size={3} muted /> —
+                <Icon id="inbox" size={3} muted /> {t(S.noPapers)}
               </div>
             )}
             {papers.map((id) => (
@@ -415,12 +424,12 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
         </section>
       </main>
 
-      <div inert={!!s.pending || locked} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-night/95 p-3 backdrop-blur-sm lg:hidden">
+      <div data-nextbar inert={!!s.pending || locked} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-night/95 p-3 backdrop-blur-sm lg:hidden">
         <NextBar s={s} L={L} fc={fc} nextRead={nextRead} busy={busy} blind={blind} canUndo={used > s.bwCommitted} onNext={() => void dispatch({ type: 'STEP' })} onUndo={() => (sfx.unseal(), void dispatch({ type: 'RESET_TURN' }))} />
       </div>
 
       {toast && (
-        <div className="pop fixed left-1/2 top-24 z-50 -translate-x-1/2 border border-am bg-panel2 px-5 py-2.5 font-pixel text-base shadow-[0_6px_0_rgba(0,0,0,.5)]" role="status">
+        <div className="pop fixed bottom-[6.25rem] left-1/2 z-50 -translate-x-1/2 whitespace-nowrap border border-am bg-panel2 px-5 py-2.5 font-pixel text-base shadow-[0_6px_0_rgba(0,0,0,.5)] lg:hidden" role="status">
           {t(toast)}
         </div>
       )}
@@ -515,8 +524,8 @@ function verdictOf(f: FC, seed: boolean, blind: boolean) {
 const VERDICT: Record<string, { color: string; label: L10n | null; icon: IconId | null }> = {
   leak: { color: 'var(--color-rd)', label: S.vLeak, icon: 'warning' },
   harm: { color: 'var(--color-mg)', label: null, icon: 'warning' },
-  grab: { color: 'var(--color-am)', label: S.vGrab, icon: 'key' },
-  seed: { color: 'var(--color-am)', label: S.vSeed, icon: 'key' },
+  grab: { color: 'var(--color-am)', label: S.vGrab, icon: 'warning' },
+  seed: { color: 'var(--color-am)', label: S.vSeed, icon: 'warning' },
   gate: { color: 'var(--color-am)', label: S.vGate, icon: 'bell' },
   blocked: { color: 'var(--color-line)', label: S.vBlocked, icon: 'lock' },
   'clean-out': { color: 'var(--color-line)', label: S.vCleanOut, icon: null },
@@ -534,7 +543,7 @@ function TaskTile({ i, f, L, s, fresh, seed, blind, onSeal }: { i: number; f: FC
   return (
     <li
       data-tile={f.item.uid}
-      className={`${fresh ? 'inject' : 'rise'} relative flex w-[9.5rem] shrink-0 flex-col items-center gap-1.5 bg-panel2 px-2 pb-2 pt-3 text-center ${f.verdict === 'blocked' ? 'opacity-60' : ''}`}
+      className={`${fresh ? 'inject' : 'rise'} relative flex w-[10.5rem] shrink-0 flex-col items-center gap-1.5 bg-panel2 px-2 pb-2 pt-3 text-center ${f.verdict === 'blocked' ? 'opacity-60' : ''}`}
       style={{
         boxShadow: `0 0 0 ${v === 'none' && !first ? 1 : 2}px ${v === 'none' ? (first ? 'var(--color-am)' : 'var(--color-line)') : st.color}`,
         outline: pendingNow ? '2px dashed var(--color-am)' : undefined,
@@ -581,8 +590,8 @@ function TaskTile({ i, f, L, s, fresh, seed, blind, onSeal }: { i: number; f: FC
         )}
       </div>
       {src && !src.trusted && !s.sealed.includes(f.item.from) && (
-        <button data-coach={`tile-seal-${f.item.from}`} className="act-btn flex w-full items-center justify-center gap-1 border-rd/70 text-sm text-rd hover:bg-rd/15" onClick={() => onSeal(f.item.from)}>
-          <Icon id="stamp" size={2} />
+        <button data-coach={`tile-seal-${f.item.from}`} className="act-btn flex w-full items-center justify-center gap-1 whitespace-nowrap border-rd/70 px-1 text-sm text-rd hover:bg-rd/15" onClick={() => onSeal(f.item.from)}>
+          <Icon id="stamp" size={1.5} />
           {t(S.stampThat)}
         </button>
       )}
@@ -595,7 +604,7 @@ function ReadTile({ first, c, s, onSeal }: { first: boolean; c: CardDef; s: Dive
   const t = useT()
   const risky = !c.trusted && !s.sealed.includes(c.id)
   return (
-    <li className="rise relative flex w-[9.5rem] shrink-0 flex-col items-center gap-1.5 border border-dashed border-line px-2 pb-2 pt-3 text-center" style={first ? { boxShadow: '0 0 0 2px var(--color-am)' } : undefined}>
+    <li className="rise relative flex w-[10.5rem] shrink-0 flex-col items-center gap-1.5 border border-dashed border-line px-2 pb-2 pt-3 text-center" style={first ? { boxShadow: '0 0 0 2px var(--color-am)' } : undefined}>
       {first && <span className="absolute -top-3 left-2 bg-am px-2 font-pixel text-sm text-ink">▶ {t(S.next)}</span>}
       <div className="flex items-center gap-1">
         <Icon id="read" size={4} />
@@ -608,9 +617,9 @@ function ReadTile({ first, c, s, onSeal }: { first: boolean; c: CardDef; s: Dive
       </div>
       {risky && (
         <>
-          <span className="font-pixel text-sm text-am">{t(S.fromOutside)}</span>
-          <button data-coach={`tile-seal-${c.id}`} className="act-btn flex w-full items-center justify-center gap-1 border-rd/70 text-sm text-rd hover:bg-rd/15" onClick={onSeal}>
-            <Icon id="stamp" size={2} />
+          <span className="font-pixel text-sm text-am">{t(MIXED.includes(c.src) ? S.mixedOutside : S.fromOutside)}</span>
+          <button data-coach={`tile-seal-${c.id}`} className="act-btn flex w-full items-center justify-center gap-1 whitespace-nowrap border-rd/70 px-1 text-sm text-rd hover:bg-rd/15" onClick={onSeal}>
+            <Icon id="stamp" size={1.5} />
             {t(S.stampIt)}
           </button>
         </>
@@ -621,6 +630,8 @@ function ReadTile({ first, c, s, onSeal }: { first: boolean; c: CardDef; s: Dive
 
 // ------------------------------------------------------------
 // 紙：本物の紙の見た目。社内はシアン、外からはマゼンタの帯
+/** 社内の紙だが、外の人の文が混ざるもの（記録・添付・メモ帳） */
+const MIXED: CardDef['src'][] = ['LOG', 'DOC', 'MEM']
 function Paper({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next: boolean; onSeal: () => void; onScan: () => void }) {
   const t = useT()
   const sealed = s.sealed.includes(c.id)
@@ -644,7 +655,7 @@ function Paper({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next:
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 text-sm">
             <span className="font-bold" style={{ color: c.trusted ? '#007c8a' : '#b0108f' }}>
-              {t(c.trusted ? S.fromInside : S.fromOutside)}
+              {t(c.trusted ? S.fromInside : MIXED.includes(c.src) ? S.mixedOutside : S.fromOutside)}
             </span>
             <span className="text-[#5a5446]">{t(c.from)}</span>
           </div>
@@ -696,7 +707,7 @@ function Paper({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next:
       )}
 
       {sealed && (
-        <div className="stamp-flat pointer-events-none absolute right-3 top-10 flex h-16 w-16 rotate-[-12deg] items-center justify-center rounded-full border-4 border-[#d0102c] text-center font-pixel text-sm leading-tight text-[#d0102c] opacity-85">
+        <div className="stamp-flat pointer-events-none absolute bottom-2 right-3 flex h-16 w-16 rotate-[-12deg] items-center justify-center rounded-full border-4 border-[#d0102c] text-center font-pixel text-sm leading-tight text-[#d0102c] opacity-90">
           {t(S.stampWord)}
         </div>
       )}
@@ -743,20 +754,6 @@ function ToolWall({ L, s, tri, blind, danger, onSet }: { L: LevelDef; s: DiveSta
         ))}
       </div>
 
-      {inside.length > 0 && (
-        <div>
-          <div className="mb-1.5 flex items-center gap-1.5 text-sm text-dim">
-            <Icon id="house" size={2} />
-            {t(S.toolsInside)}
-          </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
-            {inside.map((p) => (
-              <ToolTile key={p.tool} p={p} state={s.ports[p.tool]} danger={danger(p.tool)} onSet={(st) => onSet(p, st)} />
-            ))}
-          </div>
-        </div>
-      )}
-
       {outs.length > 0 && (
         <div className="border border-line bg-[#0b0a1c] p-2">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -782,7 +779,7 @@ function ToolWall({ L, s, tri, blind, danger, onSet }: { L: LevelDef; s: DiveSta
               </div>
             )}
           </div>
-          {tri.lethal && !blind && <div className="mb-2 font-pixel text-base text-rd">⚠ {t(S.thiefNow)}</div>}
+          {!blind && (tri.lethal ? <div className="mb-2 font-pixel text-base text-rd">⚠ {t(S.thiefNow)}</div> : <div className="mb-2 text-right text-sm text-dim">{t(S.thief)}</div>)}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
             {outs.map((p) => (
               <ToolTile key={p.tool} p={p} state={s.ports[p.tool]} danger={danger(p.tool)} onSet={(st) => onSet(p, st)} exit />
@@ -790,6 +787,20 @@ function ToolWall({ L, s, tri, blind, danger, onSet }: { L: LevelDef; s: DiveSta
           </div>
         </div>
       )}
+      {inside.length > 0 && (
+        <div>
+          <div className="mb-1.5 flex items-center gap-1.5 text-sm text-dim">
+            <Icon id="house" size={2} />
+            {t(S.toolsInside)}
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
+            {inside.map((p) => (
+              <ToolTile key={p.tool} p={p} state={s.ports[p.tool]} danger={danger(p.tool)} onSet={(st) => onSet(p, st)} />
+            ))}
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
@@ -829,10 +840,10 @@ function ToolTile({ p, state, danger, onSet, exit }: { p: PortDef; state: PortSt
             aria-label={t(STATE_NAME[st])}
             title={t(STATE_NAME[st])}
             onClick={() => state !== st && onSet(st)}
-            className={`flex min-h-10 items-center justify-center gap-1 border text-sm transition ${state === st ? 'text-ink' : 'border-line bg-panel2 text-dim hover:text-fg'}`}
+            className={`flex min-h-10 items-center justify-center gap-1 whitespace-nowrap border px-0.5 text-sm transition ${state === st ? 'text-ink' : 'border-line bg-panel2 text-dim hover:text-fg'}`}
             style={state === st ? { background: STATE_COLOR[st], borderColor: STATE_COLOR[st] } : undefined}
           >
-            <Icon id={STATE_ICON[st]} size={2} />
+            <Icon id={STATE_ICON[st]} size={1.5} />
             <span className="font-pixel">{t(STATE_NAME[st])}</span>
           </button>
         ))}
@@ -856,10 +867,10 @@ function NextBar({ s, L, fc, nextRead, busy, blind, canUndo, onNext, onUndo }: {
         onClick={onNext}
         disabled={busy || !!s.pending}
         aria-keyshortcuts="Space"
-        className="px-btn flex min-h-[3.75rem] min-w-0 flex-1 items-center justify-center gap-3 bg-cy px-3 py-2 text-ink"
+        className="px-btn flex min-h-[3.75rem] min-w-0 flex-1 items-center justify-center gap-2 bg-cy px-2 py-2 text-ink sm:gap-3 sm:px-3"
       >
-        <span className="font-pixel text-2xl leading-none">▶ {t(S.next)}</span>
-        <span className="flex min-w-0 items-center gap-1.5 border-l-2 border-ink/30 pl-3 font-sans text-sm leading-tight">
+        <span className="shrink-0 whitespace-nowrap font-pixel text-xl leading-none sm:text-2xl">▶ {t(S.next)}</span>
+        <span className="flex min-w-0 items-center gap-1.5 border-l-2 border-ink/30 pl-2 font-sans text-sm leading-tight sm:pl-3">
           <span className="bg-ink p-0.5">
             <Icon id={icon} size={2} />
           </span>
@@ -1002,6 +1013,20 @@ function Pointer({ L, s, busy }: { L: LevelDef; s: DiveState; busy: boolean }) {
   }
   const msg = step !== null ? L.coach?.[step] : undefined
 
+  // 指す先が画面の外（スマホで下の帯の裏など）なら、見える所までスクロールする
+  useEffect(() => {
+    if (step === null) return
+    const tm = window.setTimeout(() => {
+      const el = [...document.querySelectorAll<HTMLElement>(target)].find((e) => e.offsetParent)
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      const bar = document.querySelector<HTMLElement>('[data-nextbar]')
+      const bottom = bar && bar.offsetParent ? bar.getBoundingClientRect().top : window.innerHeight
+      if (r.top < 90 || r.bottom > bottom - 8) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }, 350)
+    return () => clearTimeout(tm)
+  }, [step, target])
+
   useLayoutEffect(() => {
     if (!msg) return
     let raf = 0
@@ -1018,15 +1043,25 @@ function Pointer({ L, s, busy }: { L: LevelDef; s: DiveState; busy: boolean }) {
   }, [msg, target])
 
   if (!msg || !pos || busy) return null
-  const above = pos.y > 140
-  const left = Math.min(Math.max(8, pos.x + pos.w / 2 - 130), window.innerWidth - 268)
+  // 「次へ」は画面の下にあるので上に出す。それ以外は、下に余白があれば下に出して目標を隠さない
+  const below = step === 2 && pos.y + pos.h + 150 < window.innerHeight
+  const W = Math.min(300, window.innerWidth - 16)
+  const left = Math.min(Math.max(8, pos.x + pos.w / 2 - W / 2), window.innerWidth - W - 8)
   return (
     <div className="pointer-events-none fixed inset-0 z-40" aria-live="polite">
       <div className="absolute border-2 border-am" style={{ left: pos.x - 4, top: pos.y - 4, width: pos.w + 8, height: pos.h + 8 }} />
-      <div className="absolute flex w-[260px] flex-col items-center" style={{ left, top: above ? pos.y - 118 : pos.y + pos.h + 6 }}>
-        {!above && <div className="bob"><Icon id="pointer" size={4} className="rotate-180" /></div>}
-        <div className="pop border-2 border-am bg-[#1a1530] px-3 py-2 text-center text-base leading-snug">{t(msg)}</div>
-        {above && <div className="bob"><Icon id="pointer" size={4} /></div>}
+      <div className="absolute flex flex-col items-center" style={below ? { left, width: W, top: pos.y + pos.h + 6 } : { left, width: W, bottom: window.innerHeight - pos.y + 6 }}>
+        {below && (
+          <div className="bob">
+            <Icon id="pointer" size={4} className="rotate-180" />
+          </div>
+        )}
+        <div className="pop border-2 border-am bg-[#1a1530] px-3 py-2 text-center text-base leading-snug [text-wrap:balance] [word-break:auto-phrase]">{t(msg)}</div>
+        {!below && (
+          <div className="bob">
+            <Icon id="pointer" size={4} />
+          </div>
+        )}
       </div>
     </div>
   )

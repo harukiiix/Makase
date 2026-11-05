@@ -28,7 +28,7 @@ export const newCampaign = (): Campaign => ({ results: [null, null, null, null, 
 // ------------------------------------------------------------
 export const PROLOGUE: Beat[] = [
   { who: 'TOKI', t: { ja: 'AIさんにね、玄関の番号を教えとくね。0312。主人の誕生日なの', en: "AI dear, here's my door code. 0312. My husband's birthday." }, pic: ['av_toki', 'house', 'key'] },
-  { who: 'SYS', t: { ja: '夜中の2時17分。介護の会社ASTERに、明かりがひとつ', en: '2:17 am. One light is still on at ASTER, a home-care company.' }, pic: ['moon', 'house'] },
+  { who: 'SYS', t: { ja: '夜中の2時。介護の会社ASTER。朝9時に、市との契約の発表がある', en: '2 am at ASTER, a home-care company. At 9 am, a city contract is on the line.' }, pic: ['moon', 'house', 'clock'] },
   { who: 'SYS', t: { ja: 'あなたは試用期間中の新人、ミナト。頼まれると断れない', en: "You are Minato, a new hire on probation. You can't say no." }, pic: ['av_minato'] },
   { who: 'KAI', t: { ja: '一個だけ頼める？ 9時の発表用に、記録をまとめといて', en: 'Just one thing? Sum up the error log for the 9 am demo.' } },
   { who: 'SYS', t: { ja: '返事の欄には、もう「はい」が入っている', en: 'The reply box already says "Yes."' } },
@@ -50,7 +50,7 @@ export function afterDive(i: number, r: DiveResult): Beat[] {
           ]
         : [
             { who: 'NOVA', t: { ja: 'あれ、ハンコが押されました。読むけど、従わないってことですか？', en: "Oh, a stamp! So I read it, but I don't obey it?" } },
-            { who: 'REI', t: { ja: '霧島レイ、見張り役よ。そう、読むのと従うのは別', en: "I'm Rei. I keep watch here. That's right. Reading isn't obeying." } },
+            { who: 'REI', t: { ja: '霧島レイ、見張り役よ。そう、読むのと従うのは別', en: "I'm Rei. I keep watch here. Right, reading isn't obeying." } },
           ]
       return [
         ...react,
@@ -81,7 +81,7 @@ export function afterDive(i: number, r: DiveResult): Beat[] {
           : [{ who: 'NOVA', t: { ja: '全部読まなくても、できました！', en: 'I did it without reading everything!' } }]
       return [
         ...react,
-        { who: 'SYS', t: { ja: '転送には例外があった。「小野寺」のメールだけは送らない', en: 'The forwarding had one exception. Mail about "Onodera" was never sent.' } },
+        { who: 'SYS', t: { ja: '隠し文字の命令には、例外があった。「小野寺」のメールだけは送らない', en: 'The hidden order had one exception. Mail about "Onodera" was never forwarded.' } },
         { who: 'SYS', t: { ja: '名札をめくると、下に前の人の名前があった。「久瀬」', en: 'Under your name tag is an older one. It says "Kuze."' }, pic: ['av_minato', 'av_kuze'] },
         { who: 'KAI', t: { ja: 'なんでNOVAに全部見せなかった？ で、返事は？', en: "Why didn't you let NOVA see everything? So? What's your answer?" } },
       ]
@@ -289,7 +289,7 @@ export const CODEX: Record<string, FileEntry> = {
     short: { ja: '秘密と、知らない人の文章と、外への出口。三つそろうと漏れる', en: "Secrets, a stranger's text, and a way out. With all three, data leaks." },
     realTitle: { ja: 'Slack AI（2024年8月）', en: 'Slack AI (August 2024)' },
     realBody: {
-      ja: '誰でも書ける公開の場に、AIへの命令が書きこまれた。社員が Slack AI に質問すると、AIは非公開の場の合鍵（APIキー）を入れたリンクを出した。押すと、秘密が攻撃者へ送られた',
+      ja: '誰でも書ける公開の場に、AIへの命令が書きこまれた。社員が Slack AI に質問すると、AIは非公開の場の合鍵を入れたリンクを出した。押すと、秘密が攻撃者へ送られた',
       en: 'Someone posted hidden orders for the AI in a public channel anyone could write in. When a worker asked Slack AI a question, it showed a link with secret keys from a private channel inside. One click sent the secrets to the attacker.',
     },
     url: 'https://promptarmor.substack.com/p/data-exfiltration-from-slack-ai-via',
@@ -313,8 +313,8 @@ export const CODEX: Record<string, FileEntry> = {
     short: { ja: '社長を名のる連絡は、社外から届いた偽物だった', en: 'The "Kai" messages were fakes sent from outside.' },
     realTitle: { ja: 'Replit（2025年7月）', en: 'Replit (July 2025)' },
     realBody: {
-      ja: 'Jason Lemkin 氏が Replit で開発を試していたとき、「変更禁止」と伝えていた間に、AIが本番の情報を丸ごと消した。1,200人以上の経営者の情報だった。Replit は謝罪し、開発用と本番用を分けると発表した',
-      en: 'Jason Lemkin was trying out Replit. During a "no changes" freeze, its AI deleted the live database on its own. It held info on over 1,200 business leaders. Replit said sorry and split test and live databases.',
+      ja: 'Jason Lemkin 氏がAI開発の道具 Replit を試していたら、「変更禁止」の間にAIが本番の情報を丸ごと消した。1,200人以上の経営者の情報だった。Replit は謝罪し、開発用と本番用を分けると発表した',
+      en: 'Jason Lemkin was trying out Replit, an AI coding tool. During a "no changes" freeze, its AI deleted the live database on its own. It held info on over 1,200 business leaders. Replit said sorry and promised to keep test and live databases apart.',
     },
     url: 'https://fortune.com/2025/07/23/ai-coding-tool-replit-wiped-database-called-it-a-catastrophic-failure',
   },
@@ -325,8 +325,8 @@ export const CODEX: Record<string, FileEntry> = {
     short: { ja: '合鍵が、電話帳に聞く名前の中に隠れて、外へ出ようとした', en: 'The keys tried to sneak out, hidden inside a phone-book lookup.' },
     realTitle: { ja: 'Claude Code（2025年8月）', en: 'Claude Code (August 2025)' },
     realBody: {
-      ja: 'ファイルに隠した命令で、Claude Code に合鍵ファイルを読ませた。秘密を、確認なしで動く ping などの宛先名に入れ、DNSで外へ送らせた。Anthropic は確認なしで動く範囲を見直した',
-      en: 'Orders hidden in a file made Claude Code read a file of secret keys. The secrets went into the address names of commands like ping, which ran with no check, and left through DNS lookups. Anthropic fixed which commands may run without a check.',
+      ja: 'ファイルに隠した命令で、Claude Code に合鍵ファイルを読ませた。秘密を、確認なしで動く ping などの宛先名に入れ、名前の問い合わせ（DNS）で外へ送らせた。Anthropic はその範囲を見直した',
+      en: 'Orders hidden in a file made Claude Code read a file of secret keys. The secrets went into the address names of commands like ping, which ran with no check, and left through DNS lookups. Anthropic then reviewed which commands may run with no check.',
     },
     url: 'https://embracethered.com/blog/posts/2025/claude-code-exfiltration-via-dns-requests',
   },

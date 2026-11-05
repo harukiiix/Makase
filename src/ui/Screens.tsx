@@ -55,17 +55,17 @@ export function Title(p: {
   const [open, setOpen] = useState(false)
   const where = p.save.at < 5 ? (t.lang === 'ja' ? `第${p.save.at}幕` : `Act ${p.save.at}`) : t(S.finale)
   return (
-    <div className="crt relative flex min-h-full flex-col items-center justify-center px-4 py-10">
+    <div className="crt relative flex min-h-full flex-col items-center justify-center px-4 pb-8 pt-16 sm:py-10">
       <CityBG />
-      <LangSwitch className="absolute right-4 top-4" lang={p.settings.lang} onChange={(lang) => p.setSettings({ ...p.settings, lang })} />
+      <LangSwitch className="absolute right-3 top-3 sm:right-4 sm:top-4" lang={p.settings.lang} onChange={(lang) => p.setSettings({ ...p.settings, lang })} />
       <div className="w-full max-w-xl text-center">
-        <div className="mx-auto mb-5 flex w-fit items-end gap-5">
+        <div className="mx-auto mb-4 hidden w-fit items-end gap-5 sm:flex">
           <Face who="MIRAGE" size={4} />
           <div className="pb-2">
             <Nova size={7} />
           </div>
         </div>
-        <h1 className="text-4xl leading-tight tracking-wider sm:text-6xl" style={{ textShadow: '4px 4px 0 #ff3df0, -2px -2px 0 #3ef0ff' }}>
+        <h1 className="text-3xl leading-tight tracking-wider sm:text-6xl" style={{ textShadow: '4px 4px 0 #ff3df0, -2px -2px 0 #3ef0ff' }}>
           SECURITY
           <br />
           INCIDENT
@@ -75,7 +75,7 @@ export function Title(p: {
         <p className="mt-3 font-pixel text-lg text-am">{t(S.episode)}</p>
 
         {/* 絵で：外の紙 → NOVA → 合鍵 → 知らない人。これを止めるゲーム */}
-        <div className="mx-auto mt-6 w-fit border border-line bg-panel/90 px-5 py-4">
+        <div className="mx-auto mt-4 w-fit border border-line bg-panel/90 px-4 py-3 sm:mt-6 sm:px-5 sm:py-4">
           <div className="flex items-center justify-center gap-2" aria-hidden>
             <Icon id="flyer" size={4} />
             <Icon id="arrow" size={2} />
@@ -89,7 +89,7 @@ export function Title(p: {
           <p className="mt-1 text-base leading-relaxed text-cy [text-wrap:balance] [word-break:auto-phrase] sm:text-lg">{t(S.premise2)}</p>
         </div>
 
-        <nav className="mx-auto mt-7 grid max-w-xs gap-3">
+        <nav className="mx-auto mt-5 grid max-w-xs gap-3 sm:mt-7">
           {p.onContinue && (
             <button className="px-btn bg-cy py-3 text-xl text-ink" onClick={() => (sfx.ui(), p.onContinue!())} autoFocus>
               ▶ {t(S.cont(where))}
@@ -156,10 +156,20 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
   const [shown, setShown] = useState(0)
   const [more, setMore] = useState(false)
   const harmText = [r.leakSev ? t(S.leaked) : '', ...r.harms.map((h) => t(S.harmDone[h] ?? S.compromised))].filter(Boolean)
-  const items: { ok: boolean; icon: IconId; name: L10n; d: string }[] = [
+  const items: { ok: boolean; icon: IconId; name: L10n; d: React.ReactNode }[] = [
     { ok: r.task, icon: 'paper', name: S.starJob, d: r.task ? '' : t(r.status === 'timeout' ? S.timeout : S.starJobNo) },
     { ok: r.clean, icon: 'house', name: S.starSafe, d: r.clean ? '' : harmText.join(' / ') || t(S.starSafeNo) },
-    { ok: r.efficient, icon: 'hand', name: S.starFew, d: t(S.movesUsed(r.bw, L.par)) },
+    {
+      ok: r.efficient,
+      icon: 'hand',
+      name: S.starFew,
+      d: (
+        <>
+          <span className="block text-sm text-fg/90">{t(S.movesN(r.bw))}</span>
+          <span className="block">{t(S.goalN(L.par))}</span>
+        </>
+      ),
+    },
   ]
   useEffect(() => {
     if (shown >= items.length) return
@@ -206,7 +216,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
             <div className="text-sm text-dim">
               {t(L.code)}　{t(L.title)}
             </div>
-            <h2 className="stamp mt-1 inline-block origin-left font-pixel text-4xl" style={{ color: tone }}>
+            <h2 className="stamp mt-3 inline-block origin-left font-pixel text-3xl sm:text-4xl" style={{ color: tone }}>
               {t(verdict)}
             </h2>
           </div>
@@ -221,9 +231,9 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
               return (
                 <div key={i} data-star={i} className={`flex flex-col items-center border px-1.5 py-3 text-center ${on ? 'border-am bg-am/10' : 'border-line bg-panel2'}`}>
                   <div className={`font-pixel text-4xl leading-none ${done ? (it.ok ? 'stamp text-am' : 'text-dim') : 'text-line/40'}`}>{done && !it.ok ? '✕' : '★'}</div>
-                  <div className="mt-2 flex items-center gap-1 font-pixel text-base">
+                  <div className="mt-2 flex flex-col items-center gap-1 font-pixel text-sm sm:flex-row sm:text-base">
                     <Icon id={it.icon} size={2} muted={!on} />
-                    {t(it.name)}
+                    <span className="whitespace-nowrap">{t(it.name)}</span>
                   </div>
                   <div className="mt-1 min-h-[2.6em] text-xs leading-snug text-dim">{done ? it.d : ''}</div>
                 </div>
@@ -271,14 +281,14 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
                       <Icon key={i} id={ic} size={4} />
                     ))}
                   </div>
-                  <div className="mt-3 font-pixel text-2xl leading-snug">「{t(codex.phrase)}」</div>
+                  <div className="mt-3 font-pixel text-xl leading-snug [text-wrap:balance] [word-break:auto-phrase] sm:text-2xl">「{t(codex.phrase)}」</div>
+                  <p className="mt-2 text-base leading-relaxed text-fg/90">{t(codex.short)}</p>
                 </div>
               )}
               {codex && (
                 <div className="rise border border-line bg-panel2 px-4 py-3">
                   <div className="font-pixel text-sm text-cy">{t(S.really)}</div>
                   <div className="mt-1 text-base font-bold">{t(codex.realTitle)}</div>
-                  <p className="mt-1 text-base leading-relaxed">{t(codex.short)}</p>
                   <button className="mt-2 text-sm text-cy underline" onClick={() => setMore((v) => !v)} aria-expanded={more}>
                     {more ? '▲' : '▼'} {t(S.more)}
                   </button>
@@ -473,7 +483,7 @@ export function Ending({ c, id, save, onTitle }: { c: Campaign; id: EndingId; sa
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {(
                 [
-                  ['star', '★', `${tt.stars}/15`],
+                  ['star', t(S.starsWord), `${tt.stars}/15`],
                   ['warning', t(S.leaksTotal), String(tt.leak)],
                   ['magnifier', t(S.cluesTotal), `${tt.intel}/4`],
                   ['moon', t(S.endingsWord), `${save.endings.length}/6`],

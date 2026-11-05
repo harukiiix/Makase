@@ -7,7 +7,7 @@ import { CityBG, Nova } from './pixel'
 import { S } from './strings'
 
 function Arrow() {
-  return <Icon id="arrow" size={3} />
+  return <Icon id="arrow" size={2} />
 }
 function Tile({ icon, to, bad }: { icon: IconId; to: IconId; bad?: boolean }) {
   return (
@@ -32,7 +32,7 @@ export function Howto({ onDone }: { onDone: () => void }) {
             </span>
           </span>
           <Arrow />
-          <Nova size={4} />
+          <Nova size={3} />
           <Arrow />
           <Tile icon="mail" to="stranger" bad />
         </>
@@ -49,7 +49,7 @@ export function Howto({ onDone }: { onDone: () => void }) {
             </span>
           </span>
           <Arrow />
-          <Nova size={4} mood="happy" />
+          <Nova size={3} mood="happy" />
           <Arrow />
           <span className="relative">
             <Icon id="note" size={4} muted />
