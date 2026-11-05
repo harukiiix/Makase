@@ -1,44 +1,43 @@
-import { useEffect, useState } from 'react'
-import { better, type DayResult } from './game/round'
-import { endingOf, PROLOGUE, type EndingId, type WeekResults } from './game/story'
-import type { L10n, Line } from './game/types'
-import { DAYS } from './game/week'
-import { FAST, loadSave, loadSettings, setAudio, startMusic, writeSave, writeSettings, type SaveData, type Settings } from './lib/platform'
+import { useEffect, useRef, useState } from 'react'
+import { LESSONS, lessonOf, questionOf } from './game/course'
+import { applySession, countAsk, dayNumber, dueIds, interleave, lessonOpen, newProgress, shuffle, weakTopic, type Gains, type Progress, type Session, type SessionKind } from './game/learn'
+import { ENDING, PROLOGUE } from './game/story'
+import type { L10n, Lang, Line, Question, TopicId } from './game/types'
+import { errorKind, getAI, practicePrompt, toQuestions } from './lib/ai'
+import { FAST, loadProgress, loadSettings, setAudio, startMusic, writeProgress, writeSettings, type Settings } from './lib/platform'
+import { Done } from './ui/Done'
+import { Home } from './ui/Home'
 import { LangContext, tr } from './ui/i18n'
-import { DayResultView } from './ui/Result'
-import { Round } from './ui/Round'
-import { EndingView, HowtoOverlay, Notebook, PickDay, Title } from './ui/Screens'
+import { Quiz } from './ui/Quiz'
+import { HowtoSheet, Notebook, Science, SettingsSheet } from './ui/Screens'
 import { S } from './ui/strings'
 import { Talk } from './ui/Talk'
 
 type Screen =
-  | { k: 'title' }
-  | { k: 'talk'; beats: Line[]; header?: L10n; bg?: string; next: (choice?: number) => void; choices?: L10n[] }
-  /** keep：やり直す前の、この日でいちばんよかった回 */
-  | { k: 'round'; i: number; practice: boolean; attempt: number; keep?: DayResult }
-  | { k: 'result'; i: number; practice: boolean; attempt: number; r: DayResult; keep?: DayResult }
-  | { k: 'pick' }
+  | { k: 'home'; note?: L10n }
+  | { k: 'talk'; beats: Line[]; header?: L10n; next: () => void }
+  | { k: 'quiz'; kind: SessionKind; lesson?: TopicId; title: L10n; questions: Question[]; aiMade?: boolean; nonce: number }
+  | { k: 'done'; s: Session; gains: Gains; questions: Question[] }
+  | { k: 'making' }
   | { k: 'notebook' }
-  | { k: 'ending'; id: EndingId; week: WeekResults }
+  | { k: 'science' }
 
 export default function App() {
-  const [save, setSaveState] = useState<SaveData>(() => loadSave())
+  const [progress, setProgressState] = useState<Progress>(() => loadProgress())
   const [settings, setSettingsState] = useState<Settings>(() => {
     const s = loadSettings()
     return FAST ? { ...s, textSpeed: 'instant' } : s
   })
-  // 確認用：?day=2 で水曜日の見回りから（練習あつかい）
-  const [screen, setScreen] = useState<Screen>(() => {
-    const q = new URLSearchParams(location.search)
-    const d = Number(q.get('day'))
-    return q.has('day') && Number.isInteger(d) && d >= 0 && d < DAYS.length ? { k: 'round', i: d, practice: true, attempt: 0 } : { k: 'title' }
-  })
-  const [howto, setHowto] = useState(false)
+  const [screen, setScreen] = useState<Screen>({ k: 'home' })
+  const [sheet, setSheet] = useState<'settings' | 'howto' | null>(null)
+  const nonce = useRef(0)
+  const lang = settings.lang
+  const setLang = (l: Lang) => setSettings({ ...settings, lang: l })
 
-  const setSave = (f: (s: SaveData) => SaveData) =>
-    setSaveState((prev) => {
+  const setProgress = (f: (p: Progress) => Progress) =>
+    setProgressState((prev) => {
       const n = f(prev)
-      writeSave(n)
+      writeProgress(n)
       return n
     })
   const setSettings = (s: Settings) => {
@@ -47,12 +46,11 @@ export default function App() {
   }
 
   useEffect(() => {
-    document.documentElement.lang = settings.lang
-  }, [settings.lang])
+    document.documentElement.lang = lang
+  }, [lang])
   useEffect(() => {
     setAudio(settings.sound, settings.music)
   }, [settings])
-  // 最初の操作で音楽を開始（ブラウザの自動再生制限のため）
   useEffect(() => {
     const go = () => settings.music && startMusic()
     window.addEventListener('pointerdown', go, { once: true })
@@ -62,112 +60,169 @@ export default function App() {
       window.removeEventListener('keydown', go)
     }
   }, [settings.music])
-  // 画面が変わったら、いちばん上から見せる
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [screen.k])
 
   const speed = FAST || settings.textSpeed === 'instant' ? 'instant' : settings.textSpeed
+  const topicOf = (id: string) => questionOf(id)?.topic
 
   // ---------------- 進行 ----------------
-  const intro = (i: number) => {
-    const d = DAYS[i]
-    const go = () => setScreen({ k: 'round', i, practice: false, attempt: 0 })
-    if (!d.intro.length) return go()
-    setScreen({ k: 'talk', beats: d.intro, header: { ja: S.dayPlace(d.dayName.ja, d.place.ja).ja, en: S.dayPlace(d.dayName.en, d.place.en).en }, bg: d.scene, next: go })
+  const quiz = (kind: SessionKind, title: L10n, questions: Question[], lesson?: TopicId, aiMade?: boolean) => setScreen({ k: 'quiz', kind, title, questions, lesson, aiMade, nonce: ++nonce.current })
+
+  const startLesson = (id: TopicId) => {
+    const l = lessonOf(id)
+    // 2回目からは並びを変える（答えの場所を覚えてしまわないように）
+    const qs = progress.lessons[id]?.done ? shuffle(l.questions, dayNumber() + progress.answered) : l.questions
+    const title = { ja: S.dayPlace(l.dayName.ja, l.place.ja).ja, en: S.dayPlace(l.dayName.en, l.place.en).en }
+    const go = () => quiz('lesson', title, qs, id)
+    const intro = () => (l.intro.length ? setScreen({ k: 'talk', beats: l.intro, header: title, next: go }) : go())
+    if (!progress.started && PROLOGUE.length) {
+      setScreen({
+        k: 'talk',
+        beats: PROLOGUE,
+        header: S.title,
+        next: () => {
+          setProgress((p) => ({ ...p, started: true }))
+          setSheet('howto')
+          intro()
+        },
+      })
+    } else intro()
   }
 
-  const startNew = () => {
-    setSave((s) => ({ ...s, week: {}, at: 0 }))
-    if (PROLOGUE.length) setScreen({ k: 'talk', beats: PROLOGUE, header: S.title, bg: 'gate', next: () => intro(0) })
-    else intro(0)
+  const startReview = () => {
+    const ids = dueIds(progress.cards, dayNumber(), topicOf, 10)
+    const qs = ids.map((id) => questionOf(id)).filter((q): q is Question => !!q)
+    if (qs.length) quiz('review', { ja: '今日の復習', en: "Today's review" }, qs)
   }
 
-  const resume = () => {
-    if (save.at < DAYS.length) intro(save.at)
-    else finish(save.week ?? {})
+  const startFinal = () => {
+    const seed = dayNumber() * 7 + progress.answered
+    const picked = LESSONS.flatMap((l) => shuffle(l.questions, seed + l.id.length).slice(0, 2))
+    const ids = interleave(shuffle(picked, seed).map((q) => q.id), topicOf)
+    quiz('final', S.finalTest, ids.map((id) => questionOf(id)!).filter(Boolean))
   }
 
-  const finish = (week: WeekResults) => {
-    const id = endingOf(week)
-    setSave((s) => ({ ...s, week: null, at: 0, endings: s.endings.includes(id) ? s.endings : [...s.endings, id], plays: s.plays + 1 }))
-    setScreen({ k: 'ending', id, week })
+  const startPractice = async () => {
+    setScreen({ k: 'making' })
+    const ai = await getAI()
+    if (!ai) return setScreen({ k: 'home', note: S.aiOff })
+    const done = LESSONS.filter((l) => progress.lessons[l.id]?.done)
+    const topic = weakTopic(progress, topicOf, (done[0] ?? LESSONS[0]).id)
+    const l = lessonOf(topic)
+    try {
+      const raw = await ai.json(practicePrompt({ id: l.id, title: l.title, motto: l.motto }, l.questions), { modelTier: 'default', cache: false })
+      const qs = toQuestions(raw, l.id, Date.now())
+      if (!qs.length) return setScreen({ k: 'home', note: S.aiFailed })
+      quiz('ai', { ja: `AIの練習：${l.title.ja}`, en: `AI practice: ${l.title.en}` }, qs, undefined, true)
+    } catch (e) {
+      const k = errorKind(e)
+      setScreen({ k: 'home', note: k === 'off' ? S.aiNotAllowed : k === 'busy' ? S.aiBusy : S.aiFailed })
+    }
   }
 
-  /** 1日の結果を記録して、次の日へ */
-  const commit = (i: number, r: DayResult) => {
-    const week: WeekResults = { ...(save.week ?? {}), [DAYS[i].id]: r }
-    setSave((s) => ({ ...s, week, at: i + 1 }))
-    if (i + 1 < DAYS.length) intro(i + 1)
-    else finish(week)
+  const finishQuiz = (s: Session, questions: Question[]) => {
+    const { p, gains } = applySession(progress, s, dayNumber(), LESSONS.length)
+    writeProgress(p)
+    setProgressState(p)
+    setScreen({ k: 'done', s, gains, questions })
   }
 
-  const recordBest = (r: DayResult) => setSave((s) => ({ ...s, best: { ...s.best, [r.day]: better(s.best[r.day], r) } }))
+  const firstPass = (gains: Gains) => gains.passed && !progress.endingSeen
 
   // ---------------- 描画 ----------------
   const view = (): React.ReactNode => {
     switch (screen.k) {
-      case 'title':
+      case 'home':
         return (
-          <Title
-            save={save}
-            settings={settings}
-            setSettings={setSettings}
-            onNew={startNew}
-            onContinue={save.week ? resume : null}
-            onPick={() => setScreen({ k: 'pick' })}
-            onNotebook={() => setScreen({ k: 'notebook' })}
-            onHowto={() => setHowto(true)}
-          />
+          <>
+            {screen.note && (
+              <div className="mx-auto mt-3 max-w-xl px-4">
+                <p className="rounded-xl bg-asphalt2 px-3 py-2 text-center text-base text-onDark2" role="status">
+                  {tr(screen.note, lang)}
+                </p>
+              </div>
+            )}
+            <Home
+              progress={progress}
+              lang={lang}
+              setLang={setLang}
+              onLesson={startLesson}
+              onReview={startReview}
+              onFinal={startFinal}
+              onPractice={() => void startPractice()}
+              onNotebook={() => setScreen({ k: 'notebook' })}
+              onScience={() => setScreen({ k: 'science' })}
+              onSettings={() => setSheet('settings')}
+              onHowto={() => setSheet('howto')}
+            />
+          </>
         )
       case 'talk':
-        return <Talk key={JSON.stringify(screen.beats[0]?.t) + JSON.stringify(screen.header ?? '')} beats={screen.beats} header={tr(screen.header, settings.lang)} bg={screen.bg} speed={speed} choices={screen.choices} onDone={screen.next} />
-      case 'round': {
-        const d = DAYS[screen.i]
+        return <Talk key={JSON.stringify(screen.beats[0]?.t)} beats={screen.beats} header={tr(screen.header, lang)} speed={speed} onDone={screen.next} />
+      case 'quiz': {
         const sc = screen
+        return <Quiz key={sc.nonce} kind={sc.kind} lesson={sc.lesson} title={tr(sc.title, lang)} questions={sc.questions} aiMade={sc.aiMade} lang={lang} setLang={setLang} onAsked={() => setProgress(countAsk)} onQuit={() => setScreen({ k: 'home' })} onDone={(s) => finishQuiz(s, sc.questions)} />
+      }
+      case 'done': {
+        const sc = screen
+        const i = sc.s.lesson ? LESSONS.findIndex((l) => l.id === sc.s.lesson) : -1
+        const nextL = i >= 0 ? LESSONS[i + 1] : undefined
+        const canNext = !!nextL && lessonOpen(progress, LESSONS.map((l) => l.id), nextL.id)
         return (
-          <Round
-            key={`${sc.i}-${sc.attempt}`}
-            day={d}
-            tutorial={sc.i === 0 && !save.best[d.id]}
-            onHowto={() => setHowto(true)}
-            onQuit={() => setScreen({ k: 'title' })}
-            onEnd={(r) => {
-              recordBest(r)
-              setScreen({ k: 'result', i: sc.i, practice: sc.practice, attempt: sc.attempt, r, keep: sc.keep })
-            }}
+          <Done
+            s={sc.s}
+            gains={sc.gains}
+            progress={progress}
+            extra={sc.s.kind === 'ai' ? sc.questions : undefined}
+            onHome={() => setScreen({ k: 'home' })}
+            onNext={canNext ? () => startLesson(nextL!.id) : undefined}
+            nextLabel={canNext ? tr(S.nextUp(tr(nextL!.dayName, lang)), lang) : undefined}
+            onEnding={
+              firstPass(sc.gains) && ENDING.length
+                ? () => {
+                    setProgress((p) => ({ ...p, endingSeen: true }))
+                    setScreen({ k: 'talk', beats: ENDING, header: S.buildingDone, next: () => setScreen({ k: 'home' }) })
+                  }
+                : undefined
+            }
           />
         )
       }
-      case 'result': {
-        const d = DAYS[screen.i]
-        const sc = screen
-        const kept = !sc.practice && !!sc.keep && better(sc.keep, sc.r) === sc.keep
-        const label = sc.practice ? S.toSelect : sc.i + 1 < DAYS.length ? S.nextDay : S.toEnding
+      case 'making':
         return (
-          <DayResultView
-            day={d}
-            r={sc.r}
-            kept={kept}
-            nextLabel={tr(label, settings.lang)}
-            onAgain={() => setScreen({ k: 'round', i: sc.i, practice: sc.practice, attempt: sc.attempt + 1, keep: better(sc.keep, sc.r) })}
-            onNext={() => (sc.practice ? setScreen({ k: 'pick' }) : commit(sc.i, better(sc.keep, sc.r)))}
-          />
+          <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+            <div className="blink font-pixel text-2xl text-safety">…</div>
+            <p className="text-lg">{tr(S.aiMaking, lang)}</p>
+            <button className="btn text-base" onClick={() => setScreen({ k: 'home' })}>
+              {tr(S.cancel, lang)}
+            </button>
+          </div>
         )
-      }
-      case 'pick':
-        return <PickDay save={save} onBack={() => setScreen({ k: 'title' })} onPick={(i) => setScreen({ k: 'round', i, practice: true, attempt: 0 })} />
       case 'notebook':
-        return <Notebook save={save} onBack={() => setScreen({ k: 'title' })} />
-      case 'ending':
-        return <EndingView id={screen.id} week={screen.week} save={save} onTitle={() => setScreen({ k: 'title' })} />
+        return <Notebook progress={progress} lang={lang} setLang={setLang} onBack={() => setScreen({ k: 'home' })} />
+      case 'science':
+        return <Science lang={lang} setLang={setLang} onBack={() => setScreen({ k: 'home' })} />
     }
   }
 
   return (
-    <LangContext.Provider value={settings.lang}>
+    <LangContext.Provider value={lang}>
       {view()}
-      {howto && <HowtoOverlay onClose={() => setHowto(false)} />}
+      {sheet === 'settings' && (
+        <SettingsSheet
+          s={settings}
+          set={setSettings}
+          onClose={() => setSheet(null)}
+          onReset={() => {
+            setProgress(() => newProgress())
+            setSheet(null)
+            setScreen({ k: 'home' })
+          }}
+        />
+      )}
+      {sheet === 'howto' && <HowtoSheet onClose={() => setSheet(null)} />}
     </LangContext.Provider>
   )
 }

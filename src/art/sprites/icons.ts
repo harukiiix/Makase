@@ -1,5 +1,157 @@
-// 絵（icons）。名前は「icons.なまえ」の形にする（people は face. と person.、icons は icon. と pic.）
-// 1行の文字数がそろっていなくてもよい（足りない所は透明）
+// 画面の小さな絵（12×12 前後）。名前は 'icon.なまえ'
+// 色は palette.ts の文字。'x' はその場で色を変えたい所（helmet など。pal で上書きする）
 import type { Sprite } from '../raster'
 
-export const SPRITES: Record<string, Sprite> = {}
+export const SPRITES: Record<string, Sprite> = {
+  // 安全旗（続けた日数）：白い旗に緑の十字
+  'icon.flag': {
+    rows: [
+      'KK..........',
+      'KKKKKKKKKKK.',
+      'KKWWWWeWWWK.',
+      'KKWWWWeWWWK.',
+      'KKWWeeeeeWK.',
+      'KKWWWWeWWWK.',
+      'KKWWWWeWWWK.',
+      'KKKKKKKKKKK.',
+      'KK..........',
+      'KK..........',
+      'KK..........',
+      'KK..........',
+    ],
+  },
+  // ヘルメット（階級）。x の色を階級で変える
+  'icon.helmet': {
+    rows: [
+      '............',
+      '....KKKK....',
+      '..KKxxxxKK..',
+      '.KxWWxxxxxK.',
+      '.KxWxxxxxxK.',
+      'KxxxxxxxxxxK',
+      'KxxxxxxxxxxK',
+      'KKKKKKKKKKKK',
+      'KxxxxxxxxxxK',
+      '.KKKKKKKKKK.',
+      '............',
+      '............',
+    ],
+    pal: { x: '#ffcc1a' },
+  },
+  // ポイント（星）
+  'icon.star': {
+    rows: [
+      '.....KK.....',
+      '....KyyK....',
+      '....KyyK....',
+      'KKKKKyyKKKKK',
+      'KyyyyyyyyyyK',
+      '.KyyyyyyyyK.',
+      '..KyyyyyyK..',
+      '..KyyyyyyK..',
+      '.KyyyKKyyyK.',
+      '.KyyK..KyyK.',
+      'KyyK....KyyK',
+      'KKK......KKK',
+    ],
+  },
+  'icon.lock': {
+    rows: [
+      '...KKKKKK...',
+      '..KGGGGGGK..',
+      '..KGK..KGK..',
+      '..KGK..KGK..',
+      '.KKKKKKKKKK.',
+      '.KyyyyyyyyK.',
+      '.KyyyKKyyyK.',
+      '.KyyyKKyyyK.',
+      '.KyyyyKyyyK.',
+      '.KYYYYYYYYK.',
+      '.KKKKKKKKKK.',
+      '............',
+    ],
+  },
+  'icon.check': {
+    rows: [
+      '...KKKKKK...',
+      '..KeeeeeeK..',
+      '.KeeeeeeWeK.',
+      'KeeeeeeWWeeK',
+      'KeeeeeWWWeeK',
+      'KeWeeWWWeeeK',
+      'KeWWWWWeeeeK',
+      'KeeWWWeeeeeK',
+      '.KeeWeeeeeK.',
+      '..KeeeeeeK..',
+      '...KKKKKK...',
+      '............',
+    ],
+  },
+  // AIの宮下さん（ふきだしに点3つ）
+  'icon.ai': {
+    rows: [
+      '.KKKKKKKKKK.',
+      'KbbbbbbbbbbK',
+      'KbbbbbbbbbbK',
+      'KbWWbWWbWWbK',
+      'KbWWbWWbWWbK',
+      'KbbbbbbbbbbK',
+      'KbbbbbbbbbbK',
+      '.KKKbbKKKKK.',
+      '...KbK......',
+      '...KK.......',
+      '............',
+      '............',
+    ],
+  },
+  // 復習（くるっと回る矢印）
+  'icon.review': {
+    rows: [
+      '....KKKK....',
+      '..KKbbbbKK..',
+      '.KbbKKKKbbK.',
+      '.KbK....KbK.',
+      'KbK......KbK',
+      'KbK.....KbbbK',
+      'KbK......KbK',
+      '.KbK........',
+      '.KbbKKKKK...',
+      '..KKbbbbK...',
+      '....KKKK....',
+      '............',
+    ],
+  },
+  'icon.book': {
+    rows: [
+      '.KKKKKKKKKK.',
+      '.KyKWWWWWWK.',
+      '.KyKWkkkkWK.',
+      '.KyKWWWWWWK.',
+      '.KyKWkkkkWK.',
+      '.KyKWWWWWWK.',
+      '.KyKWkkkWWK.',
+      '.KyKWWWWWWK.',
+      '.KyKWWWWWWK.',
+      '.KKKKKKKKKK.',
+      '............',
+      '............',
+    ],
+  },
+  // 学び方のわけ（電球）
+  'icon.bulb': {
+    rows: [
+      '...KKKKKK...',
+      '..KuuuuWuK..',
+      '.KuuuuuWWuK.',
+      '.KuuuuuuWuK.',
+      '.KuuuuuuuuK.',
+      '..KuuuuuuK..',
+      '...KuuuuK...',
+      '....KGGK....',
+      '....KggK....',
+      '....KGGK....',
+      '.....KK.....',
+      '............',
+    ],
+  },
+}

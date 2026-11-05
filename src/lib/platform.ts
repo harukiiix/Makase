@@ -1,35 +1,25 @@
 // ブラウザ依存：保存・設定・サウンド（WebAudioで合成。音声ファイル不要）
-import type { DayResult } from '../game/round'
-import type { EndingId, WeekResults } from '../game/story'
-import type { DayId, Lang } from '../game/types'
+import { newProgress, type Progress } from '../game/learn'
+import type { Lang } from '../game/types'
 
-const KEY = 'sit.v4'
+const KEY = 'sit.v5'
 
-export interface SaveData {
-  /** いまの1週間（はじめから遊ぶと空になる） */
-  week: WeekResults | null
-  /** 次に遊ぶ日（0=月曜日 … 5=結末） */
-  at: number
-  /** 日ごとの、これまでで一番よい結果（日をえらぶ・合言葉ノートに使う） */
-  best: Partial<Record<DayId, DayResult>>
-  endings: EndingId[]
-  plays: number
-}
-
-export const emptySave = (): SaveData => ({ week: null, at: 0, best: {}, endings: [], plays: 0 })
-
-export function loadSave(): SaveData {
+/** 学びの記録（このブラウザに保存。消えても遊べるように、読めない時は新しく始める） */
+export function loadProgress(): Progress {
   try {
     const raw = localStorage.getItem(KEY)
-    if (raw) return { ...emptySave(), ...JSON.parse(raw) }
+    if (raw) {
+      const p = JSON.parse(raw)
+      if (p && p.v === 5) return { ...newProgress(), ...p }
+    }
   } catch {
     /* プライベートモード等 */
   }
-  return emptySave()
+  return newProgress()
 }
-export function writeSave(d: SaveData) {
+export function writeProgress(p: Progress) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(d))
+    localStorage.setItem(KEY, JSON.stringify(p))
   } catch {
     /* noop */
   }

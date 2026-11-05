@@ -10,7 +10,6 @@ import { deflateSync } from 'node:zlib'
 import { SCENES, SPRITES, SPRITE_GROUPS } from '../src/art/index'
 import { drawSprite, newImg, rect, scaleImg, spriteSize, type Img } from '../src/art/raster'
 import { anchors, rasterScene, SCENE_H, SCENE_W } from '../src/art/scene'
-import { DAYS } from '../src/game/week'
 
 const args = process.argv.slice(2)
 const out = resolve(args.find((a) => a.startsWith('--out='))?.slice(6) ?? '.previews')
@@ -72,19 +71,11 @@ function scene(id: string, k = 4, boxes = false) {
   const sc = SCENES[id]
   if (!sc) throw new Error(`no scene ${id}`)
   const img = scaleImg(rasterScene(sc, SPRITES), k)
-  if (boxes) {
-    const day = DAYS.find((d) => d.scene === id)
-    const an = anchors(sc, SPRITES)
-    const kinds = new Map(day?.spots.map((s) => [s.id, s.kind]))
-    const color = (kind: string | undefined) => (kind === 'risk' ? '#ff2020' : kind === 'safe' ? '#20a0ff' : kind === 'bonus' ? '#c040ff' : '#00ff00')
-    for (const [aid, b] of Object.entries(an)) frame(img, k, b, color(kinds.get(aid)))
-    for (const s of day?.spots ?? []) if (s.box) frame(img, k, s.box, color(s.kind))
-    console.log(`boxes: red=risk blue=safe purple=bonus green=anchor with no spot`)
-    for (const s of day?.spots ?? []) {
-      const b = s.box ?? an[s.id]
-      console.log(`  ${s.kind.padEnd(5)} ${s.id.padEnd(14)} ${b ? b.join(',') : 'NO BOX'}`)
+  if (boxes)
+    for (const [aid, b] of Object.entries(anchors(sc, SPRITES))) {
+      frame(img, k, b, '#ff2020')
+      console.log(aid, b.join(','))
     }
-  }
   save(`scene-${id}${boxes ? '-boxes' : ''}.png`, img)
 }
 

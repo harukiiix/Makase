@@ -1,8 +1,8 @@
 // ドット絵を画面に出す：絵を一度だけ画像にして、拡大は「ぼかさない」で表示する
 import { SCENES, SPRITES } from '../art'
 import { rasterSprite, spriteSize, type Img } from '../art/raster'
-import { anchors, rasterScene, SCENE_H, SCENE_W } from '../art/scene'
-import type { Box, Day } from '../game/types'
+import { rasterScene, SCENE_H, SCENE_W } from '../art/scene'
+import type { Box } from '../game/types'
 
 const urls = new Map<string, string>()
 
@@ -18,6 +18,16 @@ function toURL(img: Img): string {
 
 /** 絵がない時の代わり（足りない絵がすぐわかるように、灰色の箱に×） */
 const MISSING = { rows: ['GGGGGGGG', 'GK....KG', 'G.K..K.G', 'G..KK..G', 'G..KK..G', 'G.K..K.G', 'GK....KG', 'GGGGGGGG'] }
+
+/** 計算で描いた絵（建物など）を、名前ごとに一度だけ画像にする */
+export function imgURL(key: string, draw: () => Img): string {
+  let u = urls.get(`img:${key}`)
+  if (!u) {
+    u = toURL(draw())
+    urls.set(`img:${key}`, u)
+  }
+  return u
+}
 
 export function spriteURL(id: string): string {
   const key = `s:${id}`
@@ -66,31 +76,9 @@ export function artSize(id: string): [number, number] {
   return spriteSize(SPRITES[id] ?? MISSING)
 }
 
-/** 絵1枚。scale は1ドットの大きさ（px） */
-export function Art({ id, scale = 2, className = '', title }: { id: string; scale?: number; className?: string; title?: string }) {
+/** 絵1枚。scale は1ドットの大きさ（px）。tint で 'x' の色を変える */
+export function Art({ id, scale = 2, className = '', title, tint }: { id: string; scale?: number; className?: string; title?: string; tint?: string }) {
   const [w, h] = artSize(id)
-  return <img src={spriteURL(id)} width={w * scale} height={h * scale} className={`pixelated inline-block shrink-0 ${className}`} alt={title ?? ''} aria-hidden={title ? undefined : true} draggable={false} />
-}
-
-/** 絵の名前が "crop:物の id" のときは、その日の場面から切り出す */
-export function PicArt({ id, day, boxes, scale = 2, max = 48 }: { id: string; day: Day; boxes: Record<string, Box>; scale?: number; max?: number }) {
-  if (id.startsWith('crop:')) {
-    const b = boxes[id.slice(5)]
-    if (!b) return <Art id="missing" scale={scale} />
-    const k = Math.max(1, Math.min(scale * 2, Math.floor(max / Math.max(b[2] + 6, b[3] + 6))))
-    return <img src={cropURL(day.scene, b)} width={(b[2] + 6) * k} height={(b[3] + 6) * k} className="pixelated inline-block shrink-0" alt="" aria-hidden draggable={false} />
-  }
-  return <Art id={id} scale={scale} />
-}
-
-/** その日の、押せる物の範囲（書いた範囲 → なければ絵の印） */
-export function boxesOf(day: Day): Record<string, Box> {
-  const sc = SCENES[day.scene]
-  const an = sc ? anchors(sc, SPRITES) : {}
-  const out: Record<string, Box> = {}
-  for (const s of day.spots) {
-    const b = s.box ?? an[s.id]
-    if (b) out[s.id] = b
-  }
-  return out
+  const src = tint ? imgURL(`${id}@${tint}`, () => rasterSprite({ ...(SPRITES[id] ?? MISSING), pal: { ...(SPRITES[id]?.pal ?? {}), x: tint } })) : spriteURL(id)
+  return <img src={src} width={w * scale} height={h * scale} className={`pixelated inline-block shrink-0 ${className}`} alt={title ?? ''} aria-hidden={title ? undefined : true} draggable={false} />
 }
