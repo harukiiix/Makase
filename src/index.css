@@ -23,6 +23,8 @@
 
 :root { color-scheme: dark; }
 html, body, #root { height: 100%; }
+/* 文字は大きめに（ふつうの本文で17px） */
+html { font-size: 106.25%; }
 body {
   margin: 0;
   background: var(--color-ink);
@@ -65,10 +67,10 @@ h1, h2, h3, .px-btn, .font-pixel { font-family: var(--font-pixel); letter-spacin
 
 /* ===== UI部品 ===== */
 .panel { background: var(--color-panel); border: 1px solid var(--color-line); }
-.hud-btn { font-family: var(--font-pixel); font-size: .75rem; color: var(--color-dim); border: 1px solid var(--color-line); background: var(--color-panel); padding: .4rem .7rem; min-height: 2.5rem; min-width: 2.5rem; display: inline-flex; align-items: center; justify-content: center; }
+.hud-btn { font-family: var(--font-pixel); font-size: .875rem; color: var(--color-dim); border: 1px solid var(--color-line); background: var(--color-panel); padding: .4rem .7rem; min-height: 2.5rem; min-width: 2.5rem; display: inline-flex; align-items: center; justify-content: center; }
 .hud-btn:hover { color: var(--color-fg); border-color: var(--color-dim); }
 .hud-btn[aria-pressed="true"] { color: var(--color-am); border-color: var(--color-am); }
-.act-btn { font-size: .8125rem; border: 1px solid var(--color-line); background: var(--color-panel2); padding: .375rem .7rem; min-height: 2.5rem; transition: background-color 80ms; }
+.act-btn { font-size: .875rem; border: 1px solid var(--color-line); background: var(--color-panel2); padding: .375rem .7rem; min-height: 2.5rem; transition: background-color 80ms; }
 .act-btn:disabled { opacity: .45; cursor: default; }
 .act-btn:active:not(:disabled) { transform: translateY(1px); }
 button:focus-visible, summary:focus-visible { outline: 2px dashed var(--color-am); outline-offset: 2px; }
@@ -123,3 +125,9 @@ button:focus-visible, summary:focus-visible { outline: 2px dashed var(--color-am
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #263063; }
+
+/* ===== v3：指さし・紙 ===== */
+@keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+.bob { animation: bob 900ms steps(3) infinite; }
+.reduce-motion .bob { animation: none; }
+@media (prefers-reduced-motion: reduce) { .bob { animation: none !important; } }

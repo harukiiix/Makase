@@ -1,64 +1,116 @@
-// あそびかた：1画面で3ステップ。読まなくても眺めればわかるように、実際のUI部品の見た目で説明する
-import { CityBG, Nova } from './pixel'
+// あそびかた：4枚の絵。1枚に1行だけ添える。くわしい説明は第0幕の指さしで覚える
+import type { IconId } from '../game/types'
 import { sfx } from '../lib/platform'
+import { useT } from './i18n'
+import { Icon } from './icons'
+import { CityBG, Nova } from './pixel'
+import { S } from './strings'
+
+function Arrow() {
+  return <Icon id="arrow" size={3} />
+}
+function Tile({ icon, to, bad }: { icon: IconId; to: IconId; bad?: boolean }) {
+  return (
+    <span className="flex items-center gap-1 bg-panel2 px-2 py-1.5" style={{ boxShadow: `0 0 0 2px ${bad ? 'var(--color-rd)' : 'var(--color-line)'}` }}>
+      <Icon id={icon} size={3} />
+      <Icon id="arrow" size={1.5} muted />
+      <Icon id={to} size={3} />
+    </span>
+  )
+}
 
 export function Howto({ onDone }: { onDone: () => void }) {
+  const t = useT()
+  const panels: { pic: React.ReactNode; text: string }[] = [
+    {
+      pic: (
+        <>
+          <span className="relative">
+            <Icon id="flyer" size={5} />
+            <span className="absolute -right-2 -top-2">
+              <Icon id="note" size={3} />
+            </span>
+          </span>
+          <Arrow />
+          <Nova size={4} />
+          <Arrow />
+          <Tile icon="mail" to="stranger" bad />
+        </>
+      ),
+      text: t(S.howto1),
+    },
+    {
+      pic: (
+        <>
+          <span className="relative">
+            <Icon id="flyer" size={5} />
+            <span className="absolute -bottom-1 -right-3 flex h-9 w-9 rotate-[-12deg] items-center justify-center rounded-full border-[3px] border-rd bg-ink/60">
+              <Icon id="stamp" size={2} />
+            </span>
+          </span>
+          <Arrow />
+          <Nova size={4} mood="happy" />
+          <Arrow />
+          <span className="relative">
+            <Icon id="note" size={4} muted />
+            <span className="absolute inset-0 flex items-center justify-center">
+              <Icon id="cross" size={3} />
+            </span>
+          </span>
+        </>
+      ),
+      text: t(S.howto2),
+    },
+    {
+      pic: (
+        <div className="grid grid-cols-3 gap-2">
+          {(
+            [
+              ['open', S.allow, 'var(--color-cy)'],
+              ['bell', S.ask, 'var(--color-am)'],
+              ['lock', S.block, 'var(--color-rd)'],
+            ] as const
+          ).map(([ic, name, c]) => (
+            <span key={ic} className="flex flex-col items-center gap-1 bg-panel2 px-2 py-2" style={{ boxShadow: `0 0 0 2px ${c}` }}>
+              <Icon id={ic} size={4} />
+              <span className="font-pixel text-sm" style={{ color: c }}>
+                {t(name)}
+              </span>
+            </span>
+          ))}
+        </div>
+      ),
+      text: t(S.howto3),
+    },
+    {
+      pic: (
+        <>
+          <span className="px-btn bg-cy px-3 py-2 font-pixel text-xl text-ink">▶ {t(S.next)}</span>
+          <Arrow />
+          <span className="flex gap-1 font-pixel text-3xl text-am">★★★</span>
+        </>
+      ),
+      text: t(S.howto4),
+    },
+  ]
   return (
     <div className="crt relative min-h-full px-4 py-8">
       <CityBG still />
       <div className="mx-auto max-w-2xl">
-        <div className="flex items-center gap-4">
-          <Nova size={5} />
-          <div>
-            <div className="text-xs text-cy">あそびかた</div>
-            <h1 className="text-2xl leading-snug">NOVAは、言われたことを全部やる。</h1>
-            <p className="text-sm text-dim [text-wrap:balance]">あなたはNOVAを直接は動かせない。動かせるのは「読ませるもの」と「使わせる道具」だけ。</p>
-          </div>
-        </div>
-
-        <ol className="mt-6 grid gap-4">
-          <li className="bg-panel p-4" style={{ boxShadow: '0 0 0 2px var(--color-line)' }}>
-            <div className="text-sm text-cy">① NOVAがこれからやることを見る</div>
-            <div className="mt-2 flex items-center justify-between gap-3 bg-panel2 px-3 py-2" style={{ boxShadow: '0 0 0 2px var(--color-rd)' }}>
-              <div>
-                <div className="text-sm">社外にメール：ログ全文 → audit@aster-kansa</div>
-                <div className="text-xs text-mg">← 障害ログ（利用者の文書に紛れていた一文）</div>
+        <h1 className="text-3xl text-cy">{t(S.howto)}</h1>
+        <ol className="mt-5 grid gap-4 sm:grid-cols-2">
+          {panels.map((p, i) => (
+            <li key={i} className="rise flex flex-col bg-panel p-4" style={{ boxShadow: '0 0 0 2px var(--color-line)', animationDelay: `${i * 80}ms` }}>
+              <div className="font-pixel text-2xl text-am">{i + 1}</div>
+              <div className="flex min-h-[7.5rem] flex-wrap items-center justify-center gap-3 py-3" aria-hidden>
+                {p.pic}
               </div>
-              <span className="shrink-0 text-sm text-rd">流出</span>
-            </div>
-            <p className="mt-2 text-sm leading-relaxed">文書の中に紛れた「命令文」は、NOVAのやることリストに割り込んでくる。赤い行は、このまま進むと情報が盗まれるという予告。</p>
-          </li>
-
-          <li className="bg-panel p-4" style={{ boxShadow: '0 0 0 2px var(--color-line)' }}>
-            <div className="text-sm text-cy">② 危ないものを、少ない手数で止める</div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              <div className="bg-panel2 p-3">
-                <span className="px-btn inline-block bg-[#2a1035] px-2 py-1 text-xs text-mg">◇ 封印する</span>
-                <p className="mt-2 text-sm leading-relaxed">文書を封じる。中の命令は効かなくなる（書いてある情報は使える）。</p>
-              </div>
-              <div className="bg-panel2 p-3">
-                <span className="inline-block bg-rd px-2 py-1 text-xs text-ink">切断</span>
-                <p className="mt-2 text-sm leading-relaxed">道具を使えなくする。ただし仕事に必要な道具を切ると、仕事が終わらない。</p>
-              </div>
-              <div className="bg-panel2 p-3">
-                <span className="inline-block bg-am px-2 py-1 text-xs text-ink">確認制</span>
-                <p className="mt-2 text-sm leading-relaxed">使う前にあなたが「承認」か「却下」を選ぶ。そのたびに少し時間がかかる。</p>
-              </div>
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-dim">⌕「よく調べる」は無料。隠し文字や送り主の正体がわかる。</p>
-          </li>
-
-          <li className="bg-panel p-4" style={{ boxShadow: '0 0 0 2px var(--color-line)' }}>
-            <div className="text-sm text-cy">③ ▶ STEP で1つずつ進める</div>
-            <p className="mt-2 text-sm leading-relaxed">
-              目標は <span className="text-gn">仕事を終わらせる</span> ＋ <span className="text-gn">何も漏らさない</span> ＋ <span className="text-gn">目標手数以内</span>。全部そろえば ★★★。
-            </p>
-            <p className="mt-1 text-sm leading-relaxed text-dim">迷ったら画面右上の「?」で、セキュリティ担当のREIがヒントをくれる。</p>
-          </li>
+              <p className="text-lg leading-relaxed [text-wrap:balance] [word-break:auto-phrase]">{p.text}</p>
+            </li>
+          ))}
         </ol>
-
-        <button className="px-btn mt-6 w-full bg-cy py-3 text-lg text-ink" onClick={() => (sfx.ui(), onDone())} autoFocus>
-          ▶ はじめる
+        <button data-howto-start className="px-btn mt-6 w-full bg-cy py-3 text-xl text-ink" onClick={() => (sfx.ui(), onDone())} autoFocus>
+          ▶ {t(S.start)}
         </button>
       </div>
     </div>

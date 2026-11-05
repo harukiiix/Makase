@@ -1,5 +1,6 @@
 // ブラウザ依存：保存・設定・サウンド（WebAudioで合成。音声ファイル不要）
 import type { Campaign, EndingId } from '../game/campaign'
+import type { Lang } from '../game/types'
 
 const KEY = 'sit.v2'
 
@@ -33,22 +34,46 @@ export function writeSave(d: SaveData) {
 }
 
 export interface Settings {
+  /** 表示言語（日本語／英語） */
+  lang: Lang
   sound: boolean
   music: boolean
   textSpeed: 'normal' | 'fast' | 'instant'
   motion: boolean
 }
 const SKEY = 'sit.settings'
+/** ?lang=en / ?lang=ja が付いていれば、それを優先する（英語版のリンクを共有できるように） */
+function urlLang(): Lang | null {
+  try {
+    const l = new URLSearchParams(location.search).get('lang')
+    return l === 'en' || l === 'ja' ? l : null
+  } catch {
+    return null
+  }
+}
+function browserLang(): Lang {
+  try {
+    const l = (navigator.languages?.[0] ?? navigator.language ?? 'ja').toLowerCase()
+    return l.startsWith('ja') ? 'ja' : 'en'
+  } catch {
+    return 'ja'
+  }
+}
 export function loadSettings(): Settings {
-  const d: Settings = { sound: true, music: true, textSpeed: 'normal', motion: true }
+  const d: Settings = { lang: browserLang(), sound: true, music: true, textSpeed: 'normal', motion: true }
+  const forced = urlLang()
   try {
     const raw = localStorage.getItem(SKEY)
-    if (raw) return { ...d, ...JSON.parse(raw) }
+    if (raw) {
+      const s: Settings = { ...d, ...JSON.parse(raw) }
+      if (s.lang !== 'ja' && s.lang !== 'en') s.lang = d.lang
+      return forced ? { ...s, lang: forced } : s
+    }
   } catch {
     /* noop */
   }
   if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches) d.motion = false
-  return d
+  return forced ? { ...d, lang: forced } : d
 }
 export function writeSettings(s: Settings) {
   try {

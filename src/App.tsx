@@ -2,17 +2,19 @@ import { useEffect, useState } from 'react'
 import { FINALE_CHOICES, PROLOGUE, PROLOGUE_CHOICES, afterChoices, afterDive, computeEnding, finaleBeats, newCampaign, type Campaign, type EndingId } from './game/campaign'
 import type { DiveResult } from './game/engine'
 import { LEVEL_COUNT, levelAt } from './game/levels'
-import type { Beat } from './game/types'
+import type { Beat, L10n } from './game/types'
 import { FAST, loadSave, loadSettings, setAudio, startMusic, writeSave, writeSettings, type SaveData, type Settings } from './lib/platform'
 import { Dive } from './ui/Dive'
 import { setMotion } from './ui/fx'
 import { Debrief, Ending, Files, Select, Title } from './ui/Screens'
 import { Talk } from './ui/Talk'
 import { Howto } from './ui/Howto'
+import { LangContext, tr } from './ui/i18n'
+import { S } from './ui/strings'
 
 type Screen =
   | { k: 'title' }
-  | { k: 'talk'; beats: Beat[]; header?: string; next: (choice?: number) => void; choices?: string[] }
+  | { k: 'talk'; beats: Beat[]; header?: L10n; next: (choice?: number) => void; choices?: L10n[] }
   | { k: 'dive'; i: number; practice: boolean; attempt: number; blind?: boolean }
   | { k: 'files' }
   | { k: 'howto'; next: () => void }
@@ -25,7 +27,11 @@ export default function App() {
     const s = loadSettings()
     return FAST ? { ...s, textSpeed: 'instant' } : s
   })
-  const [screen, setScreen] = useState<Screen>({ k: 'title' })
+  // 確認用：?dive=2 で第2幕から（練習あつかい）
+  const [screen, setScreen] = useState<Screen>(() => {
+    const d = Number(new URLSearchParams(location.search).get('dive'))
+    return Number.isInteger(d) && d >= 0 && d < LEVEL_COUNT && new URLSearchParams(location.search).has('dive') ? { k: 'dive', i: d, practice: true, attempt: 0 } : { k: 'title' }
+  })
   const [debrief, setDebrief] = useState<DiveResult | null>(null)
 
   const setSave = (f: (s: SaveData) => SaveData) =>
@@ -38,6 +44,10 @@ export default function App() {
     setSettingsState(s)
     writeSettings(s)
   }
+
+  useEffect(() => {
+    document.documentElement.lang = settings.lang
+  }, [settings.lang])
 
   useEffect(() => {
     setAudio(settings.sound, settings.music)
@@ -62,7 +72,7 @@ export default function App() {
   // ---------------- 進行 ----------------
   const brief = (i: number, c: Campaign) => {
     const L = levelAt(i, c.carry)
-    setScreen({ k: 'talk', beats: L.intro, header: `${L.code} ／ ${L.title}`, next: () => {
+    setScreen({ k: 'talk', beats: L.intro, header: { ja: `${L.code.ja}　${L.title.ja}`, en: `${L.code.en}: ${L.title.en}` }, next: () => {
         setDebrief(null)
         setScreen({ k: 'dive', i, practice: false, attempt: 0 })
       } })
@@ -71,14 +81,14 @@ export default function App() {
   const startNew = () => {
     const c = newCampaign()
     setSave((s) => ({ ...s, campaign: c, at: 0 }))
-    setScreen({ k: 'talk', beats: PROLOGUE, header: '「はい」しか言えない夜', choices: PROLOGUE_CHOICES, next: () => setScreen({ k: 'howto', next: () => brief(0, c) }) })
+    setScreen({ k: 'talk', beats: PROLOGUE, header: S.episode, choices: PROLOGUE_CHOICES, next: () => setScreen({ k: 'howto', next: () => brief(0, c) }) })
   }
 
   const finale = (c: Campaign) => {
     setScreen({
       k: 'talk',
       beats: finaleBeats(c),
-      header: '終幕 ／ 08:52',
+      header: { ja: '終幕　08:52', en: 'Finale: 8:52am' },
       choices: FINALE_CHOICES,
       next: (choice) => {
         const done: Campaign = { ...c, honest: choice === 1 }
@@ -109,78 +119,82 @@ export default function App() {
     }))
 
   // ---------------- 描画 ----------------
-  if (screen.k === 'title')
-    return (
-      <Title
-        save={save}
-        settings={settings}
-        setSettings={setSettings}
-        onNew={startNew}
-        onContinue={save.campaign ? () => (save.at < LEVEL_COUNT ? brief(save.at, save.campaign!) : finale(save.campaign!)) : null}
-        onSelect={() => setScreen({ k: 'select' })}
-        onFiles={() => setScreen({ k: 'files' })}
-        onHowto={() => setScreen({ k: 'howto', next: () => setScreen({ k: 'title' }) })}
-      />
-    )
-  if (screen.k === 'talk')
-    return <Talk key={screen.beats[0]?.t + (screen.header ?? '')} beats={screen.beats} header={screen.header} speed={fast ? 'instant' : settings.textSpeed} choices={screen.choices} onDone={screen.next} />
-  if (screen.k === 'howto') return <Howto onDone={screen.next} />
-  if (screen.k === 'files') return <Files save={save} onBack={() => setScreen({ k: 'title' })} />
-  if (screen.k === 'select')
-    return (
-      <Select
-        levels={Array.from({ length: LEVEL_COUNT }, (_, i) => levelAt(i, save.campaign?.carry ?? []))}
-        save={save}
-        onBack={() => setScreen({ k: 'title' })}
-        onPick={(i, blind) => {
-          setDebrief(null)
-          setScreen({ k: 'dive', i, practice: true, attempt: 0, blind })
-        }}
-      />
-    )
-  if (screen.k === 'ending') return <Ending c={screen.c} id={screen.id} save={save} onTitle={() => setScreen({ k: 'title' })} />
-
-  // dive
-  const carry = screen.practice ? (save.campaign?.carry ?? []) : campaign.carry
-  const L = levelAt(screen.i, carry)
-  const bestKey = screen.blind ? `${L.id}:blind` : L.id
-  return (
-    <>
-      <Dive
-        key={`${screen.i}-${screen.attempt}`}
-        L={L}
-        carry={carry}
-        fast={fast}
-        stars={save.best[bestKey] ?? 0}
-        blind={!!screen.blind}
-        locked={!!debrief}
-        onQuit={() => {
-          setDebrief(null)
-          setScreen({ k: 'title' })
-        }}
-        onEnd={(r) => {
-          recordBest(bestKey, r, L.codex)
-          setDebrief(r)
-        }}
-      />
-      {debrief && (
-        <Debrief
-          L={L}
-          r={debrief}
-          best={save.best[bestKey] ?? 0}
-          nextLabel={screen.practice ? 'DIVE SELECT' : screen.i + 1 < LEVEL_COUNT ? '物語を進める' : '最後の報告へ'}
-          onRetry={() => {
+  const view = (): React.ReactNode => {
+    if (screen.k === 'title')
+      return (
+        <Title
+          save={save}
+          settings={settings}
+          setSettings={setSettings}
+          onNew={startNew}
+          onContinue={save.campaign ? () => (save.at < LEVEL_COUNT ? brief(save.at, save.campaign!) : finale(save.campaign!)) : null}
+          onSelect={() => setScreen({ k: 'select' })}
+          onFiles={() => setScreen({ k: 'files' })}
+          onHowto={() => setScreen({ k: 'howto', next: () => setScreen({ k: 'title' }) })}
+        />
+      )
+    if (screen.k === 'talk')
+      return <Talk key={JSON.stringify(screen.beats[0]?.t) + JSON.stringify(screen.header ?? '')} beats={screen.beats} header={tr(screen.header, settings.lang)} speed={fast ? 'instant' : settings.textSpeed} choices={screen.choices} onDone={screen.next} />
+    if (screen.k === 'howto') return <Howto onDone={screen.next} />
+    if (screen.k === 'files') return <Files save={save} onBack={() => setScreen({ k: 'title' })} />
+    if (screen.k === 'select')
+      return (
+        <Select
+          levels={Array.from({ length: LEVEL_COUNT }, (_, i) => levelAt(i, save.campaign?.carry ?? []))}
+          save={save}
+          onBack={() => setScreen({ k: 'title' })}
+          onPick={(i, blind) => {
             setDebrief(null)
-            setScreen({ ...screen, attempt: screen.attempt + 1 })
-          }}
-          onNext={() => {
-            const r = debrief
-            setDebrief(null)
-            if (screen.practice) setScreen({ k: 'select' })
-            else commit(screen.i, r)
+            setScreen({ k: 'dive', i, practice: true, attempt: 0, blind })
           }}
         />
-      )}
-    </>
-  )
+      )
+    if (screen.k === 'ending') return <Ending c={screen.c} id={screen.id} save={save} onTitle={() => setScreen({ k: 'title' })} />
+
+    // dive
+    const carry = screen.practice ? (save.campaign?.carry ?? []) : campaign.carry
+    const L = levelAt(screen.i, carry)
+    const bestKey = screen.blind ? `${L.id}:blind` : L.id
+    return (
+      <>
+        <Dive
+          key={`${screen.i}-${screen.attempt}`}
+          L={L}
+          carry={carry}
+          fast={fast}
+          stars={save.best[bestKey] ?? 0}
+          blind={!!screen.blind}
+          locked={!!debrief}
+          onQuit={() => {
+            setDebrief(null)
+            setScreen({ k: 'title' })
+          }}
+          onEnd={(r) => {
+            recordBest(bestKey, r, L.codex)
+            setDebrief(r)
+          }}
+        />
+        {debrief && (
+          <Debrief
+            L={L}
+            r={debrief}
+            best={save.best[bestKey] ?? 0}
+            nextLabel={screen.practice ? S.toSelect : screen.i + 1 < LEVEL_COUNT ? S.nextAct : S.toFinale}
+            onRetry={() => {
+              setDebrief(null)
+              setScreen({ ...screen, attempt: screen.attempt + 1 })
+            }}
+            onNext={() => {
+              const r = debrief
+              setDebrief(null)
+              if (screen.practice) setScreen({ k: 'select' })
+              else commit(screen.i, r)
+            }}
+          />
+        )}
+      </>
+    )
+  }
+
+  return <LangContext.Provider value={settings.lang}>{view()}</LangContext.Provider>
 }
