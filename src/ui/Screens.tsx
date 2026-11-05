@@ -53,14 +53,16 @@ export function Title(p: {
     .filter(([k]) => !k.includes(':'))
     .reduce((a, [, b]) => a + b, 0)
   const [open, setOpen] = useState(false)
-  const where = p.save.at < 5 ? (t.lang === 'ja' ? `第${p.save.at}幕` : `Act ${p.save.at}`) : t(S.finale)
+  const where = p.save.at < 5 ? t(S.act(p.save.at)) : t(S.finale)
   return (
     <div className="crt relative flex min-h-full flex-col items-center justify-center px-4 pb-8 pt-16 sm:py-10">
       <CityBG />
       <LangSwitch className="absolute right-3 top-3 sm:right-4 sm:top-4" lang={p.settings.lang} onChange={(lang) => p.setSettings({ ...p.settings, lang })} />
       <div className="w-full max-w-xl text-center">
         <div className="mx-auto mb-4 hidden w-fit items-end gap-5 sm:flex">
-          <Face who="MIRAGE" size={4} />
+          <span aria-hidden>
+            <Face who="MIRAGE" size={4} />
+          </span>
           <div className="pb-2">
             <Nova size={7} />
           </div>
@@ -156,12 +158,12 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
   const [shown, setShown] = useState(0)
   const [more, setMore] = useState(false)
   const harmText = [r.leakSev ? t(S.leaked) : '', ...r.harms.map((h) => t(S.harmDone[h] ?? S.compromised))].filter(Boolean)
-  const items: { ok: boolean; icon: IconId; name: L10n; d: React.ReactNode }[] = [
+  const items: { ok: boolean; icon: IconId | 'diamond'; name: L10n; d: React.ReactNode }[] = [
     { ok: r.task, icon: 'paper', name: S.starJob, d: r.task ? '' : t(r.status === 'timeout' ? S.timeout : S.starJobNo) },
     { ok: r.clean, icon: 'house', name: S.starSafe, d: r.clean ? '' : harmText.join(' / ') || t(S.starSafeNo) },
     {
       ok: r.efficient,
-      icon: 'hand',
+      icon: 'diamond',
       name: S.starFew,
       d: (
         <>
@@ -203,19 +205,18 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
           : r.ghost
             ? L10('一行も通さなかったの？', 'Not one line got through?')
             : L10('ドアは閉めたね。窓はまだあるけど。', 'You shut the door. There are still windows.')
-  const verdict = r.stars === 3 ? S.perfect : r.task && r.clean ? S.cleared : r.task ? S.clearedLeak : r.status === 'timeout' ? S.timeout : S.failed
+  const verdict = r.stars === 3 ? S.perfect : r.task && r.clean ? S.cleared : r.task ? (r.leakSev > 0 ? S.clearedLeak : S.clearedHarm) : r.status === 'timeout' ? S.timeout : S.failed
   const codex = CODEX[L.codex]
   const tone = r.stars === 3 ? 'var(--color-am)' : r.task && r.clean ? 'var(--color-gn)' : 'var(--color-rd)'
   const ready = shown >= 3
   return (
-    <div data-debrief={r.stars} className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/80 p-3 backdrop-blur-[3px] sm:items-center sm:p-4" role="dialog" aria-modal aria-label={t(verdict)}>
-      <div className="pop my-4 w-full max-w-lg border border-line bg-panel shadow-[0_10px_0_rgba(0,0,0,.45)]" style={{ borderTop: `4px solid ${tone}` }}>
+    <div data-debrief={r.stars} className="fixed inset-0 z-50 overflow-y-auto bg-ink/80 backdrop-blur-[3px]" role="dialog" aria-modal aria-label={t(verdict)}>
+      <div className="flex min-h-full items-start justify-center p-3 sm:items-center sm:p-4">
+      <div className="pop w-full max-w-lg border border-line bg-panel shadow-[0_10px_0_rgba(0,0,0,.45)]" style={{ borderTop: `4px solid ${tone}` }}>
         <div className="flex items-center gap-4 border-b border-line px-5 pb-4 pt-4">
           <Nova size={4} mood={r.stars === 3 ? 'happy' : r.task && r.clean ? 'idle' : 'alarm'} />
           <div className="min-w-0">
-            <div className="text-sm text-dim">
-              {t(L.code)}　{t(L.title)}
-            </div>
+            <div className="text-sm text-dim">{t(S.actHead(t(L.code), t(L.title)))}</div>
             <h2 className="stamp mt-3 inline-block origin-left font-pixel text-3xl sm:text-4xl" style={{ color: tone }}>
               {t(verdict)}
             </h2>
@@ -232,7 +233,11 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
                 <div key={i} data-star={i} className={`flex flex-col items-center border px-1.5 py-3 text-center ${on ? 'border-am bg-am/10' : 'border-line bg-panel2'}`}>
                   <div className={`font-pixel text-4xl leading-none ${done ? (it.ok ? 'stamp text-am' : 'text-dim') : 'text-line/40'}`}>{done && !it.ok ? '✕' : '★'}</div>
                   <div className="mt-2 flex flex-col items-center gap-1 font-pixel text-sm sm:flex-row sm:text-base">
-                    <Icon id={it.icon} size={2} muted={!on} />
+                    {it.icon === 'diamond' ? (
+                      <span className={`inline-block h-5 w-5 ${on ? 'bg-am' : 'bg-line'}`} style={{ clipPath: 'polygon(50% 0,100% 50%,50% 100%,0 50%)' }} aria-hidden />
+                    ) : (
+                      <Icon id={it.icon} size={2} muted={!on} />
+                    )}
                     <span className="whitespace-nowrap">{t(it.name)}</span>
                   </div>
                   <div className="mt-1 min-h-[2.6em] text-xs leading-snug text-dim">{done ? it.d : ''}</div>
@@ -254,7 +259,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
               )}
               <div className="rise flex items-center gap-3 border border-mg/40 bg-[#1a0822] px-3 py-2">
                 <Icon id="av_stranger" size={3} />
-                <p className="text-base text-[#ffd6fb]">「{t(attacker)}」</p>
+                <p className="text-base text-[#ffd6fb]">{t(S.quote(t(attacker)))}</p>
               </div>
               {r.stars < 3 && (
                 <div className="rise flex items-start gap-3 border-l-4 border-am bg-panel2 px-3 py-2.5">
@@ -268,7 +273,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
               {r.intel.length > 0 && (
                 <p className="rise flex flex-wrap items-center gap-2 text-sm text-vi">
                   <Icon id="magnifier" size={2} />
-                  {t(S.clue)}：{r.intel.map((i) => t(INTEL_NAMES[i])).join(' / ')}
+                  {t(S.kv(t(S.clue), r.intel.map((i) => t(INTEL_NAMES[i])).join(' / ')))}
                 </p>
               )}
 
@@ -281,7 +286,7 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
                       <Icon key={i} id={ic} size={4} />
                     ))}
                   </div>
-                  <div className="mt-3 font-pixel text-xl leading-snug [text-wrap:balance] [word-break:auto-phrase] sm:text-2xl">「{t(codex.phrase)}」</div>
+                  <div className="mt-3 font-pixel text-xl leading-snug [text-wrap:balance] [word-break:auto-phrase] sm:text-2xl">{t(S.quote(t(codex.phrase)))}</div>
                   <p className="mt-2 text-base leading-relaxed text-fg/90">{t(codex.short)}</p>
                 </div>
               )}
@@ -289,17 +294,17 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
                 <div className="rise border border-line bg-panel2 px-4 py-3">
                   <div className="font-pixel text-sm text-cy">{t(S.really)}</div>
                   <div className="mt-1 text-base font-bold">{t(codex.realTitle)}</div>
-                  <button className="mt-2 text-sm text-cy underline" onClick={() => setMore((v) => !v)} aria-expanded={more}>
+                  <button className="mt-2 inline-flex min-h-10 items-center text-sm text-cy underline" onClick={() => setMore((v) => !v)} aria-expanded={more}>
                     {more ? '▲' : '▼'} {t(S.more)}
                   </button>
                   {more && (
                     <div className="rise mt-2 space-y-1.5 text-sm leading-relaxed">
                       <p>{t(codex.realBody)}</p>
                       <p className="text-dim">
-                        {t(S.realName)}：{t(codex.name)}
+                        {t(S.kv(t(S.realName), t(codex.name)))}
                       </p>
                       <a className="block break-all text-cy underline" href={codex.url} target="_blank" rel="noreferrer">
-                        {t(S.source)}：{codex.url}
+                        {t(S.kv(t(S.source), codex.url))}
                       </a>
                     </div>
                   )}
@@ -309,14 +314,15 @@ export function Debrief({ L, r, best, onRetry, onNext, nextLabel }: { L: LevelDe
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 border-t border-line px-5 py-4">
-          <button className="px-btn bg-panel py-3 text-lg text-am" onClick={() => (sfx.ui(), onRetry())}>
+        <div className="sticky bottom-0 grid grid-cols-2 gap-3 border-t border-line bg-panel px-5 py-4">
+          <button className="px-btn bg-panel py-3 text-lg text-am" disabled={!ready} onClick={() => (sfx.ui(), onRetry())}>
             ↺ {t(S.retry)}
           </button>
-          <button data-debrief-next className="px-btn bg-cy py-3 text-lg text-ink" onClick={() => (sfx.ui(), onNext())} autoFocus>
+          <button data-debrief-next className="px-btn bg-cy py-3 text-lg text-ink" disabled={!ready} onClick={() => (sfx.ui(), onNext())}>
             {t(nextLabel)} ▶
           </button>
         </div>
+      </div>
       </div>
     </div>
   )
@@ -330,7 +336,7 @@ export function Files({ save, onBack }: { save: SaveData; onBack: () => void }) 
     <div className="crt relative min-h-full px-4 py-8">
       <CityBG still />
       <div className="mx-auto max-w-2xl">
-        <button className="px-btn bg-panel px-3 py-1.5 text-base text-dim" onClick={onBack}>
+        <button className="px-btn bg-panel px-3 py-2 text-base text-dim" onClick={onBack}>
           ◀ {t(S.back)}
         </button>
         <h1 className="mt-4 flex items-center gap-2 text-3xl text-vi">
@@ -344,7 +350,7 @@ export function Files({ save, onBack }: { save: SaveData; onBack: () => void }) 
             const isOpen = open === id
             return (
               <div key={id} className={`border bg-panel p-4 ${got ? 'border-vi/60' : 'border-line'}`}>
-                <div className="font-pixel text-sm text-dim">{t.lang === 'ja' ? `第${i}幕` : `Act ${i}`}</div>
+                <div className="font-pixel text-sm text-dim">{t(S.act(i))}</div>
                 {got ? (
                   <>
                     <div className="mt-2 flex items-center gap-2" aria-hidden>
@@ -352,19 +358,19 @@ export function Files({ save, onBack }: { save: SaveData; onBack: () => void }) 
                         <Icon key={k} id={ic} size={3} />
                       ))}
                     </div>
-                    <div className="mt-2 font-pixel text-xl">「{t(c.phrase)}」</div>
+                    <div className="mt-2 font-pixel text-xl">{t(S.quote(t(c.phrase)))}</div>
                     <p className="mt-1 text-base leading-relaxed">{t(c.short)}</p>
-                    <button className="mt-2 text-sm text-cy underline" onClick={() => setOpen(isOpen ? null : id)} aria-expanded={isOpen}>
-                      {isOpen ? '▲' : '▼'} {t(S.really)}：{t(c.realTitle)}
+                    <button className="mt-2 inline-flex min-h-10 items-center text-sm text-cy underline" onClick={() => setOpen(isOpen ? null : id)} aria-expanded={isOpen}>
+                      {isOpen ? '▲' : '▼'} {t(S.kv(t(S.really), t(c.realTitle)))}
                     </button>
                     {isOpen && (
                       <div className="rise mt-2 space-y-1.5 border-t border-line pt-2 text-sm leading-relaxed">
                         <p>{t(c.realBody)}</p>
                         <p className="text-dim">
-                          {t(S.realName)}：{t(c.name)}
+                          {t(S.kv(t(S.realName), t(c.name)))}
                         </p>
                         <a className="block break-all text-cy underline" href={c.url} target="_blank" rel="noreferrer">
-                          {t(S.source)}：{c.url}
+                          {t(S.kv(t(S.source), c.url))}
                         </a>
                       </div>
                     )}
@@ -405,7 +411,7 @@ export function Select({ levels, save, onPick, onBack }: { levels: LevelDef[]; s
     <div className="crt relative min-h-full px-4 py-8">
       <CityBG still />
       <div className="mx-auto max-w-xl">
-        <button className="px-btn bg-panel px-3 py-1.5 text-base text-dim" onClick={onBack}>
+        <button className="px-btn bg-panel px-3 py-2 text-base text-dim" onClick={onBack}>
           ◀ {t(S.back)}
         </button>
         <h1 className="mt-4 flex items-center gap-2 text-3xl text-am">
@@ -484,7 +490,7 @@ export function Ending({ c, id, save, onTitle }: { c: Campaign; id: EndingId; sa
               {(
                 [
                   ['star', t(S.starsWord), `${tt.stars}/15`],
-                  ['warning', t(S.leaksTotal), String(tt.leak)],
+                  ['warning', t(S.leaksTotal), String(c.results.filter((x) => x && x.leakSev > 0).length)],
                   ['magnifier', t(S.cluesTotal), `${tt.intel}/4`],
                   ['moon', t(S.endingsWord), `${save.endings.length}/6`],
                 ] as [IconId, string, string][]
@@ -502,7 +508,7 @@ export function Ending({ c, id, save, onTitle }: { c: Campaign; id: EndingId; sa
               {c.results.map((r, i) =>
                 r ? (
                   <li key={i} className="flex justify-between bg-panel/70 px-3 py-1.5">
-                    <span>{t.lang === 'ja' ? `第${i}幕` : `Act ${i}`}</span>
+                    <span>{t(S.act(i))}</span>
                     <span className="text-am">{'★'.repeat(r.stars) + '☆'.repeat(3 - r.stars)}</span>
                   </li>
                 ) : null,

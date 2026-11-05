@@ -41,9 +41,14 @@ export function Talk({
   const last = i >= beats.length - 1
   const cps = speed === 'instant' ? 9999 : speed === 'fast' ? 90 : 40
   const doneRef = useRef(false)
+  /** 「とばす」で最後の行に飛んだときは、打ち直さずに全文を出す */
+  const skipRef = useRef(false)
+  /** 選択肢が出た時刻。直後の Space/Enter（読み進めるための押しすぎ）で選ばれないように */
+  const choicesAt = useRef(0)
 
   useEffect(() => {
-    setN(speed === 'instant' ? text.length : 0)
+    setN(speed === 'instant' || skipRef.current ? text.length : 0)
+    skipRef.current = false
   }, [i, text.length, speed])
   useEffect(() => {
     if (full) return
@@ -68,13 +73,24 @@ export function Talk({
     setI((v) => v + 1)
   }
 
+  const showChoices = last && full && !!choices
+  useEffect(() => {
+    if (showChoices) choicesAt.current = performance.now()
+  }, [showChoices])
+
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLButtonElement) return
-      if (e.code === 'Space' || e.key === 'Enter') {
-        e.preventDefault()
-        advance()
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      const act = e.code === 'Space' || e.key === 'Enter'
+      if (!act) return
+      // 選択肢の上で押した Space/Enter は、出てすぐ・押しっぱなしなら無視する（うっかり「はい」を防ぐ）
+      if (e.target instanceof HTMLButtonElement) {
+        if (e.target.dataset.choice !== undefined && (e.repeat || performance.now() - choicesAt.current < 700)) e.preventDefault()
+        return
       }
+      e.preventDefault()
+      if (e.repeat) return
+      advance()
     }
     window.addEventListener('keydown', k)
     return () => window.removeEventListener('keydown', k)
@@ -101,7 +117,7 @@ export function Talk({
         )}
         <div className="flex items-end gap-4">
           {b.who !== 'SYS' && (
-            <div key={i} className="pop shrink-0 bg-panel p-2" style={{ boxShadow: `0 0 0 2px ${color}` }}>
+            <div key={i} aria-hidden className="pop shrink-0 bg-panel p-2" style={{ boxShadow: `0 0 0 2px ${color}` }}>
               {b.who === 'NOVA' ? <Nova size={6} mood="idle" /> : av ? <Icon id={av} size={8} /> : <Face who={b.who} size={6} />}
             </div>
           )}
@@ -125,15 +141,16 @@ export function Talk({
             )}
           </div>
         </div>
-        {last && full && choices && (
+        {showChoices && choices && (
           <div className="rise mt-4 grid gap-3" onClick={(e) => e.stopPropagation()}>
             {choices.map((c, ci) => (
               <button
                 key={ci}
                 data-choice={ci}
-                autoFocus={ci === 0}
                 className="px-btn bg-panel2 px-4 py-3 text-left text-lg text-fg"
-                onClick={() => {
+                onClick={(e) => {
+                  // キーで押された直後のクリック（Enter の押しすぎ）は無視
+                  if (e.detail === 0 && performance.now() - choicesAt.current < 700) return
                   sfx.ui()
                   onDone(ci)
                 }}
@@ -149,6 +166,7 @@ export function Talk({
           onClick={(e) => {
             e.stopPropagation()
             if (choices) {
+              skipRef.current = true
               setI(beats.length - 1)
               setN(t(beats[beats.length - 1].t).length)
             } else onDone()

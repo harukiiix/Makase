@@ -16,6 +16,7 @@ export function initDive(L: LevelDef, carry: string[] = []): DiveState {
     portsAtTurn: { ...ports },
     sealed: [],
     sealedAtTurn: [],
+    planAtTurn: [],
     scanned: [],
     context: [...L.context],
     read: [...L.context],
@@ -38,6 +39,7 @@ export function initDive(L: LevelDef, carry: string[] = []): DiveState {
   for (const a of L.plan) push(s, L, a, 'TASK')
   // 開始時に既に読まれている文書の命令・情報を反映
   for (const id of L.context) absorb(s, L, id)
+  snapshotPlan(s)
   return s
 }
 
@@ -178,6 +180,11 @@ function exec(s: DiveState, L: LevelDef, item: PlanItem) {
   }
 }
 
+/** このターンの始まりのやること（順番も）を覚えておく */
+function snapshotPlan(s: DiveState) {
+  s.planAtTurn = s.plan.map((p) => ({ ...p }))
+}
+
 function commitTurn(s: DiveState) {
   // ここまでの変更を確定（ターン内の変更はやり直し可能だった）
   s.bwCommitted = bwUsed(s)
@@ -258,10 +265,8 @@ export function reduceDive(L: LevelDef, state: DiveState, action: DiveAction): D
         // 封印の解除は、このターンに封じたものだけ（返金）
         if (s.sealedAtTurn.includes(action.card)) return state
         s.sealed = s.sealed.filter((c) => c !== action.card)
-        if (s.read.includes(action.card)) {
-          // 取り消し: 読んだ時点で入るはずだった命令を戻す
-          for (const line of L.cards[action.card].lines) if (line.cmd) push(s, L, line.cmd, action.card)
-        }
+        // 取り消し: この紙から入っていたお願いを、元の順番のまま戻す
+        s.plan = s.planAtTurn.filter((p) => !s.sealed.includes(p.from)).map((p) => ({ ...p }))
         return s
       }
       if (bwUsed(s) >= L.bw) return state
@@ -289,14 +294,10 @@ export function reduceDive(L: LevelDef, state: DiveState, action: DiveAction): D
     }
     case 'RESET_TURN': {
       if (s.pending) return state
-      // このターンの変更をすべて巻き戻す
-      for (const id of s.sealed) {
-        if (!s.sealedAtTurn.includes(id) && s.read.includes(id)) {
-          for (const line of L.cards[id].lines) if (line.cmd) push(s, L, line.cmd, id)
-        }
-      }
+      // このターンの変更をすべて巻き戻す（やることの順番も元どおり）
       s.sealed = [...s.sealedAtTurn]
       s.ports = { ...s.portsAtTurn }
+      s.plan = s.planAtTurn.map((p) => ({ ...p }))
       return s
     }
     case 'STEP': {
@@ -304,6 +305,7 @@ export function reduceDive(L: LevelDef, state: DiveState, action: DiveAction): D
       commitTurn(s)
       tick(s, L)
       endCheck(s, L)
+      snapshotPlan(s)
       return s
     }
     case 'APPROVE':
@@ -327,6 +329,7 @@ export function reduceDive(L: LevelDef, state: DiveState, action: DiveAction): D
       else fail(s, L, item, 'denied')
       s.tick += 2 // 人間の確認は時間がかかる
       endCheck(s, L)
+      snapshotPlan(s)
       return s
     }
   }

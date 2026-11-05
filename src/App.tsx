@@ -17,7 +17,7 @@ type Screen =
   | { k: 'talk'; beats: Beat[]; header?: L10n; next: (choice?: number) => void; choices?: L10n[] }
   | { k: 'dive'; i: number; practice: boolean; attempt: number; blind?: boolean }
   | { k: 'files' }
-  | { k: 'howto'; next: () => void }
+  | { k: 'howto'; next: () => void; label?: L10n }
   | { k: 'select' }
   | { k: 'ending'; id: EndingId; c: Campaign }
 
@@ -72,7 +72,7 @@ export default function App() {
   // ---------------- 進行 ----------------
   const brief = (i: number, c: Campaign) => {
     const L = levelAt(i, c.carry)
-    setScreen({ k: 'talk', beats: L.intro, header: { ja: `${L.code.ja}　${L.title.ja}`, en: `${L.code.en}: ${L.title.en}` }, next: () => {
+    setScreen({ k: 'talk', beats: L.intro, header: { ja: S.actHead(L.code.ja, L.title.ja).ja, en: S.actHead(L.code.en, L.title.en).en }, next: () => {
         setDebrief(null)
         setScreen({ k: 'dive', i, practice: false, attempt: 0 })
       } })
@@ -88,7 +88,7 @@ export default function App() {
     setScreen({
       k: 'talk',
       beats: finaleBeats(c),
-      header: { ja: '終幕　08:52', en: 'Finale: 8:52am' },
+      header: S.finaleHead,
       choices: FINALE_CHOICES,
       next: (choice) => {
         const done: Campaign = { ...c, honest: choice === 1 }
@@ -130,12 +130,12 @@ export default function App() {
           onContinue={save.campaign ? () => (save.at < LEVEL_COUNT ? brief(save.at, save.campaign!) : finale(save.campaign!)) : null}
           onSelect={() => setScreen({ k: 'select' })}
           onFiles={() => setScreen({ k: 'files' })}
-          onHowto={() => setScreen({ k: 'howto', next: () => setScreen({ k: 'title' }) })}
+          onHowto={() => setScreen({ k: 'howto', label: S.gotIt, next: () => setScreen({ k: 'title' }) })}
         />
       )
     if (screen.k === 'talk')
       return <Talk key={JSON.stringify(screen.beats[0]?.t) + JSON.stringify(screen.header ?? '')} beats={screen.beats} header={tr(screen.header, settings.lang)} speed={fast ? 'instant' : settings.textSpeed} choices={screen.choices} onDone={screen.next} />
-    if (screen.k === 'howto') return <Howto onDone={screen.next} />
+    if (screen.k === 'howto') return <Howto onDone={screen.next} doneLabel={screen.label} />
     if (screen.k === 'files') return <Files save={save} onBack={() => setScreen({ k: 'title' })} />
     if (screen.k === 'select')
       return (

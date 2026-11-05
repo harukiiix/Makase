@@ -34,8 +34,11 @@ body {
   line-height: 1.7;
   overflow-x: hidden;
 }
-button { font-family: inherit; }
-h1, h2, h3, .px-btn, .font-pixel { font-family: var(--font-pixel); letter-spacing: 0.03em; }
+/* 層の外に置くとユーティリティ（font-pixel など）に勝ってしまうので、base 層に入れる */
+@layer base {
+  button { font-family: inherit; }
+  h1, h2, h3, .px-btn, .font-pixel { font-family: var(--font-pixel); letter-spacing: 0.03em; }
+}
 .pixelated { image-rendering: pixelated; }
 
 /* CRT 走査線 + ビネット */
@@ -49,6 +52,8 @@ h1, h2, h3, .px-btn, .font-pixel { font-family: var(--font-pixel); letter-spacin
   background: radial-gradient(ellipse at center, transparent 65%, rgba(0,0,0,.35) 100%);
 }
 
+/* 部品のクラスは components 層に入れる（Tailwind のユーティリティで上書きできるように） */
+@layer components {
 /* ピクセル枠（角を欠いたボックス） */
 .px-box {
   background: var(--color-panel);
@@ -73,6 +78,7 @@ h1, h2, h3, .px-btn, .font-pixel { font-family: var(--font-pixel); letter-spacin
 .act-btn { font-size: .875rem; border: 1px solid var(--color-line); background: var(--color-panel2); padding: .375rem .7rem; min-height: 2.5rem; transition: background-color 80ms; }
 .act-btn:disabled { opacity: .45; cursor: default; }
 .act-btn:active:not(:disabled) { transform: translateY(1px); }
+}
 button:focus-visible, summary:focus-visible { outline: 2px dashed var(--color-am); outline-offset: 2px; }
 
 /* ===== Game Feel ===== */
@@ -119,6 +125,8 @@ button:focus-visible, summary:focus-visible { outline: 2px dashed var(--color-am
 
 @media (prefers-reduced-motion: reduce) {
   .shake-s, .shake-l, .stamp, .stamp-flat, .flash, .inject, .rise, .pop, .glitch-anim, .pulse-rd, .blink, .particle, .stream > span { animation: none !important; }
+  /* 動かない光は画面を塗りつぶすだけなので出さない */
+  .flash, .particle { display: none; }
 }
 .reduce-motion .shake-s, .reduce-motion .shake-l, .reduce-motion .glitch-anim, .reduce-motion .particle, .reduce-motion .pulse-rd, .reduce-motion .blink, .reduce-motion .stamp, .reduce-motion .stamp-flat, .reduce-motion .flash { animation: none !important; }
 .reduce-motion .flash, .reduce-motion .particle { display: none; }

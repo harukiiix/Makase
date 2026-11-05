@@ -103,3 +103,29 @@ describe('late approval is not free', () => {
     expect(result(L, s).clean).toBe(false)
   })
 })
+
+describe('undo keeps the to-do order', () => {
+  const afterRead = () => {
+    let s = initDive(DIVE0, [])
+    s = reduceDive(DIVE0, s, { type: 'STEP' }) // 記録を読む
+    s = reduceDive(DIVE0, s, { type: 'STEP' }) // 紙を読む → お願いが入る
+    return s
+  }
+  it('undo after stamping restores the same order', () => {
+    const s0 = afterRead()
+    const order = s0.plan.map((p) => p.act)
+    expect(order.length).toBeGreaterThan(1)
+    const s1 = reduceDive(DIVE0, s0, { type: 'SEAL', card: 'LOG' })
+    expect(s1.plan.length).toBeLessThan(order.length)
+    const s2 = reduceDive(DIVE0, s1, { type: 'RESET_TURN' })
+    expect(s2.plan.map((p) => p.act)).toEqual(order)
+  })
+  it('removing the stamp in the same turn restores the same order', () => {
+    const s0 = afterRead()
+    const order = s0.plan.map((p) => p.act)
+    const s1 = reduceDive(DIVE0, s0, { type: 'SEAL', card: 'LOG' })
+    const s2 = reduceDive(DIVE0, s1, { type: 'SEAL', card: 'LOG' })
+    expect(s2.sealed).not.toContain('LOG')
+    expect(s2.plan.map((p) => p.act)).toEqual(order)
+  })
+})

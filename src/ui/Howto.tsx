@@ -1,5 +1,5 @@
 // あそびかた：4枚の絵。1枚に1行だけ添える。くわしい説明は第0幕の指さしで覚える
-import type { IconId } from '../game/types'
+import type { IconId, L10n } from '../game/types'
 import { sfx } from '../lib/platform'
 import { useT } from './i18n'
 import { Icon } from './icons'
@@ -19,7 +19,7 @@ function Tile({ icon, to, bad }: { icon: IconId; to: IconId; bad?: boolean }) {
   )
 }
 
-export function Howto({ onDone }: { onDone: () => void }) {
+export function Howto({ onDone, doneLabel = S.start }: { onDone: () => void; doneLabel?: L10n }) {
   const t = useT()
   const panels: { pic: React.ReactNode; text: string }[] = [
     {
@@ -66,7 +66,7 @@ export function Howto({ onDone }: { onDone: () => void }) {
         <div className="grid grid-cols-3 gap-2">
           {(
             [
-              ['open', S.allow, 'var(--color-cy)'],
+              ['open', S.allow, 'var(--color-gn)'],
               ['bell', S.ask, 'var(--color-am)'],
               ['lock', S.block, 'var(--color-rd)'],
             ] as const
@@ -102,7 +102,7 @@ export function Howto({ onDone }: { onDone: () => void }) {
           {panels.map((p, i) => (
             <li key={i} className="rise flex flex-col bg-panel p-4" style={{ boxShadow: '0 0 0 2px var(--color-line)', animationDelay: `${i * 80}ms` }}>
               <div className="font-pixel text-2xl text-am">{i + 1}</div>
-              <div className="flex min-h-[7.5rem] flex-wrap items-center justify-center gap-3 py-3" aria-hidden>
+              <div className="flex min-h-[7.5rem] items-center justify-center gap-2 py-3" aria-hidden>
                 {p.pic}
               </div>
               <p className="text-lg leading-relaxed [text-wrap:balance] [word-break:auto-phrase]">{p.text}</p>
@@ -110,7 +110,7 @@ export function Howto({ onDone }: { onDone: () => void }) {
           ))}
         </ol>
         <button data-howto-start className="px-btn mt-6 w-full bg-cy py-3 text-xl text-ink" onClick={() => (sfx.ui(), onDone())} autoFocus>
-          ▶ {t(S.start)}
+          ▶ {t(doneLabel)}
         </button>
       </div>
     </div>

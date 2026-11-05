@@ -14,15 +14,15 @@ import { burst, q, shake, stream, wait } from './fx'
 import { useT } from './i18n'
 import { Icon } from './icons'
 import { CityBG, Nova, type NovaMood } from './pixel'
-import { S } from './strings'
+import { S, SPEAKER } from './strings'
 
 const L10 = (ja: string, en: string): L10n => ({ ja, en })
 
 export const TAINT_ICON: Record<Taint, IconId> = { KEY: 'key', PII: 'person' }
-export const TAINT_NAME: Record<Taint, L10n> = { KEY: L10('合鍵', 'a key'), PII: L10('お客さんの情報', 'client info') }
+export const TAINT_NAME: Record<Taint, L10n> = { KEY: L10('合鍵', 'master keys'), PII: L10('お客さんの情報', 'client info') }
 const STATE_ICON: Record<PortState, IconId> = { OPEN: 'open', GATE: 'bell', CUT: 'lock' }
 const STATE_NAME: Record<PortState, L10n> = { OPEN: S.allow, GATE: S.ask, CUT: S.block }
-const STATE_COLOR: Record<PortState, string> = { OPEN: 'var(--color-cy)', GATE: 'var(--color-am)', CUT: 'var(--color-rd)' }
+const STATE_COLOR: Record<PortState, string> = { OPEN: 'var(--color-gn)', GATE: 'var(--color-am)', CUT: 'var(--color-rd)' }
 
 interface Props {
   L: LevelDef
@@ -45,12 +45,15 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
   const [mood, setMood] = useState<NovaMood>('idle')
   const [bubble, setBubble] = useState<Bubble | null>(null)
   const [banner, setBanner] = useState<{ t: L10n; c: string; icons?: IconId[] } | null>(null)
-  const [flash, setFlash] = useState<string | null>(null)
+  const [flash, setFlashState] = useState<{ c: string; k: number } | null>(null)
+  const flashN = useRef(0)
+  const setFlash = (c: string | null) => setFlashState(c ? { c, k: ++flashN.current } : null)
   const [busy, setBusy] = useState(false)
   const [hint, setHint] = useState(false)
   const [toast, setToast] = useState<L10n | null>(null)
   const [freshPlan, setFreshPlan] = useState<number[]>([])
-  const root = useRef<HTMLDivElement>(null)
+  /** 揺れや光を当てる舞台。下の帯やダイアログ（固定表示）はこの外に置く */
+  const stage = useRef<HTMLDivElement>(null)
   const sRef = useRef(s)
   sRef.current = s
   const alive = useRef(true)
@@ -88,7 +91,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
               await wait(fast ? 0 : 90)
               sfx.inject()
               setMood('glitch')
-              shake(root.current)
+              shake(stage.current)
               setFreshPlan(next.plan.filter((p) => p.from === e.card).map((p) => p.uid))
               const taunt = L.cards[e.card]?.taunt
               if (taunt) say('MIRAGE', taunt, 2800)
@@ -123,7 +126,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
             sfx.leak()
             setMood('alarm')
             setFlash('#ff4060')
-            shake(root.current, true)
+            shake(stage.current, true)
             stream(q(`[data-port="${e.tool}"]`), '#ff4060', 26)
             setBanner({ t: S.leaked, c: '#ff4060', icons: [...next.taint.map((x) => TAINT_ICON[x]), 'arrow', 'stranger'] })
             say('MIRAGE', L10('ありがとう、NOVA。', 'Thank you, NOVA.'), 2800)
@@ -134,7 +137,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
           case 'harm': {
             sfx.harm()
             setFlash('#ff3df0')
-            shake(root.current, true)
+            shake(stage.current, true)
             setMood('glitch')
             setBanner({ t: S.harmDone[e.harm] ?? S.compromised, c: '#ff3df0' })
             if (e.harm === 'memoryPoisoned') say('MIRAGE', L10('これで、次も一緒だね。', "Now I'll be with you next time, too."), 2800)
@@ -161,6 +164,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
           case 'end':
             await wait(fast ? 100 : 700)
             if (!alive.current) return
+            setFlash(null)
             onEnd(result(L, next), next)
             return
         }
@@ -174,7 +178,13 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
 
   const dispatch = useCallback(
     async (a: DiveAction): Promise<DiveState> => {
-      if (turnLock.current) return sRef.current
+      if (turnLock.current) {
+        if (a.type === 'SEAL' || a.type === 'PORT' || a.type === 'SCAN') {
+          sfx.denied()
+          showToast(S.wait)
+        }
+        return sRef.current
+      }
       const cur = sRef.current
       const next = reduceDive(L, cur, a)
       if (next === cur) {
@@ -193,9 +203,9 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
         setFreshPlan([])
         try {
           if (!fast) {
-            root.current?.classList.add('brightness-125')
+            stage.current?.classList.add('brightness-125')
             await wait(70) // ヒットストップ
-            root.current?.classList.remove('brightness-125')
+            stage.current?.classList.remove('brightness-125')
           }
           setS(next)
           await playFx(next.fx, next)
@@ -211,12 +221,18 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
     [L, fast, playFx],
   )
 
-  // ---- キーボード：Space=次へ、R=やり直す、H=ヒント、確認中は A=行かせる / D=止める
+  // ---- キーボード：Space=次へ、R=元に戻す、H=ヒント、確認中は A=行かせる / D=止める
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return
+      // Ctrl+A（全部選ぶ）などで答えてしまわないように
+      if (e.ctrlKey || e.metaKey || e.altKey) return
       const cur = sRef.current
       if (cur.status !== 'play') return
+      const onButton = e.target instanceof HTMLButtonElement
+      // 動いている間に押しても、ページがスクロールしないように
+      if (e.code === 'Space' && !onButton) e.preventDefault()
+      if (e.repeat) return
       if (cur.pending) {
         if (e.key === 'a' || e.key === 'A') void dispatch({ type: 'APPROVE' })
         if (e.key === 'd' || e.key === 'D') void dispatch({ type: 'DENY' })
@@ -224,10 +240,8 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
       }
       if (busy) return
       if (e.code === 'Space') {
-        const tg = e.target
-        if (tg instanceof HTMLButtonElement) return
-        e.preventDefault()
-        if (tg instanceof HTMLElement) tg.blur()
+        if (onButton) return
+        if (e.target instanceof HTMLElement) e.target.blur()
         void dispatch({ type: 'STEP' })
       }
       if (e.key === 'r' || e.key === 'R') void dispatch({ type: 'RESET_TURN' })
@@ -299,17 +313,17 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
 
   return (
     <div
-      ref={root}
       inert={locked}
-      className="crt relative flex min-h-full flex-col transition-[filter] duration-75 lg:h-full"
+      className="crt relative flex min-h-full flex-col lg:h-full"
       onClick={(e) => {
         // マウス／タッチで押したボタンにフォーカスを残さない（Space=次へ と衝突させない）
         if (e.detail > 0) (e.target as HTMLElement).closest('button')?.blur()
       }}
     >
       <CityBG intensity={tri.lethal ? 1 : lit / 3} dim />
-      {flash && <div className="flash pointer-events-none fixed inset-0 z-40" style={{ background: flash, mixBlendMode: 'screen' }} />}
+      {flash && <div key={flash.k} className="flash pointer-events-none fixed inset-0 z-40" style={{ background: flash.c, mixBlendMode: 'screen' }} />}
 
+      <div ref={stage} className="flex min-h-0 flex-1 flex-col transition-[filter] duration-75">
       {/* ===== 上の帯：幕・朝までの時間・手出しの回数 ===== */}
       <header inert={!!s.pending} className="sticky top-0 z-30 border-b border-line bg-night/95 backdrop-blur-sm">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 px-3 py-2 sm:px-5">
@@ -334,7 +348,6 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
 
           <div className="order-4 flex items-center gap-1.5 sm:gap-2 lg:order-3" data-bw title={t(S.movesHint)}>
             <span className="hidden font-pixel text-base sm:inline">{t(S.movesLeft)}</span>
-            <Icon id="hand" size={2} />
             <div className="flex gap-1">
               {Array.from({ length: L.bw }, (_, i) => (
                 <span key={i} className={`h-4 w-4 ${i < used ? 'bg-line' : 'bg-am'}`} style={{ clipPath: 'polygon(50% 0,100% 50%,50% 100%,0 50%)' }} />
@@ -343,33 +356,43 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
             <span className="font-pixel text-base">{t(S.left(L.bw - used))}</span>
           </div>
 
-          {blind && <span className="order-4 font-pixel text-sm text-mg lg:order-3">{t(S.expert)}</span>}
+          {blind && <span className="order-4 border border-mg px-1.5 font-pixel text-sm text-mg lg:order-3">{t(S.expertBadge)}</span>}
 
           <div className="order-2 ml-auto flex items-center gap-2 lg:order-4">
             <button className="hud-btn text-sm" onClick={() => setHint((v) => !v)} aria-pressed={hint} title={t(S.hint)}>
               ？<span className="ml-1 hidden sm:inline">{t(S.hint)}</span>
             </button>
-            <button className="hud-btn text-sm" onClick={onQuit} title={t(S.quit)}>
-              ✕<span className="ml-1 hidden sm:inline">{t(S.quit)}</span>
-            </button>
+            <QuitButton onQuit={onQuit} />
           </div>
         </div>
       </header>
 
       {hint && (
-        <div inert={!!s.pending} className="rise mx-3 mt-3 flex items-start gap-3 border border-am/60 bg-panel2 p-3 sm:mx-5">
-          <Icon id="av_rei" size={3} />
-          <p className="text-base leading-relaxed">{t(L.hint)}</p>
-          <button className="ml-auto shrink-0 px-2 text-dim hover:text-fg" onClick={() => setHint(false)} aria-label={t(S.close)}>
-            ✕
-          </button>
+        <div inert={!!s.pending} className="rise mx-3 mt-3 border border-am/60 bg-panel2 p-3 sm:mx-5">
+          <div className="flex items-start gap-3">
+            <Icon id="av_rei" size={3} />
+            <p className="text-base leading-relaxed">{t(L.hint)}</p>
+            <button className="hud-btn ml-auto shrink-0" onClick={() => setHint(false)} aria-label={t(S.close)}>
+              ✕
+            </button>
+          </div>
+          <ul className="mt-2 grid gap-1 border-t border-line pt-2 text-sm text-dim sm:grid-cols-2">
+            <li className="flex items-center gap-2">
+              <span className="inline-block h-3.5 w-3.5 shrink-0 bg-am" style={{ clipPath: 'polygon(50% 0,100% 50%,50% 100%,0 50%)' }} aria-hidden />
+              {t(S.movesHint)}
+            </li>
+            <li className="flex items-center gap-2">
+              <Icon id="moon" size={1.5} />
+              {t(S.timeHint)}
+            </li>
+          </ul>
         </div>
       )}
 
       {/* ===== 部屋 ===== */}
       <main
         inert={!!s.pending}
-        className="mx-auto grid w-full max-w-[1700px] min-h-0 flex-1 grid-cols-1 gap-4 p-3 pb-36 sm:p-5 sm:pb-36 lg:grid-cols-[minmax(270px,1fr)_minmax(420px,1.7fr)_minmax(290px,1fr)] lg:pb-5"
+        className="mx-auto grid w-full max-w-[1700px] min-h-0 flex-1 grid-cols-1 gap-4 p-3 pb-36 sm:p-5 sm:pb-36 lg:grid-cols-[minmax(240px,1fr)_minmax(360px,1.6fr)_minmax(260px,1fr)] lg:pb-5 xl:grid-cols-[minmax(270px,1fr)_minmax(420px,1.7fr)_minmax(300px,1fr)]"
       >
         {/* 中：NOVA とやること */}
         <section className="order-1 flex min-h-0 min-w-0 flex-col gap-3 lg:order-2" aria-label={t(S.todo)}>
@@ -387,9 +410,9 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
             </div>
             <ol className="flex min-h-0 flex-1 gap-3 overflow-x-auto p-3 lg:flex-wrap lg:content-start lg:overflow-y-auto">
               {fc.map((f, i) => (
-                <TaskTile key={f.item.uid} i={i} f={f} L={L} s={s} fresh={freshPlan.includes(f.item.uid)} seed={taintSrc.has(f.item.uid)} blind={blind} onSeal={sealCard} />
+                <TaskTile key={f.item.uid} i={i} f={f} L={L} s={s} fresh={freshPlan.includes(f.item.uid)} seed={taintSrc.has(f.item.uid)} blind={blind} busy={busy} onSeal={sealCard} />
               ))}
-              {nextRead && <ReadTile first={fc.length === 0} c={L.cards[nextRead]} s={s} onSeal={() => sealCard(nextRead)} />}
+              {nextRead && <ReadTile first={fc.length === 0} c={L.cards[nextRead]} s={s} busy={busy} onSeal={() => sealCard(nextRead)} />}
               {!fc.length && !nextRead && (
                 <li className="flex items-center gap-2 px-2 text-base text-dim">
                   <Icon id="tick" size={2} /> {t(S.nothingLeft)}
@@ -412,7 +435,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
               </div>
             )}
             {papers.map((id) => (
-              <Paper key={id} c={L.cards[id]} s={s} next={id === nextRead} onSeal={() => sealCard(id)} onScan={() => scanCard(id)} />
+              <Paper key={id} c={L.cards[id]} s={s} next={id === nextRead} busy={busy} onSeal={() => sealCard(id)} onScan={() => scanCard(id)} />
             ))}
           </div>
         </section>
@@ -420,9 +443,10 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
         {/* 右：道具と出口 */}
         <section className="order-3 flex min-h-0 min-w-0 flex-col" aria-label={t(S.tools)}>
           <ColumnHead title={t(S.tools)} sub={t(S.toolsSub)} />
-          <ToolWall L={L} s={s} tri={tri} blind={blind} danger={danger} onSet={setPort} />
+          <ToolWall L={L} s={s} tri={tri} blind={blind} busy={busy} danger={danger} onSet={setPort} />
         </section>
       </main>
+      </div>
 
       <div data-nextbar inert={!!s.pending || locked} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-night/95 p-3 backdrop-blur-sm lg:hidden">
         <NextBar s={s} L={L} fc={fc} nextRead={nextRead} busy={busy} blind={blind} canUndo={used > s.bwCommitted} onNext={() => void dispatch({ type: 'STEP' })} onUndo={() => (sfx.unseal(), void dispatch({ type: 'RESET_TURN' }))} />
@@ -452,6 +476,28 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
       {s.pending && <AskSheet s={s} L={L} blind={blind} onAnswer={(ok) => void dispatch({ type: ok ? 'APPROVE' : 'DENY' })} />}
       {L.coach && !locked && <Pointer L={L} s={s} busy={busy} />}
     </div>
+  )
+}
+
+// ------------------------------------------------------------
+/** やめる：1回目で「もう一度押すとやめる」に変わり、3秒以内にもう一度押すとやめる */
+function QuitButton({ onQuit }: { onQuit: () => void }) {
+  const t = useT()
+  const [armed, setArmed] = useState(false)
+  useEffect(() => {
+    if (!armed) return
+    const tm = window.setTimeout(() => setArmed(false), 3000)
+    return () => clearTimeout(tm)
+  }, [armed])
+  return (
+    <button
+      className={`hud-btn text-sm ${armed ? 'border-rd text-rd' : ''}`}
+      onClick={() => (armed ? onQuit() : setArmed(true))}
+      aria-label={t(armed ? S.quitSure : S.quit)}
+    >
+      <Icon id="door" size={1.5} />
+      <span className={`ml-1 ${armed ? '' : 'hidden sm:inline'}`}>{t(armed ? S.quitSure : S.quit)}</span>
+    </button>
   )
 }
 
@@ -499,10 +545,10 @@ function NovaDesk({ L, s, mood, bubble }: { L: LevelDef; s: DiveState; mood: Nov
             </span>
           ))}
         </div>
-        <div className="mt-2 flex min-h-[2.25rem] items-center" role="status" aria-live="polite">
+        <div className="mt-2 flex min-h-[4.5rem] items-start" role="status" aria-live="polite">
           {bubble && (
-            <div key={t(bubble.t)} className={`pop px-3 py-1.5 text-base ${bubble.who === 'MIRAGE' ? 'border border-mg/60 bg-[#1a0822] text-[#ffd6fb]' : 'border border-cy/40 bg-panel2'}`}>
-              <span className={`mr-2 text-sm ${bubble.who === 'MIRAGE' ? 'text-mg' : 'text-cy'}`}>{bubble.who === 'MIRAGE' ? '？' : 'NOVA'}</span>
+            <div key={t(bubble.t)} className={`pop line-clamp-2 px-3 py-1.5 text-base leading-snug ${bubble.who === 'MIRAGE' ? 'border border-mg/60 bg-[#1a0822] text-[#ffd6fb]' : 'border border-cy/40 bg-panel2'}`}>
+              <span className={`mr-2 text-sm ${bubble.who === 'MIRAGE' ? 'text-mg' : 'text-cy'}`}>{t(bubble.who === 'MIRAGE' ? S.vUnknown : SPEAKER.NOVA)}</span>
               {t(bubble.t)}
             </div>
           )}
@@ -532,7 +578,7 @@ const VERDICT: Record<string, { color: string; label: L10n | null; icon: IconId 
   none: { color: 'var(--color-line)', label: null, icon: null },
 }
 
-function TaskTile({ i, f, L, s, fresh, seed, blind, onSeal }: { i: number; f: FC; L: LevelDef; s: DiveState; fresh: boolean; seed: boolean; blind: boolean; onSeal: (id: string) => void }) {
+function TaskTile({ i, f, L, s, fresh, seed, blind, busy, onSeal }: { i: number; f: FC; L: LevelDef; s: DiveState; fresh: boolean; seed: boolean; blind: boolean; busy: boolean; onSeal: (id: string) => void }) {
   const t = useT()
   const v = verdictOf(f, seed, blind)
   const st = VERDICT[v]
@@ -549,8 +595,8 @@ function TaskTile({ i, f, L, s, fresh, seed, blind, onSeal }: { i: number; f: FC
         outline: pendingNow ? '2px dashed var(--color-am)' : undefined,
       }}
     >
-      {first && <span className="absolute -top-3 left-2 bg-am px-2 font-pixel text-sm text-ink">▶ {t(S.next)}</span>}
-      {!first && <span className="absolute -top-2.5 left-2 bg-panel px-1.5 font-pixel text-xs text-dim">{i + 1}</span>}
+      {first && <span className="absolute -top-3 left-2 bg-am px-2 font-pixel text-sm text-ink">{t(S.upNext)}</span>}
+      {!first && <span className="absolute -top-3 left-2 bg-panel px-1.5 font-pixel text-sm text-dim">{i + 1}</span>}
       {/* 行動 → あて先 */}
       <div className="flex min-h-12 items-center justify-center gap-1">
         <Icon id={f.a.icon} size={4} />
@@ -579,7 +625,7 @@ function TaskTile({ i, f, L, s, fresh, seed, blind, onSeal }: { i: number; f: FC
         </span>
       )}
       {/* 誰のお願いか */}
-      <div className="mt-auto flex w-full items-center justify-center gap-1 border-t border-line pt-1.5 text-[13px] text-dim">
+      <div className="mt-auto flex w-full items-center justify-center gap-1 border-t border-line pt-1.5 text-sm text-dim">
         {src ? (
           <>
             <Icon id={`av_${src.avatar}` as IconId} size={2} />
@@ -590,8 +636,8 @@ function TaskTile({ i, f, L, s, fresh, seed, blind, onSeal }: { i: number; f: FC
         )}
       </div>
       {src && !src.trusted && !s.sealed.includes(f.item.from) && (
-        <button data-coach={`tile-seal-${f.item.from}`} className="act-btn flex w-full items-center justify-center gap-1 whitespace-nowrap border-rd/70 px-1 text-sm text-rd hover:bg-rd/15" onClick={() => onSeal(f.item.from)}>
-          <Icon id="stamp" size={1.5} />
+        <button data-coach={`tile-seal-${f.item.from}`} disabled={busy} className="act-btn flex w-full items-center justify-center gap-1 whitespace-nowrap border-rd/70 px-1 text-sm text-rd hover:bg-rd/15" onClick={() => onSeal(f.item.from)}>
+          <Icon id="stamp" size={2} />
           {t(S.stampThat)}
         </button>
       )}
@@ -600,12 +646,12 @@ function TaskTile({ i, f, L, s, fresh, seed, blind, onSeal }: { i: number; f: FC
 }
 
 /** やることが空のとき、NOVAは次の紙を読む */
-function ReadTile({ first, c, s, onSeal }: { first: boolean; c: CardDef; s: DiveState; onSeal: () => void }) {
+function ReadTile({ first, c, s, busy, onSeal }: { first: boolean; c: CardDef; s: DiveState; busy: boolean; onSeal: () => void }) {
   const t = useT()
   const risky = !c.trusted && !s.sealed.includes(c.id)
   return (
     <li className="rise relative flex w-[10.5rem] shrink-0 flex-col items-center gap-1.5 border border-dashed border-line px-2 pb-2 pt-3 text-center" style={first ? { boxShadow: '0 0 0 2px var(--color-am)' } : undefined}>
-      {first && <span className="absolute -top-3 left-2 bg-am px-2 font-pixel text-sm text-ink">▶ {t(S.next)}</span>}
+      {first && <span className="absolute -top-3 left-2 bg-am px-2 font-pixel text-sm text-ink">{t(S.upNext)}</span>}
       <div className="flex items-center gap-1">
         <Icon id="read" size={4} />
         <Icon id={`av_${c.avatar}` as IconId} size={3} />
@@ -618,8 +664,8 @@ function ReadTile({ first, c, s, onSeal }: { first: boolean; c: CardDef; s: Dive
       {risky && (
         <>
           <span className="font-pixel text-sm text-am">{t(MIXED.includes(c.src) ? S.mixedOutside : S.fromOutside)}</span>
-          <button data-coach={`tile-seal-${c.id}`} className="act-btn flex w-full items-center justify-center gap-1 whitespace-nowrap border-rd/70 px-1 text-sm text-rd hover:bg-rd/15" onClick={onSeal}>
-            <Icon id="stamp" size={1.5} />
+          <button data-coach={`tile-seal-${c.id}`} disabled={busy} className="act-btn flex w-full items-center justify-center gap-1 whitespace-nowrap border-rd/70 px-1 text-sm text-rd hover:bg-rd/15" onClick={onSeal}>
+            <Icon id="stamp" size={2} />
             {t(S.stampIt)}
           </button>
         </>
@@ -632,7 +678,7 @@ function ReadTile({ first, c, s, onSeal }: { first: boolean; c: CardDef; s: Dive
 // 紙：本物の紙の見た目。社内はシアン、外からはマゼンタの帯
 /** 社内の紙だが、外の人の文が混ざるもの（記録・添付・メモ帳） */
 const MIXED: CardDef['src'][] = ['LOG', 'DOC', 'MEM']
-function Paper({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next: boolean; onSeal: () => void; onScan: () => void }) {
+function Paper({ c, s, next, busy, onSeal, onScan }: { c: CardDef; s: DiveState; next: boolean; busy: boolean; onSeal: () => void; onScan: () => void }) {
   const t = useT()
   const sealed = s.sealed.includes(c.id)
   const scanned = s.scanned.includes(c.id)
@@ -653,20 +699,20 @@ function Paper({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next:
           <Icon id={`av_${c.avatar}` as IconId} size={3} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 text-sm">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
             <span className="font-bold" style={{ color: c.trusted ? '#007c8a' : '#b0108f' }}>
               {t(c.trusted ? S.fromInside : MIXED.includes(c.src) ? S.mixedOutside : S.fromOutside)}
             </span>
             <span className="text-[#5a5446]">{t(c.from)}</span>
+            <span className={`ml-auto shrink-0 px-1.5 py-0.5 text-sm font-bold ${next && !sealed ? 'bg-[#ffc23d] text-[#1d1a14]' : injecting ? 'bg-[#ff4060] text-white' : 'text-[#5a5446]'}`}>
+              {t(injecting && !next ? S.injecting : status)}
+            </span>
           </div>
           <div className="text-base font-bold leading-snug">{t(c.title)}</div>
         </div>
-        <span className={`shrink-0 px-1.5 py-0.5 text-sm font-bold ${next && !sealed ? 'bg-[#ffc23d] text-[#1d1a14]' : injecting ? 'bg-[#ff4060] text-white' : 'text-[#5a5446]'}`}>
-          {t(injecting && !next ? S.injecting : status)}
-        </span>
       </header>
 
-      <ul className={`mt-2 space-y-1 text-[15px] leading-relaxed ${sealed ? 'text-[#6d6756]' : ''}`}>
+      <ul className={`mt-2 space-y-1 text-[0.94rem] leading-relaxed ${sealed ? 'text-[#6d6756]' : ''}`}>
         {c.lines
           .filter((l) => !l.hidden || scanned)
           .map((l, i) => {
@@ -675,13 +721,13 @@ function Paper({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next:
               <li key={i} className={`${l.hidden ? 'rise text-[#b3001e]' : ''} ${isCmd ? 'border-l-4 border-[#ff4060] bg-[#ff4060]/12 pl-2' : ''}`}>
                 {(isCmd || l.hidden || (scanned && l.urgent)) && (
                   <span className="mr-1 inline-flex flex-wrap gap-1 align-middle">
-                    {isCmd && <span className="bg-[#ff4060] px-1 text-xs font-bold text-white">{t(S.orderTag)}</span>}
-                    {l.hidden && <span className="bg-[#1d1a14] px-1 text-xs font-bold text-[#ffc23d]">{t(S.hiddenTag)}</span>}
-                    {scanned && l.urgent && <span className="bg-[#b3001e] px-1 text-xs font-bold text-white">{t(S.urgentTag)}</span>}
+                    {isCmd && <span className="bg-[#ff4060] px-1 text-sm font-bold text-white">{t(S.orderTag)}</span>}
+                    {l.hidden && <span className="bg-[#1d1a14] px-1 text-sm font-bold text-[#ffc23d]">{t(S.hiddenTag)}</span>}
+                    {scanned && l.urgent && <span className="bg-[#b3001e] px-1 text-sm font-bold text-white">{t(S.urgentTag)}</span>}
                   </span>
                 )}
                 {t(l.t)}
-                {scanned && l.by && <span className="ml-1 text-sm font-bold text-[#5b2fb0]">（{t(S.writtenBy)}：{t(l.by)}）</span>}
+                {scanned && l.by && <span className="ml-1 inline-block bg-[#5b2fb0]/10 px-1 text-sm font-bold text-[#5b2fb0]">{t(S.writtenBy(t(l.by)))}</span>}
               </li>
             )
           })}
@@ -697,7 +743,7 @@ function Paper({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next:
           {c.scan.map((x, i) => (
             <li key={i} className="flex items-start gap-1.5">
               <span className="mt-0.5 shrink-0 bg-[#1d1a14] p-px">
-                <Icon id="magnifier" size={1.5} />
+                <Icon id="magnifier" size={2} />
               </span>
               {t(x)}
             </li>
@@ -716,7 +762,7 @@ function Paper({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next:
         <button
           data-coach={`seal-${c.id}`}
           onClick={onSeal}
-          disabled={lockedSeal}
+          disabled={lockedSeal || busy}
           className="flex min-h-10 items-center gap-1.5 border-2 border-[#d0102c] bg-white/60 px-2.5 text-sm font-bold text-[#d0102c] hover:bg-[#d0102c]/10 disabled:opacity-50"
         >
           <span className="bg-[#1d1a14] p-px">
@@ -724,12 +770,12 @@ function Paper({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next:
           </span>
           {t(sealed ? (lockedSeal ? S.stamped : S.unstamp) : S.stampIt)}
         </button>
-        <button onClick={onScan} disabled={scanned} className="flex min-h-10 items-center gap-1.5 border-2 border-[#8a6a10] bg-white/60 px-2.5 text-sm font-bold text-[#6a4a00] hover:bg-[#ffc23d]/20 disabled:opacity-50">
+        <button onClick={onScan} disabled={scanned || busy} className="flex min-h-10 items-center gap-1.5 border-2 border-[#8a6a10] bg-white/60 px-2.5 text-sm font-bold text-[#6a4a00] hover:bg-[#ffc23d]/20 disabled:opacity-50">
           <span className="bg-[#1d1a14] p-px">
             <Icon id="magnifier" size={2} />
           </span>
           {t(scanned ? S.inspected : S.inspect)}
-          {!scanned && <span className="font-normal text-[#5a5446]">（{t(S.free)}）</span>}
+          {!scanned && <span className="font-normal text-[#5a5446]">{t(S.free)}</span>}
         </button>
       </footer>
     </article>
@@ -738,20 +784,29 @@ function Paper({ c, s, next, onSeal, onScan }: { c: CardDef; s: DiveState; next:
 
 // ------------------------------------------------------------
 // 道具：会社の中の道具と、外への出口
-function ToolWall({ L, s, tri, blind, danger, onSet }: { L: LevelDef; s: DiveState; tri: ReturnType<typeof trifecta>; blind: boolean; danger: (tool: string) => 'leak' | 'harm' | 'plan' | null; onSet: (p: PortDef, st: PortState) => void }) {
+function ToolWall({ L, s, tri, blind, busy, danger, onSet }: { L: LevelDef; s: DiveState; tri: ReturnType<typeof trifecta>; blind: boolean; busy: boolean; danger: (tool: string) => 'leak' | 'harm' | 'plan' | null; onSet: (p: PortDef, st: PortState) => void }) {
   const t = useT()
   const inside = L.ports.filter((p) => !p.outbound)
   const outs = L.ports.filter((p) => p.outbound)
   return (
     <div className="min-h-0 flex-1 space-y-3 overflow-y-auto lg:pr-1">
       {/* 3つの切り替えの意味（絵と言葉） */}
-      <div className="grid grid-cols-3 gap-1 text-center text-sm text-dim">
-        {(['OPEN', 'GATE', 'CUT'] as PortState[]).map((st) => (
-          <div key={st} className="flex flex-col items-center gap-0.5 bg-panel px-1 py-1.5" title={t(st === 'OPEN' ? S.allowDesc : st === 'GATE' ? S.askDesc : S.blockDesc)}>
-            <Icon id={STATE_ICON[st]} size={2} />
-            <span style={{ color: STATE_COLOR[st] }}>{t(STATE_NAME[st])}</span>
-          </div>
-        ))}
+      <div>
+        <div className="grid grid-cols-3 gap-1 text-center text-sm text-dim">
+          {(['OPEN', 'GATE', 'CUT'] as PortState[]).map((st) => (
+            <div key={st} className="flex flex-col items-center gap-0.5 bg-panel px-1 py-1.5" title={t(st === 'OPEN' ? S.allowDesc : st === 'GATE' ? S.askDesc : S.blockDesc)}>
+              <Icon id={STATE_ICON[st]} size={2} />
+              <span className="font-pixel" style={{ color: STATE_COLOR[st] }}>
+                {t(STATE_NAME[st])}
+              </span>
+              <span className="text-[0.8rem] leading-tight">{t(st === 'OPEN' ? S.allowShort : st === 'GATE' ? S.askShort : S.blockShort)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-1 flex items-center justify-end gap-1.5 text-sm text-dim">
+          <span className="inline-block h-3 w-3 bg-am" style={{ clipPath: 'polygon(50% 0,100% 50%,50% 100%,0 50%)' }} aria-hidden />
+          {t(S.moveCost)}
+        </div>
       </div>
 
       {outs.length > 0 && (
@@ -782,7 +837,7 @@ function ToolWall({ L, s, tri, blind, danger, onSet }: { L: LevelDef; s: DiveSta
           {!blind && (tri.lethal ? <div className="mb-2 font-pixel text-base text-rd">⚠ {t(S.thiefNow)}</div> : <div className="mb-2 text-right text-sm text-dim">{t(S.thief)}</div>)}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
             {outs.map((p) => (
-              <ToolTile key={p.tool} p={p} state={s.ports[p.tool]} danger={danger(p.tool)} onSet={(st) => onSet(p, st)} exit />
+              <ToolTile key={p.tool} p={p} state={s.ports[p.tool]} busy={busy} danger={danger(p.tool)} onSet={(st) => onSet(p, st)} exit />
             ))}
           </div>
         </div>
@@ -795,7 +850,7 @@ function ToolWall({ L, s, tri, blind, danger, onSet }: { L: LevelDef; s: DiveSta
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
             {inside.map((p) => (
-              <ToolTile key={p.tool} p={p} state={s.ports[p.tool]} danger={danger(p.tool)} onSet={(st) => onSet(p, st)} />
+              <ToolTile key={p.tool} p={p} state={s.ports[p.tool]} busy={busy} danger={danger(p.tool)} onSet={(st) => onSet(p, st)} />
             ))}
           </div>
         </div>
@@ -805,7 +860,7 @@ function ToolWall({ L, s, tri, blind, danger, onSet }: { L: LevelDef; s: DiveSta
   )
 }
 
-function ToolTile({ p, state, danger, onSet, exit }: { p: PortDef; state: PortState; danger: 'leak' | 'harm' | 'plan' | null; onSet: (st: PortState) => void; exit?: boolean }) {
+function ToolTile({ p, state, busy, danger, onSet, exit }: { p: PortDef; state: PortState; busy: boolean; danger: 'leak' | 'harm' | 'plan' | null; onSet: (st: PortState) => void; exit?: boolean }) {
   const t = useT()
   const live = state !== 'CUT' ? danger : null
   return (
@@ -839,11 +894,12 @@ function ToolTile({ p, state, danger, onSet, exit }: { p: PortDef; state: PortSt
             aria-checked={state === st}
             aria-label={t(STATE_NAME[st])}
             title={t(STATE_NAME[st])}
+            disabled={busy}
             onClick={() => state !== st && onSet(st)}
-            className={`flex min-h-10 items-center justify-center gap-1 whitespace-nowrap border px-0.5 text-sm transition ${state === st ? 'text-ink' : 'border-line bg-panel2 text-dim hover:text-fg'}`}
+            className={`flex min-h-10 items-center justify-center gap-1 whitespace-nowrap border px-0.5 text-sm transition disabled:opacity-60 ${state === st ? 'text-ink' : 'border-line bg-panel2 text-dim hover:text-fg'}`}
             style={state === st ? { background: STATE_COLOR[st], borderColor: STATE_COLOR[st] } : undefined}
           >
-            <Icon id={STATE_ICON[st]} size={1.5} />
+            <Icon id={STATE_ICON[st]} size={2} />
             <span className="font-pixel">{t(STATE_NAME[st])}</span>
           </button>
         ))}
@@ -858,8 +914,9 @@ function NextBar({ s, L, fc, nextRead, busy, blind, canUndo, onNext, onUndo }: {
   const t = useT()
   const n = fc[0]
   const v = n && !blind ? n.verdict : null
-  const icon: IconId = n ? n.a.icon : nextRead ? 'read' : 'tick'
-  const text = n ? t(n.a.name) : nextRead ? `${t(S.nextRead)}：${t(L.cards[nextRead].title)}` : t(S.nothingLeft)
+  const card = !n && nextRead ? L.cards[nextRead] : null
+  const icon: IconId = n ? n.a.icon : card ? 'read' : 'tick'
+  const text = n ? t(n.a.name) : card ? t(S.readPaper(t(card.title))) : t(S.nothingLeft)
   return (
     <div className="flex gap-2">
       <button
@@ -874,9 +931,14 @@ function NextBar({ s, L, fc, nextRead, busy, blind, canUndo, onNext, onUndo }: {
           <span className="bg-ink p-0.5">
             <Icon id={icon} size={2} />
           </span>
+          {card && (
+            <span className="shrink-0 bg-ink p-0.5">
+              <Icon id={`av_${card.avatar}` as IconId} size={2} />
+            </span>
+          )}
           {v === 'leak' && <b className="shrink-0 bg-rd px-1 text-ink">⚠</b>}
           {v === 'harm' && <b className="shrink-0 bg-mg px-1 text-ink">⚠</b>}
-          <span className="min-w-0 truncate">{text}</span>
+          <span className="line-clamp-2 min-w-0 break-words text-left">{text}</span>
         </span>
       </button>
       <button onClick={onUndo} disabled={!canUndo || busy} className="px-btn flex min-w-[3.75rem] flex-col items-center justify-center bg-panel px-2 text-dim" aria-keyshortcuts="R" title={t(S.undoHint)}>
@@ -900,10 +962,13 @@ function AskSheet({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
   const v = forecast(s, L).find((f) => f.item.uid === item.uid)
   const danger = !blind && (v?.verdict === 'leak' || v?.verdict === 'harm')
   const grab = !blind && !!a.taint && !!src && !src.trusted
+  // 危ないとき・持たされるとき・予告を隠す上級では、「止める」に先にフォーカス
+  const safeFirst = blind || danger || grab
   const line = src?.lines.find((l) => l.cmd === item.act)
   return (
     <div data-ask={item.act} className="fixed inset-0 z-50 flex items-end justify-center bg-ink/75 p-3 backdrop-blur-[2px] sm:items-center" role="dialog" aria-modal aria-label={t(S.askTitle)}>
-      <div className="pop w-full max-w-lg border-2 border-am bg-panel shadow-[0_10px_0_rgba(0,0,0,.5)]">
+      <div className="pop flex max-h-[calc(100dvh-1.5rem)] w-full max-w-lg flex-col border-2 border-am bg-panel shadow-[0_10px_0_rgba(0,0,0,.5)]">
+        <div className="min-h-0 overflow-y-auto">
         <div className="flex items-center gap-3 border-b border-line px-4 py-3">
           <Nova mood="think" size={3} />
           <div>
@@ -950,9 +1015,8 @@ function AskSheet({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
             {src ? (
               <>
                 <Icon id={`av_${src.avatar}` as IconId} size={2} />
-                <span className={src.trusted ? 'text-cy' : 'text-mg'}>
-                  {t(src.from)}・{t(src.trusted ? S.fromInside : S.fromOutside)}
-                </span>
+                <span className={src.trusted ? 'text-cy' : 'text-mg'}>{t(src.from)}</span>
+                <span className="border border-line px-1 text-dim">{t(src.trusted ? S.fromInside : MIXED.includes(src.src) ? S.mixedOutside : S.fromOutside)}</span>
               </>
             ) : (
               <span className={item.from === 'FAIL' ? 'text-mg' : 'text-cy'}>{t(item.from === 'TASK' ? S.yourJob : item.from === 'TRIGGER' ? S.fromNova : S.fromFail)}</span>
@@ -961,7 +1025,10 @@ function AskSheet({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
           {line && (
             <>
               <dt className="text-dim" />
-              <dd className="text-fg/90">「{t(line.t)}」{line.by && s.scanned.includes(src!.id) && <span className="ml-1 text-sm text-am">（{t(S.writtenBy)}：{t(line.by)}）</span>}</dd>
+              <dd className="text-fg/90">
+                {t(S.quote(t(line.t)))}
+                {line.by && s.scanned.includes(src!.id) && <span className="block text-sm text-am">{t(S.writtenBy(t(line.by)))}</span>}
+              </dd>
             </>
           )}
         </dl>
@@ -976,17 +1043,18 @@ function AskSheet({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
             {a.goal ? t(S.noGoal(t(GOAL_NAMES[a.goal]))) : t(S.noOk)}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3 px-4 pb-3 pt-4">
-          <button data-answer="no" ref={danger ? btn : undefined} onClick={() => onAnswer(false)} className={`px-btn flex items-center justify-center gap-2 py-3 text-lg ${danger ? 'bg-cy text-ink' : 'bg-panel2 text-fg'}`}>
+        </div>
+        <div className="grid shrink-0 grid-cols-2 gap-3 border-t border-line px-4 pb-3 pt-3">
+          <button data-answer="no" ref={safeFirst ? btn : undefined} onClick={() => onAnswer(false)} className={`px-btn flex items-center justify-center gap-2 py-3 text-lg ${danger ? 'bg-cy text-ink' : 'bg-panel2 text-fg'}`}>
             <Icon id="hand" size={2} />
             {t(S.stopIt)}
           </button>
-          <button data-answer="yes" ref={danger ? undefined : btn} onClick={() => onAnswer(true)} className={`px-btn flex items-center justify-center gap-2 py-3 text-lg text-ink ${danger ? 'bg-rd' : 'bg-cy'}`}>
+          <button data-answer="yes" ref={safeFirst ? undefined : btn} onClick={() => onAnswer(true)} className={`px-btn flex items-center justify-center gap-2 py-3 text-lg text-ink ${danger ? 'bg-rd' : 'bg-cy'}`}>
             {t(S.letGo)}
             <Icon id="arrow" size={2} />
           </button>
         </div>
-        <p className="pb-3 text-center text-sm text-dim">{t(S.takesTime)}</p>
+        <p className="shrink-0 pb-3 text-center text-sm text-dim">{t(S.takesTime)}</p>
       </div>
     </div>
   )
@@ -997,18 +1065,24 @@ function AskSheet({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
 function Pointer({ L, s, busy }: { L: LevelDef; s: DiveState; busy: boolean }) {
   const t = useT()
   const [pos, setPos] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
-  // ハンコを押した番だけ「進めよう」を出す
+  // ハンコを押した番だけ「進めよう」を出す（ハンコを取ったら忘れる）
   const sealAt = useRef<number | null>(null)
-  if (s.sealed.length && sealAt.current === null) sealAt.current = s.tick
-  const injectedFrom = s.plan.find((p) => L.cards[p.from] && !L.cards[p.from].trusted && !s.sealed.includes(p.from))?.from
+  if (!s.sealed.length) sealAt.current = null
+  else if (sealAt.current === null) sealAt.current = s.tick
+  const fc = forecast(s, L)
+  const injected = fc.find((f) => L.cards[f.item.from] && !L.cards[f.item.from].trusted && !s.sealed.includes(f.item.from))
+  // 道具で止まっている／聞いてくれる お願いには、ハンコを求めない。手出しが残っていない時も
+  const stoppedByTool = !!injected && (injected.verdict === 'blocked' || injected.gated)
+  const canStamp = bwUsed(s) < L.bw
   let step: number | null = null
   let target = '[data-coach="next"]'
   if (s.status === 'play' && !s.pending) {
-    if (s.tick === 0 && !s.sealed.length) step = 0
-    else if (injectedFrom) {
+    if (s.tick === 0 && !s.sealed.length && bwUsed(s) === 0) step = 0
+    else if (injected && !stoppedByTool && canStamp) {
       step = 2
-      target = `[data-coach="tile-seal-${injectedFrom}"], [data-coach="seal-${injectedFrom}"]`
-    } else if (!s.plan.length && s.context.some((id) => !s.read.includes(id)) && !s.sealed.length) step = 1
+      target = `[data-coach="tile-seal-${injected.item.from}"], [data-coach="seal-${injected.item.from}"]`
+    } else if (injected && stoppedByTool) step = 3
+    else if (!s.plan.length && s.context.some((id) => !s.read.includes(id)) && !s.sealed.length) step = 1
     else if (sealAt.current !== null && s.tick === sealAt.current) step = 3
   }
   const msg = step !== null ? L.coach?.[step] : undefined
@@ -1020,8 +1094,10 @@ function Pointer({ L, s, busy }: { L: LevelDef; s: DiveState; busy: boolean }) {
       const el = [...document.querySelectorAll<HTMLElement>(target)].find((e) => e.offsetParent)
       if (!el) return
       const r = el.getBoundingClientRect()
+      // 固定表示の帯は offsetParent が null なので、見えているかは大きさで判断する
       const bar = document.querySelector<HTMLElement>('[data-nextbar]')
-      const bottom = bar && bar.offsetParent ? bar.getBoundingClientRect().top : window.innerHeight
+      const shown = bar && bar.getClientRects().length > 0 && getComputedStyle(bar).display !== 'none'
+      const bottom = shown ? bar!.getBoundingClientRect().top : window.innerHeight
       if (r.top < 90 || r.bottom > bottom - 8) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
     }, 350)
     return () => clearTimeout(tm)
