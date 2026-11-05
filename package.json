@@ -12,6 +12,7 @@
     "build:single": "SINGLE=1 vite build"
   },
   "dependencies": {
+    "budoux": "0.9.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

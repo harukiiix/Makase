@@ -1,4 +1,5 @@
 // あそびかた：4枚の絵。1枚に1行だけ添える。くわしい説明は第0幕の指さしで覚える
+import { useEffect, useRef } from 'react'
 import type { IconId, L10n } from '../game/types'
 import { sfx } from '../lib/platform'
 import { useT } from './i18n'
@@ -21,6 +22,12 @@ function Tile({ icon, to, bad }: { icon: IconId; to: IconId; bad?: boolean }) {
 
 export function Howto({ onDone, doneLabel = S.start }: { onDone: () => void; doneLabel?: L10n }) {
   const t = useT()
+  // 開いたら一番上から見せる（ボタンに合わせて下まで流れないように）
+  const startRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    startRef.current?.focus({ preventScroll: true })
+  }, [])
   const panels: { pic: React.ReactNode; text: string }[] = [
     {
       pic: (
@@ -87,7 +94,15 @@ export function Howto({ onDone, doneLabel = S.start }: { onDone: () => void; don
         <>
           <span className="px-btn bg-cy px-3 py-2 font-pixel text-xl text-ink">▶ {t(S.next)}</span>
           <Arrow />
-          <span className="flex gap-1 font-pixel text-3xl text-am">★★★</span>
+          {/* ★3つ：仕事・守る・手出し少なめ（結果画面と同じしるし） */}
+          <span className="flex gap-1.5">
+            {(['paper', 'house', 'diamond'] as const).map((ic) => (
+              <span key={ic} className="flex flex-col items-center gap-1 bg-panel2 px-1.5 py-1.5" style={{ boxShadow: '0 0 0 2px var(--color-am)' }}>
+                <span className="font-pixel text-xl leading-none text-am">★</span>
+                {ic === 'diamond' ? <span className="font-pixel text-lg leading-none text-cy">◆</span> : <Icon id={ic} size={2} />}
+              </span>
+            ))}
+          </span>
         </>
       ),
       text: t(S.howto4),
@@ -105,11 +120,11 @@ export function Howto({ onDone, doneLabel = S.start }: { onDone: () => void; don
               <div className="flex min-h-[7.5rem] items-center justify-center gap-2 py-3" aria-hidden>
                 {p.pic}
               </div>
-              <p className="text-lg leading-relaxed [text-wrap:balance] [word-break:auto-phrase]">{p.text}</p>
+              <p className="text-lg leading-relaxed [text-wrap:balance]">{p.text}</p>
             </li>
           ))}
         </ol>
-        <button data-howto-start className="px-btn mt-6 w-full bg-cy py-3 text-xl text-ink" onClick={() => (sfx.ui(), onDone())} autoFocus>
+        <button data-howto-start className="px-btn mt-6 w-full bg-cy py-3 text-xl text-ink" ref={startRef} onClick={() => (sfx.ui(), onDone())}>
           ▶ {t(doneLabel)}
         </button>
       </div>

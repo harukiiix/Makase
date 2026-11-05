@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* 横向きのスマホなど、高さの低い画面 */
+@custom-variant short (@media (max-height: 500px));
+/* 高さに余裕のある画面（飾りの絵を出す） */
+@custom-variant tall (@media (min-height: 960px));
+/* 横に広いが高さの足りない画面（ノートPCなど）。説明を少なくして、全部を1画面に入れる */
+@custom-variant lgshort (@media (min-width: 1024px) and (max-height: 959px));
+
 /* ===== Art Direction: 雨の湾岸、夜。ネイビーの闇に、シアン（信頼）とマゼンタ（外の声）。 ===== */
 @theme {
   /* 本文は読みやすいゴシック、見出し・ボタン・数字はドット文字 */
@@ -38,7 +45,12 @@ body {
 @layer base {
   button { font-family: inherit; }
   h1, h2, h3, .px-btn, .font-pixel { font-family: var(--font-pixel); letter-spacing: 0.03em; }
+  /* 日本語は文節の間（t() が入れる目印）でだけ折り返す。入りきらない時だけ途中で折る */
+  html:lang(ja) body { word-break: keep-all; overflow-wrap: break-word; }
+  p, li { text-wrap: pretty; }
 }
+/* 英語のドット文字は、字の幅がそろわない（I や l が広がる）ので、英字用のドット文字を先に使う */
+:root:lang(en) { --font-pixel: "Pixelify Sans", "DotGothic16", "M PLUS 1p", system-ui, sans-serif; }
 .pixelated { image-rendering: pixelated; }
 
 /* CRT 走査線 + ビネット */
@@ -132,7 +144,8 @@ button:focus-visible, summary:focus-visible { outline: 2px dashed var(--color-am
 .reduce-motion .flash, .reduce-motion .particle { display: none; }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #263063; }
+::-webkit-scrollbar-thumb { background: #5a66a8; }
+* { scrollbar-color: #5a66a8 transparent; }
 
 /* ===== v3：指さし・紙 ===== */
 @keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }

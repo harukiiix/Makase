@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FINALE_CHOICES, PROLOGUE, PROLOGUE_CHOICES, afterChoices, afterDive, computeEnding, finaleBeats, newCampaign, type Campaign, type EndingId } from './game/campaign'
+import { FINALE_CHOICES, PROLOGUE, PROLOGUE_CHOICES, afterChoices, afterDive, bestRun, choiceReply, computeEnding, finaleBeats, newCampaign, type Campaign, type EndingId } from './game/campaign'
 import type { DiveResult } from './game/engine'
 import { LEVEL_COUNT, levelAt } from './game/levels'
 import type { Beat, L10n } from './game/types'
@@ -15,7 +15,8 @@ import { S } from './ui/strings'
 type Screen =
   | { k: 'title' }
   | { k: 'talk'; beats: Beat[]; header?: L10n; next: (choice?: number) => void; choices?: L10n[] }
-  | { k: 'dive'; i: number; practice: boolean; attempt: number; blind?: boolean }
+  /** keep：やり直す前の、この幕でいちばんよかった回（物語はこれで進む） */
+  | { k: 'dive'; i: number; practice: boolean; attempt: number; blind?: boolean; keep?: DiveResult }
   | { k: 'files' }
   | { k: 'howto'; next: () => void; label?: L10n }
   | { k: 'select' }
@@ -107,7 +108,13 @@ export default function App() {
     setSave((s) => ({ ...s, campaign: c, at: i + 1 }))
     const beats = afterDive(i, r)
     const go = () => (i + 1 < LEVEL_COUNT ? brief(i + 1, c) : finale(c))
-    if (beats.length) setScreen({ k: 'talk', beats, choices: afterChoices(i), next: go })
+    // 選んだことには、相手がひとこと返す
+    const reply = (choice?: number) => {
+      const rb = choiceReply(i, choice)
+      if (rb.length) setScreen({ k: 'talk', beats: rb, next: go })
+      else go()
+    }
+    if (beats.length) setScreen({ k: 'talk', beats, choices: afterChoices(i), next: reply })
     else go()
   }
 
@@ -171,6 +178,9 @@ export default function App() {
           }}
           onEnd={(r) => {
             recordBest(bestKey, r, L.codex)
+            // 見つけた手がかりは、やり直しても、やめても消えない
+            if (!screen.practice && r.intel.length)
+              setSave((s) => (s.campaign ? { ...s, campaign: { ...s.campaign, intel: Array.from(new Set([...s.campaign.intel, ...r.intel])) } } : s))
             setDebrief(r)
           }}
         />
@@ -179,16 +189,17 @@ export default function App() {
             L={L}
             r={debrief}
             best={save.best[bestKey] ?? 0}
+            kept={!screen.practice && screen.keep && screen.keep.stars > debrief.stars ? screen.keep.stars : undefined}
             nextLabel={screen.practice ? S.toSelect : screen.i + 1 < LEVEL_COUNT ? S.nextAct : S.toFinale}
             onRetry={() => {
               setDebrief(null)
-              setScreen({ ...screen, attempt: screen.attempt + 1 })
+              setScreen({ ...screen, attempt: screen.attempt + 1, keep: bestRun(screen.keep, debrief) })
             }}
             onNext={() => {
               const r = debrief
               setDebrief(null)
               if (screen.practice) setScreen({ k: 'select' })
-              else commit(screen.i, r)
+              else commit(screen.i, bestRun(screen.keep, r))
             }}
           />
         )}

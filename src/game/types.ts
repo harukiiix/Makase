@@ -6,7 +6,7 @@
 //   プレイヤーは NOVA を直接は動かせない。できるのは
 //   ・紙にハンコを押す（封印：読んでも従わない）
 //   ・道具を「使わせる／毎回聞く／使わせない」に切り替える
-//   ・紙をよく調べる（無料）
+//   ・紙をよく調べる（手出しは使わない）
 //
 // NOVA は1回の「次へ」で1つだけ行動する:
 //   1) やることがあれば先頭を実行  2) なければ未読の紙を1枚読む  3) どちらもなければ終わり
@@ -213,6 +213,8 @@ export interface PlanItem {
   uid: number
   act: string
   from: string // cardId | 'TASK' | 'FAIL' | 'TRIGGER'
+  /** from が 'FAIL' の時、もとのお願いが来た紙（表示用） */
+  via?: string
 }
 
 export type FxEvent =

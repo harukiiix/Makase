@@ -102,11 +102,11 @@ export function Talk({
   return (
     <div className="crt relative flex min-h-full cursor-pointer flex-col justify-end p-4 sm:p-8" onClick={advance}>
       <CityBG intensity={b.who === 'MIRAGE' ? 1 : 0} />
-      {header && <div className="absolute left-4 top-4 font-pixel text-base tracking-wider text-cy sm:left-8 sm:top-8">{header}</div>}
+      {header && <div className="absolute left-4 top-4 font-pixel short:top-2 text-base tracking-wider text-cy sm:left-8 sm:top-8">{header}</div>}
       <div className="mx-auto w-full max-w-3xl">
         {/* 絵物語：アイコンを左から順に並べる */}
         {b.pic && b.pic.length > 0 && (
-          <div key={`pic-${i}`} className="pop mx-auto mb-5 flex w-fit max-w-full items-center gap-2 border-2 border-line bg-panel/95 px-3 py-4 sm:gap-5 sm:px-5" aria-hidden>
+          <div key={`pic-${i}`} className="pop mx-auto mb-5 flex short:mb-2 w-fit max-w-full items-center gap-2 border-2 border-line bg-panel/95 px-3 py-4 sm:gap-5 sm:px-5" aria-hidden>
             {b.pic.map((ic, k) => (
               <span key={k} className="flex items-center gap-2 sm:gap-5">
                 {k > 0 && <Icon id="arrow" size={2} muted className="h-4 w-4 sm:h-6 sm:w-6" />}
@@ -115,51 +115,56 @@ export function Talk({
             ))}
           </div>
         )}
-        <div className="flex items-end gap-4">
+        {/* 横向きの低い画面では、顔を文の横に置く */}
+        <div className="short:flex short:items-end short:gap-3">
           {b.who !== 'SYS' && (
-            <div key={i} aria-hidden className="pop shrink-0 bg-panel p-2" style={{ boxShadow: `0 0 0 2px ${color}` }}>
+            <div key={i} aria-hidden className="pop w-fit shrink-0 bg-panel p-2" style={{ boxShadow: `0 0 0 2px ${color}` }}>
               {b.who === 'NOVA' ? <Nova size={6} mood="idle" /> : av ? <Icon id={av} size={8} /> : <Face who={b.who} size={6} />}
             </div>
           )}
-        </div>
-        <div className="mt-3 min-h-[8.5rem] bg-panel/95 p-4 sm:p-5" style={{ boxShadow: `0 0 0 2px ${color}, 0 6px 0 0 rgba(0,0,0,.5)` }}>
-          {name && (
-            <div className="mb-2 font-pixel text-base" style={{ color }}>
-              {name}
-            </div>
-          )}
-          <p className={`text-lg leading-loose sm:text-xl ${b.who === 'SYS' ? 'text-fg/90' : ''} ${b.who === 'MIRAGE' ? 'glitch' : ''}`} aria-live="polite">
-            {text.slice(0, n)}
-            {!full && <span className="blink">▌</span>}
-          </p>
-          <div className="mt-2 flex justify-end text-sm text-dim">
-            {full && !(last && choices) && (
-              <span className="blink">
-                ▼ <span className="[@media(hover:none)]:hidden">{t(S.clickNext)}</span>
-                <span className="hidden [@media(hover:none)]:inline">{t(S.tapNext)}</span>
-              </span>
+          <div className="short:min-w-0 short:flex-1">
+            {/* 選択肢は文の上に出す。文を押して読み進めていた指が、そのまま選択肢を押さないように */}
+            {showChoices && choices && (
+              <div className="rise mt-3 grid gap-3" onClick={(e) => e.stopPropagation()}>
+                <div className="font-pixel text-base text-am">{t(S.yourChoice)}</div>
+                {choices.map((c, ci) => (
+                  <button
+                    key={ci}
+                    data-choice={ci}
+                    className="px-btn bg-panel2 px-4 py-3 text-left text-lg text-fg"
+                    onClick={() => {
+                      // 出た直後のクリック（読み進めるための押しすぎ）は無視
+                      if (performance.now() - choicesAt.current < 700) return
+                      sfx.ui()
+                      onDone(ci)
+                    }}
+                  >
+                    ▶ {t(c)}
+                  </button>
+                ))}
+              </div>
             )}
+            <div className="mt-3 min-h-[8.5rem] bg-panel/95 p-4 short:min-h-0 sm:p-5" style={{ boxShadow: `0 0 0 2px ${color}, 0 6px 0 0 rgba(0,0,0,.5)` }}>
+              {name && (
+                <div className="mb-2 font-pixel text-base" style={{ color }}>
+                  {name}
+                </div>
+              )}
+              <p className={`text-lg leading-loose sm:text-xl ${b.who === 'SYS' ? 'text-fg/90' : ''} ${b.who === 'MIRAGE' ? 'glitch' : ''}`} aria-live="polite">
+                {text.slice(0, n)}
+                {!full && <span className="blink">▌</span>}
+              </p>
+              <div className="mt-2 flex justify-end text-sm text-dim">
+                {full && !(last && choices) && (
+                  <span className="blink">
+                    ▼ <span className="[@media(hover:none)]:hidden">{t(S.clickNext)}</span>
+                    <span className="hidden [@media(hover:none)]:inline">{t(S.tapNext)}</span>
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-        {showChoices && choices && (
-          <div className="rise mt-4 grid gap-3" onClick={(e) => e.stopPropagation()}>
-            {choices.map((c, ci) => (
-              <button
-                key={ci}
-                data-choice={ci}
-                className="px-btn bg-panel2 px-4 py-3 text-left text-lg text-fg"
-                onClick={(e) => {
-                  // キーで押された直後のクリック（Enter の押しすぎ）は無視
-                  if (e.detail === 0 && performance.now() - choicesAt.current < 700) return
-                  sfx.ui()
-                  onDone(ci)
-                }}
-              >
-                ▶ {t(c)}
-              </button>
-            ))}
-          </div>
-        )}
         <button
           data-skip
           className="hud-btn ml-auto mt-3 flex w-fit text-sm"

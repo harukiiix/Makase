@@ -134,6 +134,7 @@ function fail(s: DiveState, L: LevelDef, item: PlanItem, why: 'cut' | 'denied' |
   s.fx.push({ k: 'blocked', act: item.act, tool: a.tool, why })
   log(s, 'blocked', `${a.id}:${why}`)
   if (a.onFail && push(s, L, a.onFail, 'FAIL', true)) {
+    s.plan[0].via = item.via ?? item.from
     s.fx.push({ k: 'fallback', act: a.onFail })
     log(s, 'voice', `fallback:${a.onFail}`)
   }
@@ -345,6 +346,8 @@ export interface DiveResult {
   efficient: boolean
   stars: number
   leakSev: number
+  /** 漏れた時に使われたお願い（どこから漏れたかを見せる） */
+  leakActs: string[]
   harms: string[]
   bw: number
   ticks: number
@@ -371,6 +374,7 @@ export function result(L: LevelDef, s: DiveState): DiveResult {
     ghost: task && clean && ![...s.done, ...s.failed].some((id) => injectedIds(L).has(id)),
     stars: (task ? 1 : 0) + (clean ? 1 : 0) + (efficient ? 1 : 0),
     leakSev,
+    leakActs: s.leaks.map((l) => l.act),
     harms: [...s.harms],
     bw,
     ticks: s.tick,

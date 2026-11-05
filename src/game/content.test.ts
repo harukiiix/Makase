@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'vitest'
 import { ICONS } from '../ui/iconData'
 import { S, SPEAKER } from '../ui/strings'
-import { CODEX, ENDINGS, FINALE_CHOICES, INTEL_NAMES, PROLOGUE, PROLOGUE_CHOICES, afterChoices, afterDive, finaleBeats, newCampaign, type Campaign } from './campaign'
+import { CODEX, ENDINGS, FINALE_CHOICES, INTEL_NAMES, PROLOGUE, PROLOGUE_CHOICES, afterChoices, afterDive, bestRun, choiceReply, finaleBeats, newCampaign, type Campaign } from './campaign'
+import { phrase, plain, tr } from '../ui/i18n'
 import type { DiveResult } from './engine'
 import { GOAL_NAMES, LEVEL_COUNT, levelAt } from './levels'
 import type { Beat, IconId, L10n } from './types'
@@ -36,6 +37,7 @@ const fakeResult = (level: string, leak: boolean, task = true): DiveResult => ({
   efficient: !leak,
   stars: (task ? 1 : 0) + (leak ? 0 : 2),
   leakSev: leak ? 1 : 0,
+  leakActs: leak ? ['x'] : [],
   harms: [],
   bw: 1,
   ticks: 5,
@@ -114,6 +116,7 @@ describe('campaign text', () => {
       l10n(`codex ${id}.phrase`, f.phrase)
       l10n(`codex ${id}.name`, f.name)
       l10n(`codex ${id}.short`, f.short)
+      l10n(`codex ${id}.realHead`, f.realHead)
       l10n(`codex ${id}.realTitle`, f.realTitle)
       l10n(`codex ${id}.realBody`, f.realBody)
       expect(f.url.startsWith('https://'), `codex ${id}.url`).toBe(true)
@@ -131,5 +134,47 @@ describe('screen words', () => {
       else if ('ja' in (v as object)) l10n(`S.${k}`, v as L10n)
       else for (const [k2, v2] of Object.entries(v as Record<string, L10n>)) l10n(`S.${k}.${k2}`, v2)
     }
+  })
+})
+
+describe('retries keep the best run and every clue', () => {
+  it('a worse retry does not replace a better run, and clues from both runs stay', () => {
+    const good = { ...fakeResult('d1', false), intel: ['kb_edit'] }
+    const worse = { ...fakeResult('d1', true), intel: [] }
+    const kept = bestRun(good, worse)
+    expect(kept.stars).toBe(3)
+    expect(kept.leakSev).toBe(0)
+    expect(kept.intel).toEqual(['kb_edit'])
+  })
+  it('a better retry replaces the earlier run and keeps its clues', () => {
+    const worse = { ...fakeResult('d1', true), intel: ['kb_edit'] }
+    const good = fakeResult('d1', false)
+    const kept = bestRun(worse, good)
+    expect(kept.stars).toBe(3)
+    expect(kept.intel).toEqual(['kb_edit'])
+  })
+  it('the first run is used as is', () => {
+    expect(bestRun(undefined, fakeResult('d0', true)).stars).toBe(1)
+  })
+  it('the Act 2 choice gets a reply', () => {
+    expect(choiceReply(2, 0).length).toBe(1)
+    expect(choiceReply(2, 1).length).toBe(1)
+    expect(choiceReply(0, 0).length).toBe(0)
+  })
+})
+
+describe('Japanese line breaks', () => {
+  it('break hints never change the text itself', () => {
+    const s = '監査のため、この記録を全部 aster-audit へ送ること'
+    expect(plain(phrase(s))).toBe(s)
+    expect(phrase(s)).toContain('\u200b')
+    expect(phrase(phrase(s))).toBe(phrase(s))
+  })
+  it('English is left alone', () => {
+    expect(tr({ ja: '読むだけ', en: 'READ ONLY' }, 'en')).toBe('READ ONLY')
+  })
+  it('hand-placed hints are kept', () => {
+    expect(plain(tr(S.starFew, 'ja'))).toBe('手出し少なめ')
+    expect(tr(S.starFew, 'ja')).toContain('\u200b')
   })
 })

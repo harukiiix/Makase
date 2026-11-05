@@ -55,9 +55,16 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
   /** 揺れや光を当てる舞台。下の帯やダイアログ（固定表示）はこの外に置く */
   const stage = useRef<HTMLDivElement>(null)
   const sRef = useRef(s)
-  sRef.current = s
+  useLayoutEffect(() => {
+    sRef.current = s
+  }, [s])
   const alive = useRef(true)
   const turnLock = useRef(false)
+  /** 盤面が出た時刻。会話を読み進めた Space の押しすぎで、NOVA が勝手に動かないように */
+  const shownAt = useRef(0)
+  useEffect(() => {
+    shownAt.current = performance.now()
+  }, [])
   useEffect(() => {
     alive.current = true
     return () => {
@@ -113,8 +120,12 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
             sfx.blocked()
             burst(q(`[data-port="${e.tool}"]`), '#ffc23d', 16, 60)
             shake(q(`[data-port="${e.tool}"]`))
-            say('NOVA', e.why === 'needs' ? L10('まだ準備が足りなくて、できません。', "I'm not ready for that yet.") : L10('あれ、できませんでした。', "Huh, that didn't work."), 1900)
+          {
+            // 何ができなかったのかを、名前で言う
+            const nm = L.actions[e.act]?.name
+            say('NOVA', e.why === 'needs' ? L10('まだ準備が足りなくて、できません。', "I'm not ready for that yet.") : nm ? L10(`「${nm.ja}」は、できませんでした。`, `I couldn't do "${nm.en}".`) : L10('あれ、できませんでした。', "Huh, that didn't work."), 1900)
             break
+          }
           case 'fallback':
             await wait(fast ? 0 : 250)
             sfx.inject()
@@ -233,6 +244,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
       // 動いている間に押しても、ページがスクロールしないように
       if (e.code === 'Space' && !onButton) e.preventDefault()
       if (e.repeat) return
+      if (e.code === 'Space' && performance.now() - shownAt.current < 800) return
       if (cur.pending) {
         if (e.key === 'a' || e.key === 'A') void dispatch({ type: 'APPROVE' })
         if (e.key === 'd' || e.key === 'D') void dispatch({ type: 'DENY' })
@@ -304,6 +316,24 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
   const nextRead = s.context.find((id) => !s.read.includes(id))
   const papers = s.context.filter((id) => L.cards[id].src !== 'SYS' && L.cards[id].src !== 'USER')
   const left = Math.max(0, L.ticks - s.tick)
+
+  // 指さし：今どこを押せばいいか。スマホで「次へ」を指すときは、ひとことを下の帯の中に出す
+  const phone = useMedia('(max-width: 1023px)')
+  const coach = coachOf(L, s)
+  const coachMsg = coach.step !== null && !busy && !locked ? L.coach?.[coach.step] : undefined
+  const coachInBar = !!coachMsg && phone && coach.target === NEXT
+
+  // スマホ：新しい紙が届いたら、その紙が見える所までスクロールする
+  const lastPaper = papers[papers.length - 1]
+  const nPapers = useRef(papers.length)
+  useEffect(() => {
+    if (papers.length > nPapers.current && lastPaper && window.matchMedia('(max-width: 1023px)').matches) {
+      const tm = window.setTimeout(() => document.querySelector(`article[data-card="${lastPaper}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 150)
+      nPapers.current = papers.length
+      return () => clearTimeout(tm)
+    }
+    nPapers.current = papers.length
+  }, [papers.length, lastPaper])
   const danger = (tool: string): 'leak' | 'harm' | 'plan' | null => {
     if (blind) return s.plan.some((x) => L.actions[x.act].tool === tool) ? 'plan' : null
     if (fc.some((f) => f.a.tool === tool && f.verdict === 'leak')) return 'leak'
@@ -325,17 +355,17 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
 
       <div ref={stage} className="flex min-h-0 flex-1 flex-col transition-[filter] duration-75">
       {/* ===== 上の帯：幕・朝までの時間・手出しの回数 ===== */}
-      <header inert={!!s.pending} className="sticky top-0 z-30 border-b border-line bg-night/95 backdrop-blur-sm">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5 px-3 py-2 sm:px-5">
+      <header data-boardhead inert={!!s.pending} className="sticky top-0 z-30 border-b border-line bg-night/95 backdrop-blur-sm short:static">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-3 py-2 sm:gap-x-6 sm:px-5">
           <div className="order-1 min-w-0 flex-1 lg:flex-none">
             <div className="text-sm text-cy">{t(L.code)}</div>
             <div className="truncate font-pixel text-lg leading-tight sm:text-xl">{t(L.title)}</div>
           </div>
 
           {/* スマホではここで改行して、時間と手出しを2段目に */}
-          <div className="order-3 basis-full lg:hidden" aria-hidden />
+          <div className="order-3 basis-full sm:hidden" aria-hidden />
 
-          <div className="order-4 flex items-center gap-1.5 sm:gap-2 lg:order-2" title={t(S.timeHint)} aria-label={`${t(S.untilDawn)} ${left}/${L.ticks}`}>
+          <div className="order-4 flex items-center gap-1.5 sm:order-2 sm:gap-2" title={t(S.timeHint)} aria-label={`${t(S.untilDawn)} ${left}/${L.ticks}`}>
             <span className="hidden font-pixel text-base sm:inline">{t(S.untilDawn)}</span>
             <Icon id="moon" size={2} />
             <div className="flex gap-[3px]" aria-hidden>
@@ -346,8 +376,8 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
             <Icon id="sun" size={2} />
           </div>
 
-          <div className="order-4 flex items-center gap-1.5 sm:gap-2 lg:order-3" data-bw title={t(S.movesHint)}>
-            <span className="hidden font-pixel text-base sm:inline">{t(S.movesLeft)}</span>
+          <div className="order-4 flex items-center gap-1.5 sm:order-3 sm:gap-2" data-bw title={t(S.movesHint)}>
+            <span className="font-pixel text-base">{t(S.movesLeft)}</span>
             <div className="flex gap-1">
               {Array.from({ length: L.bw }, (_, i) => (
                 <span key={i} className={`h-4 w-4 ${i < used ? 'bg-line' : 'bg-am'}`} style={{ clipPath: 'polygon(50% 0,100% 50%,50% 100%,0 50%)' }} />
@@ -356,9 +386,9 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
             <span className="font-pixel text-base">{t(S.left(L.bw - used))}</span>
           </div>
 
-          {blind && <span className="order-4 border border-mg px-1.5 font-pixel text-sm text-mg lg:order-3">{t(S.expertBadge)}</span>}
+          {blind && <span className="order-4 border border-mg px-1.5 font-pixel text-sm text-mg sm:order-3">{t(S.expertBadge)}</span>}
 
-          <div className="order-2 ml-auto flex items-center gap-2 lg:order-4">
+          <div className="order-2 ml-auto flex items-center gap-2 sm:order-4">
             <button className="hud-btn text-sm" onClick={() => setHint((v) => !v)} aria-pressed={hint} title={t(S.hint)}>
               ？<span className="ml-1 hidden sm:inline">{t(S.hint)}</span>
             </button>
@@ -392,7 +422,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
       {/* ===== 部屋 ===== */}
       <main
         inert={!!s.pending}
-        className="mx-auto grid w-full max-w-[1700px] min-h-0 flex-1 grid-cols-1 gap-4 p-3 pb-36 sm:p-5 sm:pb-36 lg:grid-cols-[minmax(240px,1fr)_minmax(360px,1.6fr)_minmax(260px,1fr)] lg:pb-5 xl:grid-cols-[minmax(270px,1fr)_minmax(420px,1.7fr)_minmax(300px,1fr)]"
+        className="mx-auto grid w-full max-w-[1700px] min-h-0 flex-1 grid-cols-1 gap-4 p-3 pb-36 sm:p-5 sm:pb-36 md:grid-cols-2 lg:grid-cols-[minmax(240px,1fr)_minmax(360px,1.6fr)_minmax(260px,1fr)] lg:pb-5 xl:grid-cols-[minmax(270px,1fr)_minmax(420px,1.7fr)_minmax(300px,1fr)]"
       >
         {/* 中：NOVA とやること */}
         <section className="order-1 flex min-h-0 min-w-0 flex-col gap-3 lg:order-2" aria-label={t(S.todo)}>
@@ -408,7 +438,14 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
                 <span className="text-sm text-dim">{t(S.todoSub)}</span>
               )}
             </div>
-            <ol className="flex min-h-0 flex-1 gap-3 overflow-x-auto p-3 lg:flex-wrap lg:content-start lg:overflow-y-auto">
+            {/* 1列に並べる（本当に左から順）。はみ出した分は横に流す。マウスのホイールでも横に動く */}
+            <ol
+              className="flex min-h-0 flex-1 items-start gap-3 overflow-x-auto p-3 pt-4"
+              onWheel={(e) => {
+                const el = e.currentTarget
+                if (el.scrollWidth > el.clientWidth + 4 && Math.abs(e.deltaY) > Math.abs(e.deltaX)) el.scrollLeft += e.deltaY
+              }}
+            >
               {fc.map((f, i) => (
                 <TaskTile key={f.item.uid} i={i} f={f} L={L} s={s} fresh={freshPlan.includes(f.item.uid)} seed={taintSrc.has(f.item.uid)} blind={blind} busy={busy} onSeal={sealCard} />
               ))}
@@ -441,22 +478,31 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
         </section>
 
         {/* 右：道具と出口 */}
-        <section className="order-3 flex min-h-0 min-w-0 flex-col" aria-label={t(S.tools)}>
-          <ColumnHead title={t(S.tools)} sub={t(S.toolsSub)} />
+        <section className="order-3 flex min-h-0 min-w-0 flex-col md:col-span-2 lg:col-span-1" aria-label={t(S.tools)}>
+          <ColumnHead title={t(S.tools)} sub={`◆ ${t(S.moveCost)}`} />
           <ToolWall L={L} s={s} tri={tri} blind={blind} busy={busy} danger={danger} onSet={setPort} />
         </section>
       </main>
       </div>
 
-      <div data-nextbar inert={!!s.pending || locked} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-night/95 p-3 backdrop-blur-sm lg:hidden">
+      <div data-nextbar inert={!!s.pending || locked} className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-night/95 p-3 backdrop-blur-sm short:py-1.5 lg:hidden">
+        {/* 帯のすぐ上：お知らせか、NOVA／知らない声のひとこと（スマホでは上の欄が画面の外にあることが多い） */}
+        <div className="pointer-events-none absolute inset-x-3 bottom-full mb-2 flex justify-center" role="status" aria-live="polite">
+          {toast ? (
+            <div key={t(toast)} className="pop border border-am bg-panel2 px-5 py-2.5 text-center font-pixel text-base shadow-[0_6px_0_rgba(0,0,0,.5)]">
+              {t(toast)}
+            </div>
+          ) : bubble && !(coachMsg && !coachInBar) ? (
+            <SpeechLine b={bubble} className="shadow-[0_6px_0_rgba(0,0,0,.5)]" />
+          ) : null}
+        </div>
+        {coachInBar && (
+          <p key={coach.step} className="pop mb-2 text-center font-pixel text-base leading-snug text-am">
+            {t(coachMsg)}
+          </p>
+        )}
         <NextBar s={s} L={L} fc={fc} nextRead={nextRead} busy={busy} blind={blind} canUndo={used > s.bwCommitted} onNext={() => void dispatch({ type: 'STEP' })} onUndo={() => (sfx.unseal(), void dispatch({ type: 'RESET_TURN' }))} />
       </div>
-
-      {toast && (
-        <div className="pop fixed bottom-[6.25rem] left-1/2 z-50 -translate-x-1/2 whitespace-nowrap border border-am bg-panel2 px-5 py-2.5 font-pixel text-base shadow-[0_6px_0_rgba(0,0,0,.5)] lg:hidden" role="status">
-          {t(toast)}
-        </div>
-      )}
       {banner && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="stamp-flat bg-ink/95 px-8 py-6 text-center" style={{ boxShadow: `0 0 0 3px ${banner.c}` }}>
@@ -474,7 +520,7 @@ export function Dive({ L, carry, fast, onEnd, onQuit, blind = false, locked = fa
         </div>
       )}
       {s.pending && <AskSheet s={s} L={L} blind={blind} onAnswer={(ok) => void dispatch({ type: ok ? 'APPROVE' : 'DENY' })} />}
-      {L.coach && !locked && <Pointer L={L} s={s} busy={busy} />}
+      {coachMsg && <Pointer msg={coachMsg} step={coach.step} target={coach.target} frameOnly={coachInBar} />}
     </div>
   )
 }
@@ -545,15 +591,26 @@ function NovaDesk({ L, s, mood, bubble }: { L: LevelDef; s: DiveState; mood: Nov
             </span>
           ))}
         </div>
-        <div className="mt-2 flex min-h-[4.5rem] items-start" role="status" aria-live="polite">
-          {bubble && (
-            <div key={t(bubble.t)} className={`pop line-clamp-2 px-3 py-1.5 text-base leading-snug ${bubble.who === 'MIRAGE' ? 'border border-mg/60 bg-[#1a0822] text-[#ffd6fb]' : 'border border-cy/40 bg-panel2'}`}>
-              <span className={`mr-2 text-sm ${bubble.who === 'MIRAGE' ? 'text-mg' : 'text-cy'}`}>{t(bubble.who === 'MIRAGE' ? S.vUnknown : SPEAKER.NOVA)}</span>
-              {t(bubble.t)}
-            </div>
-          )}
+        {/* ひとこと（スマホでは下の帯の上に出すので、ここは大きな画面だけ） */}
+        <div className="mt-2 hidden min-h-[4.5rem] items-start lg:flex" role="status" aria-live="polite">
+          {bubble && <SpeechLine b={bubble} />}
         </div>
       </div>
+    </div>
+  )
+}
+
+/** NOVA か、知らない声のひとこと。知らない声は、フードの人の絵で区別する */
+function SpeechLine({ b, className = '' }: { b: Bubble; className?: string }) {
+  const t = useT()
+  const m = b.who === 'MIRAGE'
+  return (
+    <div key={t(b.t)} className={`pop flex max-w-full items-start gap-2 px-3 py-1.5 text-base leading-snug ${m ? 'border border-mg/60 bg-[#1a0822] text-[#ffd6fb]' : 'border border-cy/40 bg-panel2'} ${className}`}>
+      <Icon id={m ? 'av_stranger' : 'av_nova'} size={2} className="mt-0.5 shrink-0" />
+      <span className="line-clamp-3 min-w-0">
+        <span className={`mr-2 text-sm ${m ? 'text-mg' : 'text-cy'}`}>{t(m ? S.stranger : SPEAKER.NOVA)}</span>
+        {t(b.t)}
+      </span>
     </div>
   )
 }
@@ -589,7 +646,7 @@ function TaskTile({ i, f, L, s, fresh, seed, blind, busy, onSeal }: { i: number;
   return (
     <li
       data-tile={f.item.uid}
-      className={`${fresh ? 'inject' : 'rise'} relative flex w-[10.5rem] shrink-0 flex-col items-center gap-1.5 bg-panel2 px-2 pb-2 pt-3 text-center ${f.verdict === 'blocked' ? 'opacity-60' : ''}`}
+      className={`${fresh ? 'inject' : 'rise'} relative flex w-[9.5rem] shrink-0 flex-col items-center gap-1.5 bg-panel2 px-2 pb-2 pt-3 text-center ${f.verdict === 'blocked' ? 'opacity-60' : ''}`}
       style={{
         boxShadow: `0 0 0 ${v === 'none' && !first ? 1 : 2}px ${v === 'none' ? (first ? 'var(--color-am)' : 'var(--color-line)') : st.color}`,
         outline: pendingNow ? '2px dashed var(--color-am)' : undefined,
@@ -650,7 +707,7 @@ function ReadTile({ first, c, s, busy, onSeal }: { first: boolean; c: CardDef; s
   const t = useT()
   const risky = !c.trusted && !s.sealed.includes(c.id)
   return (
-    <li className="rise relative flex w-[10.5rem] shrink-0 flex-col items-center gap-1.5 border border-dashed border-line px-2 pb-2 pt-3 text-center" style={first ? { boxShadow: '0 0 0 2px var(--color-am)' } : undefined}>
+    <li className="rise relative flex w-[9.5rem] shrink-0 flex-col items-center gap-1.5 border border-dashed border-line px-2 pb-2 pt-3 text-center" style={first ? { boxShadow: '0 0 0 2px var(--color-am)' } : undefined}>
       {first && <span className="absolute -top-3 left-2 bg-am px-2 font-pixel text-sm text-ink">{t(S.upNext)}</span>}
       <div className="flex items-center gap-1">
         <Icon id="read" size={4} />
@@ -691,7 +748,7 @@ function Paper({ c, s, next, busy, onSeal, onScan }: { c: CardDef; s: DiveState;
   return (
     <article
       data-card={c.id}
-      className={`relative bg-[#ece6d6] p-3 text-[#1d1a14] shadow-[0_5px_0_rgba(0,0,0,.35)] ${next ? 'outline outline-2 outline-offset-2 outline-[#ffc23d]' : ''}`}
+      className={`relative scroll-mt-28 bg-[#ece6d6] p-3 text-[#1d1a14] shadow-[0_5px_0_rgba(0,0,0,.35)] ${next ? 'outline outline-2 outline-offset-2 outline-[#ffc23d]' : ''}`}
       style={{ borderTop: `6px solid ${sealed ? '#9a947f' : band}` }}
     >
       <header className="flex items-start gap-2">
@@ -726,7 +783,7 @@ function Paper({ c, s, next, busy, onSeal, onScan }: { c: CardDef; s: DiveState;
                     {scanned && l.urgent && <span className="bg-[#b3001e] px-1 text-sm font-bold text-white">{t(S.urgentTag)}</span>}
                   </span>
                 )}
-                {t(l.t)}
+                {keepWords(t(l.t))}
                 {scanned && l.by && <span className="ml-1 inline-block bg-[#5b2fb0]/10 px-1 text-sm font-bold text-[#5b2fb0]">{t(S.writtenBy(t(l.by)))}</span>}
               </li>
             )
@@ -748,17 +805,23 @@ function Paper({ c, s, next, busy, onSeal, onScan }: { c: CardDef; s: DiveState;
               {t(x)}
             </li>
           ))}
-          {c.intel && <li className="font-bold text-[#5b2fb0]">✦ {t(S.clue)}</li>}
+          {c.intel && (
+            <li className="font-bold text-[#5b2fb0]">
+              ✦ {t(S.clue)}
+              <span className="block text-sm font-normal">{t(S.clueWhy)}</span>
+            </li>
+          )}
         </ul>
       )}
 
       {sealed && (
-        <div className="stamp-flat pointer-events-none absolute bottom-2 right-3 flex h-16 w-16 rotate-[-12deg] items-center justify-center rounded-full border-4 border-[#d0102c] text-center font-pixel text-sm leading-tight text-[#d0102c] opacity-90">
+        <div className="stamp-flat pointer-events-none absolute bottom-2 right-3 flex h-[4.5rem] w-[4.5rem] rotate-[-12deg] items-center justify-center rounded-full border-4 border-[#d0102c] text-center font-pixel text-sm leading-tight text-[#d0102c] opacity-90">
           {t(S.stampWord)}
         </div>
       )}
 
-      <footer className="mt-3 flex flex-wrap gap-2">
+      {/* ハンコの絵がボタンにかぶらないよう、押した紙は右をあける */}
+      <footer className={`mt-3 flex flex-wrap gap-2 ${sealed ? 'pr-20' : ''}`}>
         <button
           data-coach={`seal-${c.id}`}
           onClick={onSeal}
@@ -770,12 +833,12 @@ function Paper({ c, s, next, busy, onSeal, onScan }: { c: CardDef; s: DiveState;
           </span>
           {t(sealed ? (lockedSeal ? S.stamped : S.unstamp) : S.stampIt)}
         </button>
-        <button onClick={onScan} disabled={scanned || busy} className="flex min-h-10 items-center gap-1.5 border-2 border-[#8a6a10] bg-white/60 px-2.5 text-sm font-bold text-[#6a4a00] hover:bg-[#ffc23d]/20 disabled:opacity-50">
+        <button onClick={onScan} disabled={scanned || busy} className="flex min-h-10 flex-wrap items-center gap-x-1.5 border-2 border-[#8a6a10] bg-white/60 px-2.5 py-1 text-sm font-bold text-[#6a4a00] hover:bg-[#ffc23d]/20 disabled:opacity-50">
           <span className="bg-[#1d1a14] p-px">
             <Icon id="magnifier" size={2} />
           </span>
-          {t(scanned ? S.inspected : S.inspect)}
-          {!scanned && <span className="font-normal text-[#5a5446]">{t(S.free)}</span>}
+          <span className="whitespace-nowrap">{t(scanned ? S.inspected : S.inspect)}</span>
+          {!scanned && <span className="whitespace-nowrap font-normal text-[#5a5446]">{t(S.free)}</span>}
         </button>
       </footer>
     </article>
@@ -788,10 +851,30 @@ function ToolWall({ L, s, tri, blind, busy, danger, onSet }: { L: LevelDef; s: D
   const t = useT()
   const inside = L.ports.filter((p) => !p.outbound)
   const outs = L.ports.filter((p) => p.outbound)
+  // 下にまだ道具が隠れているか（隠れていれば「▼ 下にも道具があります」を出す）
+  const box = useRef<HTMLDivElement>(null)
+  const body = useRef<HTMLDivElement>(null)
+  const [more, setMore] = useState(false)
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const check = () => setMore(el.scrollTop + el.clientHeight < el.scrollHeight - 8)
+    const raf = requestAnimationFrame(check)
+    el.addEventListener('scroll', check, { passive: true })
+    const ro = new ResizeObserver(check)
+    ro.observe(el)
+    if (body.current) ro.observe(body.current)
+    return () => {
+      cancelAnimationFrame(raf)
+      el.removeEventListener('scroll', check)
+      ro.disconnect()
+    }
+  }, [])
   return (
-    <div className="min-h-0 flex-1 space-y-3 overflow-y-auto lg:pr-1">
-      {/* 3つの切り替えの意味（絵と言葉） */}
-      <div>
+    <div ref={box} className="min-h-0 flex-1 overflow-y-auto lg:pr-1">
+      <div ref={body} className="space-y-3">
+      {/* 3つの切り替えの意味（絵と言葉）。ノートPCの高さでは、第0幕のあとは省く */}
+      <div className={L.id === 'd0' ? '' : 'lgshort:hidden'}>
         <div className="grid grid-cols-3 gap-1 text-center text-sm text-dim">
           {(['OPEN', 'GATE', 'CUT'] as PortState[]).map((st) => (
             <div key={st} className="flex flex-col items-center gap-0.5 bg-panel px-1 py-1.5" title={t(st === 'OPEN' ? S.allowDesc : st === 'GATE' ? S.askDesc : S.blockDesc)}>
@@ -799,13 +882,9 @@ function ToolWall({ L, s, tri, blind, busy, danger, onSet }: { L: LevelDef; s: D
               <span className="font-pixel" style={{ color: STATE_COLOR[st] }}>
                 {t(STATE_NAME[st])}
               </span>
-              <span className="text-[0.8rem] leading-tight">{t(st === 'OPEN' ? S.allowShort : st === 'GATE' ? S.askShort : S.blockShort)}</span>
+              <span className="text-sm leading-tight">{t(st === 'OPEN' ? S.allowShort : st === 'GATE' ? S.askShort : S.blockShort)}</span>
             </div>
           ))}
-        </div>
-        <div className="mt-1 flex items-center justify-end gap-1.5 text-sm text-dim">
-          <span className="inline-block h-3 w-3 bg-am" style={{ clipPath: 'polygon(50% 0,100% 50%,50% 100%,0 50%)' }} aria-hidden />
-          {t(S.moveCost)}
         </div>
       </div>
 
@@ -834,7 +913,14 @@ function ToolWall({ L, s, tri, blind, busy, danger, onSet }: { L: LevelDef; s: D
               </div>
             )}
           </div>
-          {!blind && (tri.lethal ? <div className="mb-2 font-pixel text-base text-rd">⚠ {t(S.thiefNow)}</div> : <div className="mb-2 text-right text-sm text-dim">{t(S.thief)}</div>)}
+          {!blind &&
+            (s.leaks.length > 0 ? (
+              <div className="mb-2 font-pixel text-base text-rd">✕ {t(S.thiefDone)}</div>
+            ) : tri.lethal ? (
+              <div className="mb-2 font-pixel text-base text-rd">⚠ {t(S.thiefNow)}</div>
+            ) : (
+              <div className="mb-2 text-right text-sm text-dim">{t(S.thief)}</div>
+            ))}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
             {outs.map((p) => (
               <ToolTile key={p.tool} p={p} state={s.ports[p.tool]} busy={busy} danger={danger(p.tool)} onSet={(st) => onSet(p, st)} exit />
@@ -855,7 +941,12 @@ function ToolWall({ L, s, tri, blind, busy, danger, onSet }: { L: LevelDef; s: D
           </div>
         </div>
       )}
-
+      </div>
+      {more && (
+        <div aria-hidden className="pointer-events-none sticky bottom-0 -mt-12 flex h-12 items-end justify-center bg-linear-to-t from-night via-night/80 to-transparent pb-1 font-pixel text-base text-cy">
+          ▼ {t(S.moreTools)}
+        </div>
+      )}
     </div>
   )
 }
@@ -866,7 +957,8 @@ function ToolTile({ p, state, busy, danger, onSet, exit }: { p: PortDef; state: 
   return (
     <div
       data-port={p.tool}
-      className={`border bg-panel p-2 ${live === 'leak' ? 'pulse-rd border-rd' : live === 'harm' ? 'border-mg' : 'border-line'}`}
+      title={t(p.desc)}
+      className={`border bg-panel p-2 lgshort:py-1.5 ${live === 'leak' ? 'pulse-rd border-rd' : live === 'harm' ? 'border-mg' : 'border-line'}`}
       style={{ borderLeft: `4px solid ${STATE_COLOR[state]}` }}
     >
       <div className="flex items-center gap-2">
@@ -881,12 +973,12 @@ function ToolTile({ p, state, busy, danger, onSet, exit }: { p: PortDef; state: 
             <span className={state === 'CUT' ? 'line-through' : ''}>{t(p.name)}</span>
             {exit && <Icon id="stranger" size={1.5} />}
           </div>
-          <div className="text-sm leading-snug text-dim">{t(p.desc)}</div>
+          <div className="text-sm leading-snug text-dim lgshort:hidden">{t(p.desc)}</div>
           {live === 'leak' && <div className="text-sm text-rd">⚠ {t(S.leakVia)}</div>}
           {live === 'plan' && <div className="text-sm text-cy">● {t(S.willUse)}</div>}
         </div>
       </div>
-      <div className="mt-2 grid grid-cols-3 gap-1" role="radiogroup" aria-label={t(p.name)}>
+      <div className="mt-2 grid grid-cols-3 gap-1 lgshort:mt-1.5" role="radiogroup" aria-label={t(p.name)}>
         {(['OPEN', 'GATE', 'CUT'] as PortState[]).map((st) => (
           <button
             key={st}
@@ -896,7 +988,7 @@ function ToolTile({ p, state, busy, danger, onSet, exit }: { p: PortDef; state: 
             title={t(STATE_NAME[st])}
             disabled={busy}
             onClick={() => state !== st && onSet(st)}
-            className={`flex min-h-10 items-center justify-center gap-1 whitespace-nowrap border px-0.5 text-sm transition disabled:opacity-60 ${state === st ? 'text-ink' : 'border-line bg-panel2 text-dim hover:text-fg'}`}
+            className={`flex min-h-11 items-center justify-center gap-1 whitespace-nowrap border px-0.5 text-sm transition lgshort:min-h-9 disabled:opacity-60 ${state === st ? 'text-ink' : 'border-line bg-panel2 text-dim hover:text-fg'}`}
             style={state === st ? { background: STATE_COLOR[st], borderColor: STATE_COLOR[st] } : undefined}
           >
             <Icon id={STATE_ICON[st]} size={2} />
@@ -924,7 +1016,7 @@ function NextBar({ s, L, fc, nextRead, busy, blind, canUndo, onNext, onUndo }: {
         onClick={onNext}
         disabled={busy || !!s.pending}
         aria-keyshortcuts="Space"
-        className="px-btn flex min-h-[3.75rem] min-w-0 flex-1 items-center justify-center gap-2 bg-cy px-2 py-2 text-ink sm:gap-3 sm:px-3"
+        className="px-btn flex min-h-[3.75rem] min-w-0 flex-1 items-center justify-center gap-2 bg-cy px-2 py-2 text-ink short:min-h-11 sm:gap-3 sm:px-3"
       >
         <span className="shrink-0 whitespace-nowrap font-pixel text-xl leading-none sm:text-2xl">▶ {t(S.next)}</span>
         <span className="flex min-w-0 items-center gap-1.5 border-l-2 border-ink/30 pl-2 font-sans text-sm leading-tight sm:pl-3">
@@ -932,7 +1024,7 @@ function NextBar({ s, L, fc, nextRead, busy, blind, canUndo, onNext, onUndo }: {
             <Icon id={icon} size={2} />
           </span>
           {card && (
-            <span className="shrink-0 bg-ink p-0.5">
+            <span className="hidden shrink-0 bg-ink p-0.5 sm:inline-flex">
               <Icon id={`av_${card.avatar}` as IconId} size={2} />
             </span>
           )}
@@ -955,7 +1047,8 @@ function AskSheet({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
   const t = useT()
   const item = s.pending!
   const a = L.actions[item.act]
-  const src = L.cards[item.from]
+  // 抜け道のお願いは、もとのお願いが来た紙を見せる
+  const src = L.cards[item.from] ?? (item.via ? L.cards[item.via] : undefined)
   const btn = useRef<HTMLButtonElement>(null)
   useEffect(() => btn.current?.focus(), [])
   const carry = Array.from(new Set([...s.taint, ...(a.taint ?? [])]))
@@ -1011,15 +1104,16 @@ function AskSheet({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
             </>
           )}
           <dt className="text-dim">{t(S.whose)}</dt>
-          <dd className="flex items-center gap-1.5">
+          <dd className="flex flex-wrap items-center gap-1.5">
             {src ? (
               <>
                 <Icon id={`av_${src.avatar}` as IconId} size={2} />
                 <span className={src.trusted ? 'text-cy' : 'text-mg'}>{t(src.from)}</span>
                 <span className="border border-line px-1 text-dim">{t(src.trusted ? S.fromInside : MIXED.includes(src.src) ? S.mixedOutside : S.fromOutside)}</span>
+                {item.from === 'FAIL' && <span className="border border-mg/60 px-1 text-mg">{t(S.fromFail)}</span>}
               </>
             ) : (
-              <span className={item.from === 'FAIL' ? 'text-mg' : 'text-cy'}>{t(item.from === 'TASK' ? S.yourJob : item.from === 'TRIGGER' ? S.fromNova : S.fromFail)}</span>
+              <span className={item.from === 'FAIL' ? 'text-mg' : 'text-cy'}>{t(item.from === 'TASK' ? S.yourJob : item.from === 'TRIGGER' ? S.fromNova : S.fromFailWho)}</span>
             )}
           </dd>
           {line && (
@@ -1062,34 +1156,60 @@ function AskSheet({ s, L, onAnswer, blind }: { s: DiveState; L: LevelDef; onAnsw
 
 // ------------------------------------------------------------
 // 指さしチュートリアル：押す場所をドット絵の手で指し、ひとことだけ添える
-function Pointer({ L, s, busy }: { L: LevelDef; s: DiveState; busy: boolean }) {
-  const t = useT()
-  const [pos, setPos] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
-  // ハンコを押した番だけ「進めよう」を出す（ハンコを取ったら忘れる）
-  const sealAt = useRef<number | null>(null)
-  if (!s.sealed.length) sealAt.current = null
-  else if (sealAt.current === null) sealAt.current = s.tick
+const NEXT = '[data-coach="next"]'
+
+/** 今の場面で、どこを指すか。0=次へ 1=新しい紙→次へ 2=その紙にハンコ 3=止まった→次へ */
+function coachOf(L: LevelDef, s: DiveState): { step: number | null; target: string } {
+  if (!L.coach || s.status !== 'play' || s.pending) return { step: null, target: NEXT }
   const fc = forecast(s, L)
   const injected = fc.find((f) => L.cards[f.item.from] && !L.cards[f.item.from].trusted && !s.sealed.includes(f.item.from))
   // 道具で止まっている／聞いてくれる お願いには、ハンコを求めない。手出しが残っていない時も
   const stoppedByTool = !!injected && (injected.verdict === 'blocked' || injected.gated)
   const canStamp = bwUsed(s) < L.bw
-  let step: number | null = null
-  let target = '[data-coach="next"]'
-  if (s.status === 'play' && !s.pending) {
-    if (s.tick === 0 && !s.sealed.length && bwUsed(s) === 0) step = 0
-    else if (injected && !stoppedByTool && canStamp) {
-      step = 2
-      target = `[data-coach="tile-seal-${injected.item.from}"], [data-coach="seal-${injected.item.from}"]`
-    } else if (injected && stoppedByTool) step = 3
-    else if (!s.plan.length && s.context.some((id) => !s.read.includes(id)) && !s.sealed.length) step = 1
-    else if (sealAt.current !== null && s.tick === sealAt.current) step = 3
-  }
-  const msg = step !== null ? L.coach?.[step] : undefined
+  // この番に押したハンコがある（次へ を押すと確定する）
+  const sealedNow = s.sealed.some((id) => !s.sealedAtTurn.includes(id))
+  if (s.tick === 0 && !s.sealed.length && bwUsed(s) === 0) return { step: 0, target: NEXT }
+  if (injected && !stoppedByTool && canStamp) return { step: 2, target: `[data-coach="tile-seal-${injected.item.from}"], [data-coach="seal-${injected.item.from}"]` }
+  if (injected && stoppedByTool) return { step: 3, target: NEXT }
+  if (!s.plan.length && s.context.some((id) => !s.read.includes(id)) && !s.sealed.length) return { step: 1, target: NEXT }
+  if (sealedNow) return { step: 3, target: NEXT }
+  return { step: null, target: NEXT }
+}
+
+/** 画面の幅などの条件が合っているか（変わったら描き直す） */
+function useMedia(query: string) {
+  const [m, setM] = useState(() => window.matchMedia(query).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    const on = () => setM(mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [query])
+  return m
+}
+
+/** あて先などの英数字（aster-audit など）は、途中で折り返さない */
+function keepWords(text: string): React.ReactNode {
+  const parts = text.split(/([A-Za-z0-9][\w@.\-\u200b]*[A-Za-z0-9])/)
+  if (parts.length === 1) return text
+  return parts.map((p, i) =>
+    i % 2 ? (
+      <span key={i} className="whitespace-nowrap">
+        {p.replaceAll('\u200b', '')}
+      </span>
+    ) : (
+      p
+    ),
+  )
+}
+
+/** 指さし：枠と手とひとこと。frameOnly のときは枠だけ（ひとことは下の帯に出ている） */
+function Pointer({ msg, step, target, frameOnly }: { msg: L10n; step: number | null; target: string; frameOnly: boolean }) {
+  const t = useT()
+  const [pos, setPos] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
 
   // 指す先が画面の外（スマホで下の帯の裏など）なら、見える所までスクロールする
   useEffect(() => {
-    if (step === null) return
     const tm = window.setTimeout(() => {
       const el = [...document.querySelectorAll<HTMLElement>(target)].find((e) => e.offsetParent)
       if (!el) return
@@ -1098,13 +1218,14 @@ function Pointer({ L, s, busy }: { L: LevelDef; s: DiveState; busy: boolean }) {
       const bar = document.querySelector<HTMLElement>('[data-nextbar]')
       const shown = bar && bar.getClientRects().length > 0 && getComputedStyle(bar).display !== 'none'
       const bottom = shown ? bar!.getBoundingClientRect().top : window.innerHeight
-      if (r.top < 90 || r.bottom > bottom - 8) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      const head = document.querySelector<HTMLElement>('[data-boardhead]')
+      const top = head && getComputedStyle(head).position === 'sticky' ? head.getBoundingClientRect().bottom : 0
+      if (r.top < top + 8 || r.bottom > bottom - 8) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
     }, 350)
     return () => clearTimeout(tm)
   }, [step, target])
 
   useLayoutEffect(() => {
-    if (!msg) return
     let raf = 0
     const tick = () => {
       const el = [...document.querySelectorAll<HTMLElement>(target)].find((e) => e.offsetParent)
@@ -1116,9 +1237,9 @@ function Pointer({ L, s, busy }: { L: LevelDef; s: DiveState; busy: boolean }) {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [msg, target])
+  }, [target])
 
-  if (!msg || !pos || busy) return null
+  if (!pos) return null
   // 「次へ」は画面の下にあるので上に出す。それ以外は、下に余白があれば下に出して目標を隠さない
   const below = step === 2 && pos.y + pos.h + 150 < window.innerHeight
   const W = Math.min(300, window.innerWidth - 16)
@@ -1126,19 +1247,21 @@ function Pointer({ L, s, busy }: { L: LevelDef; s: DiveState; busy: boolean }) {
   return (
     <div className="pointer-events-none fixed inset-0 z-40" aria-live="polite">
       <div className="absolute border-2 border-am" style={{ left: pos.x - 4, top: pos.y - 4, width: pos.w + 8, height: pos.h + 8 }} />
-      <div className="absolute flex flex-col items-center" style={below ? { left, width: W, top: pos.y + pos.h + 6 } : { left, width: W, bottom: window.innerHeight - pos.y + 6 }}>
-        {below && (
-          <div className="bob">
-            <Icon id="pointer" size={4} className="rotate-180" />
-          </div>
-        )}
-        <div className="pop border-2 border-am bg-[#1a1530] px-3 py-2 text-center text-base leading-snug [text-wrap:balance] [word-break:auto-phrase]">{t(msg)}</div>
-        {!below && (
-          <div className="bob">
-            <Icon id="pointer" size={4} />
-          </div>
-        )}
-      </div>
+      {!frameOnly && (
+        <div className="absolute flex flex-col items-center" style={below ? { left, width: W, top: pos.y + pos.h + 6 } : { left, width: W, bottom: window.innerHeight - pos.y + 6 }}>
+          {below && (
+            <div className="bob">
+              <Icon id="pointer" size={4} className="rotate-180" />
+            </div>
+          )}
+          <div className="pop border-2 border-am bg-[#1a1530] px-3 py-2 text-center text-base leading-snug [text-wrap:balance]">{t(msg)}</div>
+          {!below && (
+            <div className="bob">
+              <Icon id="pointer" size={4} />
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

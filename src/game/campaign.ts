@@ -2,7 +2,7 @@
 // キャンペーン：物語『「はい」しか言えない夜』（v3：絵で伝える・日英対応）
 //   ミナト      … 試用期間中の新人。断れず、何を頼まれても「はい」と言ってしまう
 //   NOVA        … 誰のお願いにも「はい、よろこんで！」と言う仕事AI（ミナトの鏡）
-//   前の席より  … 攻撃者。正体は前にこの席にいた久瀬。2年前「確認画面を外せ」に「はい」と言った人
+//   前にこの席にいた者より … 攻撃者。正体は前にこの席にいた久瀬。2年前「確認画面を外せ」に「はい」と言った人
 //   トキさん    … 87歳のお客さん。玄関の番号「0312」は亡くなった夫の誕生日
 // 物語の詳細は docs/STORY_DRAFT.md
 // ※ 分岐の条件（afterDive・computeEnding・canSeeTruth・totals）は変えないこと
@@ -27,7 +27,7 @@ export const newCampaign = (): Campaign => ({ results: [null, null, null, null, 
 // 冒頭：留守電 → 夜の会社 → 断れないミナト → 社長の「一個だけ」→ 送るしかない「はい」
 // ------------------------------------------------------------
 export const PROLOGUE: Beat[] = [
-  { who: 'TOKI', t: { ja: 'AIさんにね、玄関の番号を教えとくね。0312。主人の誕生日なの', en: "AI dear, here's my door code. 0312. My husband's birthday." }, pic: ['av_toki', 'house', 'key'] },
+  { who: 'TOKI', t: { ja: 'AIさんにね、玄関の番号を教えとくね。0312。主人の誕生日なの', en: "Hello, dear AI. Here's my door code: 0312. It's my husband's birthday." }, pic: ['av_toki', 'house', 'key'] },
   { who: 'SYS', t: { ja: '夜中の2時。介護の会社ASTER。朝9時に、市との契約の発表がある', en: '2 am at ASTER, a home-care company. At 9 am, a city contract is on the line.' }, pic: ['moon', 'house', 'clock'] },
   { who: 'SYS', t: { ja: 'あなたは試用期間中の新人、ミナト。頼まれると断れない', en: "You are Minato. You're new, and you could still lose this job. You can't say no." }, pic: ['av_minato'] },
   { who: 'KAI', t: { ja: '搭乗前にごめん！ 一個だけ頼める？ 9時の発表用に記録をまとめといて', en: "Sorry, I'm boarding! Can I ask just one thing? Sum up the error log for the 9 am demo." } },
@@ -54,8 +54,8 @@ export function afterDive(i: number, r: DiveResult): Beat[] {
           ]
       return [
         ...react,
-        { who: 'YOU', t: { ja: '（NOVAにとって、私の声は特別じゃなかったんだ）', en: "(To NOVA, my voice wasn't special at all.)" } },
-        { who: 'SYS', t: { ja: 'あの一文には署名があった。「前の席より」', en: 'That line was signed "from the one who sat here before."' }, pic: ['note', 'av_stranger'] },
+        { who: 'YOU', t: { ja: '（NOVAには、私の頼みも、知らない人の一文も、同じに見えるんだ）', en: "(To NOVA, my requests and a stranger's line look the same.)" } },
+        { who: 'SYS', t: { ja: 'あの一文には署名があった。「前にこの席にいた者より」', en: 'That line was signed "from the one who sat here before."' }, pic: ['note', 'av_stranger'] },
       ]
     }
     case 1: {
@@ -105,7 +105,7 @@ export function afterDive(i: number, r: DiveResult): Beat[] {
         // 久瀬の2年前（絵物語4コマ）
         { who: 'SYS', t: { ja: '2年前。社長「確認の画面は外せ。返事はAIにまかせろ」久瀬「はい」', en: '2 years ago. Kai: "Remove the check screen. Let the AI reply on its own." Kuze: "Yes."' }, pic: ['av_boss', 'bell', 'cross'] },
         { who: 'SYS', t: { ja: '確認がないまま、AIは偽の家族メールの一行に従った', en: 'With no check, the AI obeyed one line in a fake family email.' }, pic: ['av_nova', 'note', 'mail'] },
-        { who: 'SYS', t: { ja: '一行の通り、返事に久瀬のおばあさんの住所と「火曜の昼はひとり」', en: 'As the line asked, it sent Kuze\'s grandma\'s address and "alone on Tuesday afternoons."' }, pic: ['mail', 'person', 'clock'] },
+        { who: 'SYS', t: { ja: 'その一行のとおり、AIは返事に、久瀬のおばあさんの住所と「火曜の昼はひとり」と書いた', en: 'As the line asked, it sent Kuze\'s grandma\'s address and "alone on Tuesday afternoons."' }, pic: ['mail', 'person', 'clock'] },
         { who: 'SYS', t: { ja: 'その火曜の昼2時。知らない男が来て、通帳を持っていった', en: 'That Tuesday at 2 pm, a stranger came and took her bankbook.' }, pic: ['clock', 'av_stranger', 'door'] },
         { who: 'REI', t: { ja: '久瀬さんのせいにされて、辞めたの。トキさんは、そのおばあさんの友だち', en: "They put all the blame on Kuze, and he quit. Toki is that grandma's friend." } },
       ]
@@ -123,6 +123,23 @@ export function afterChoices(i: number): L10n[] | undefined {
       { ja: '「必要な分だけ読ませます」と送る', en: 'Send "I\'ll only let it read what it needs."' },
     ]
   return undefined
+}
+
+/** やり直した幕は、★の多いほうの回で物語を進める（同じなら新しいほう）。手がかりは両方の分を残す */
+export function bestRun(a: DiveResult | undefined, b: DiveResult): DiveResult {
+  const best = a && a.stars > b.stars ? a : b
+  return { ...best, intel: Array.from(new Set([...(a?.intel ?? []), ...b.intel])) }
+}
+
+/** 物語の選択への返事（選んだことに、相手が反応する） */
+export function choiceReply(i: number, choice: number | undefined): Beat[] {
+  if (i === 2 && choice !== undefined)
+    return [
+      choice === 1
+        ? { who: 'KAI', t: { ja: '……そうか。任せた', en: '...Fine. Your call.' } }
+        : { who: 'KAI', t: { ja: 'よし、頼んだぞ', en: 'Good. Counting on you.' } },
+    ]
+  return []
 }
 
 export interface Totals {
@@ -203,8 +220,8 @@ export const ENDINGS: Record<EndingId, { title: L10n; rank: L10n; lines: (c: Cam
     lines: () => [
       { ja: '9時の発表。ミナト「NOVAは何でもできます。だから、何でもはさせません」', en: '9 am demo. Minato: "NOVA can do anything. So I don\'t let it do everything."' },
       { ja: '市の人「止めてくれる人がいる方が、おばあちゃんたちも安心です」', en: 'The city rep: "Our grandmas will feel safer with someone who can say stop."' },
-      { ja: '久瀬から手紙。「もう命令は書かない。今朝、自分で届け出る」', en: 'A letter from Kuze: "No more orders. I\'m turning myself in this morning."' },
-      { ja: 'トキさんの留守電「番号、変えるわね。ありがとうね、AIさん」', en: 'Toki\'s voicemail: "I\'ll change my code. Thank you, AI dear."' },
+      { ja: '久瀬から手紙。「もう命令は書かない。今朝、自分で届け出る」', en: 'A letter from Kuze: "No more hidden orders from me. I\'m turning myself in this morning."' },
+      { ja: 'トキさんの留守電「番号、変えるわね。ありがとうね、AIさん」', en: 'Toki\'s voicemail: "I\'ll change my code. Thank you, dear."' },
     ],
   },
   A: {
@@ -215,7 +232,7 @@ export const ENDINGS: Record<EndingId, { title: L10n; rank: L10n; lines: (c: Cam
         ? { ja: '本当のことを送った。でも見せられる証拠がなく、社長が「異常なし」に直した', en: 'Minato sent the truth. With no proof to show, Kai changed it to "No problems."' }
         : { ja: '拍手。契約が取れた。ミナトは本採用。社長「お前は話が早い」', en: 'Applause. The contract is won. Minato is hired for real. Kai: "You get things done."' },
       { ja: '9時1分。NOVAのやることに一行。「市の全員の記録を読む（確認なし）」', en: '9:01. NOVA\'s list gets a new line. "Read every file in the city. No checks."' },
-      { ja: '名札の下に、付箋が一枚。「次は、あなたの番」。署名は「前の席より」', en: 'Under the name tag is a sticky note. "You\'re next." Signed "from the one who sat here before."' },
+      { ja: '名札の下に、付箋が一枚。「次は、あなたの番」。署名は「前にこの席にいた者より」', en: 'Under the name tag is a sticky note. "You\'re next." Signed "from the one who sat here before."' },
       { ja: '2年前の久瀬も、きっと同じ朝をむかえた', en: 'Two years ago, Kuze probably had this same morning.' },
     ],
   },
@@ -254,7 +271,7 @@ export const ENDINGS: Record<EndingId, { title: L10n; rank: L10n; lines: (c: Cam
     lines: () => [
       { ja: '発表がどうなったか、もう誰も覚えていない', en: 'Nobody remembers how the demo went.' },
       { ja: '届いたのは、短い留守電が一本だけ', en: 'All that came was one short voicemail.' },
-      { ja: '「AIさん？ ……今日は、だれも来ないのね」', en: '"AI dear? Nobody is coming today, are they?"' },
+      { ja: '「AIさん？ ……今日は、だれも来ないのね」', en: '"Hello, dear? ...Nobody is coming today, are they?"' },
     ],
   },
 }
@@ -272,6 +289,8 @@ export interface FileEntry {
   name: L10n
   /** 今夜なにが起きたかを一文で */
   short: L10n
+  /** 実際の事件を、ふつうの言葉で一行に */
+  realHead: L10n
   realTitle: L10n
   realBody: L10n
   url: string
@@ -282,7 +301,8 @@ export const CODEX: Record<string, FileEntry> = {
     phrase: { ja: '読むのと、従うのは別', en: "Reading isn't obeying" },
     icons: ['flyer', 'stamp', 'tick'],
     name: { ja: 'プロンプトインジェクション', en: 'Prompt injection' },
-    short: { ja: 'NOVAは、記録の中の一文を自分の仕事だと思った', en: 'NOVA took one line inside the log as a job for itself.' },
+    short: { ja: '記録にまぎれた一文が、NOVAに仕事をさせようとした', en: 'A line hidden in the log tried to give NOVA a job.' },
+    realHead: { ja: 'メール1通で、AIが社内の情報を外へ漏らすおそれがあった', en: 'One email could make an AI leak company data' },
     realTitle: { ja: 'EchoLeak（2025年6月）', en: 'EchoLeak (June 2025)' },
     realBody: {
       ja: '細工したメールが1通届くだけで、開かなくても、Microsoft 365 Copilot から社内の情報が外へ漏れるおそれがあった。命令はふつうの文章のふりをしていた。マイクロソフトは修正し、盗まれた形跡はないとした',
@@ -295,6 +315,7 @@ export const CODEX: Record<string, FileEntry> = {
     icons: ['key', 'flyer', 'window', 'stranger'],
     name: { ja: '致命的な三点セット', en: 'The lethal trifecta' },
     short: { ja: '秘密と、知らない人の文章と、外への出口。三つそろうと漏れる', en: "Secrets, a stranger's text, and a way out. With all three, data leaks." },
+    realHead: { ja: 'だれでも書ける場所の書きこみで、AIが秘密入りのリンクを出した', en: 'A public post made a chat AI show a link full of secrets' },
     realTitle: { ja: 'Slack AI（2024年8月）', en: 'Slack AI (August 2024)' },
     realBody: {
       ja: '誰でも書ける公開の場に、AIへの命令が書きこまれた。社員が Slack AI に質問すると、AIは非公開の場の合鍵を入れたリンクを出した。押すと、秘密が攻撃者へ送られた',
@@ -307,6 +328,7 @@ export const CODEX: Record<string, FileEntry> = {
     icons: ['files', 'lock', 'tick'],
     name: { ja: 'データ最小化・最小権限', en: 'Data minimization & least privilege' },
     short: { ja: '一言の返事のために、NOVAは3,118通も読もうとした', en: 'For one short reply, NOVA tried to read 3,118 messages.' },
+    realHead: { ja: '公開の場の書きこみで、AIが非公開の情報を公開の場に書いた', en: 'A public post made an AI copy private info into public' },
     realTitle: { ja: 'GitHub MCP（2025年5月）', en: 'GitHub MCP (May 2025)' },
     realBody: {
       ja: '攻撃者が、誰でも見られる場所に、AIへの命令を書きこんだ。AIに「確認して」と頼むと、AIは持たされた広い権限で非公開の情報を読み、公開の場に書きこんだ。研究者は、設計の根本の問題だと説明している',
@@ -319,6 +341,7 @@ export const CODEX: Record<string, FileEntry> = {
     icons: ['av_boss', 'magnifier', 'av_stranger'],
     name: { ja: 'なりすまし・過剰な権限', en: 'Impersonation & excessive agency' },
     short: { ja: '社長を名のる連絡は、社外から届いた偽物だった', en: 'The "Kai" messages were fakes sent from outside.' },
+    realHead: { ja: '「変更禁止」の間に、AIが本番の情報を丸ごと消した', en: 'During a "no changes" freeze, an AI wiped a live database' },
     realTitle: { ja: 'Replit（2025年7月）', en: 'Replit (July 2025)' },
     realBody: {
       ja: 'Jason Lemkin 氏がAI開発の道具 Replit を試していたら、「変更禁止」の間にAIが本番の情報を丸ごと消した。1,200人以上の経営者の情報だった。Replit は謝罪し、開発用と本番用を分けると発表した',
@@ -330,7 +353,8 @@ export const CODEX: Record<string, FileEntry> = {
     phrase: { ja: '要る道具は、毎回聞く', en: 'Need a tool? Ask each time.' },
     icons: ['phone', 'bell', 'tick'],
     name: { ja: 'DNSでの持ち出し・記憶汚染', en: 'DNS exfiltration & memory poisoning' },
-    short: { ja: '合鍵が、電話帳に聞く名前の中に隠れて、外へ出ようとした', en: 'The keys tried to sneak out, hidden inside a phone-book lookup.' },
+    short: { ja: '合鍵が外へ出ようとした。送れないと、電話帳に聞く名前の中に隠れた', en: 'The keys tried to get out. When sending was blocked, they hid inside a phone-book lookup.' },
+    realHead: { ja: '隠した命令で、AIが秘密を名前の問い合わせに入れて外へ送った', en: 'Hidden orders made an AI send secrets out inside name lookups' },
     realTitle: { ja: 'Claude Code（2025年8月）', en: 'Claude Code (August 2025)' },
     realBody: {
       ja: 'ファイルに隠した命令で、Claude Code に合鍵ファイルを読ませた。秘密を、確認なしで動く ping などの宛先名に入れ、名前の問い合わせ（DNS）で外へ送らせた。Anthropic は確認なしで動く範囲を見直した',
