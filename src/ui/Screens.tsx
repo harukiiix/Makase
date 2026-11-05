@@ -22,10 +22,12 @@ const host = (u: string) => {
 function Page({ title, lang, setLang, onBack, children }: { title: string; lang: Lang; setLang: (l: Lang) => void; onBack: () => void; children: React.ReactNode }) {
   return (
     <div className="min-h-dvh px-4 pb-10 pt-3 sm:px-6">
-      <header className="mx-auto flex max-w-2xl items-center gap-3">
-        <BackButton onClick={onBack} />
-        <h1 className="min-w-0 flex-1 truncate text-2xl text-safety">{title}</h1>
-        <LangToggle lang={lang} onChange={setLang} />
+      <header className="mx-auto max-w-2xl">
+        <div className="flex items-center justify-between gap-3">
+          <BackButton onClick={onBack} />
+          <LangToggle lang={lang} onChange={setLang} />
+        </div>
+        <h1 className="mt-2 text-2xl text-safety sm:text-3xl">{title}</h1>
       </header>
       <div className="mx-auto mt-4 grid max-w-2xl gap-4">{children}</div>
     </div>
@@ -110,15 +112,18 @@ export function Science({ lang, setLang, onBack }: { lang: Lang; setLang: (l: La
             <b>{t(S.scienceHere)}</b>　{t(pr.here)}
           </p>
           {pr.refs.length > 0 && (
-            <ul className="mt-2 grid gap-1 text-sm text-ink2">
-              {pr.refs.map((r, k) => (
-                <li key={k}>
-                  <a className="text-hint underline" href={r.url} target="_blank" rel="noreferrer">
-                    {r.cite}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <details className="mt-2 text-sm text-ink2">
+              <summary className="min-h-11 cursor-pointer content-center font-bold">{t(S.sourcesN(pr.refs.length))}</summary>
+              <ul className="grid gap-1.5 pb-1">
+                {pr.refs.map((r, k) => (
+                  <li key={k} lang="en" className="break-words">
+                    <a className="text-hint underline" href={r.url} target="_blank" rel="noreferrer">
+                      {r.cite}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
           )}
         </div>
       ))}

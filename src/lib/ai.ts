@@ -58,6 +58,7 @@ export function tutorRules(q: Question, pick: number, lang: Lang): string {
       ? `Reply in natural, plain spoken Japanese, the way a real supervisor talks to a new worker (〜だね、〜しよう、〜かな). Use everyday words. Do not use katakana technical words such as インシデント, フィッシング, マルウェア, ランサムウェア, クラウド, アカウント, ログイン, リスク.`
       : `Reply in natural, plain, friendly English, the way a real supervisor talks to a new worker. Use everyday words, no technical jargon.`,
     `Keep it short: at most 3 short sentences (about ${ja ? '120 Japanese characters' : '60 words'}). No lists, no headings, no markdown.`,
+    `If the worker gives their own reason (for example a message ending in 〜と思う or starting with "I think"), first say kindly what is right in it, then add the one thing that is missing or wrong, if any. Do not just repeat the explanation below.`,
     `Stay on this question and on protecting information at work. If asked about something unrelated, about breaking into systems, or anything harmful, kindly say that is outside today's lesson and bring it back. Do not invent real incidents, laws, company names or numbers. If you are not sure, say so and suggest asking the person in charge at the company. The company's and the site's rules come first.`,
     ``,
     `The quiz question the worker just answered:`,

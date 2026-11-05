@@ -38,7 +38,7 @@ export function LangToggle({ lang, onChange, className = '' }: { lang: Lang; onC
 export function BackButton({ onClick, label }: { onClick: () => void; label?: string }) {
   const t = useT()
   return (
-    <button onClick={() => (sfx.ui(), onClick())} aria-label={label ?? t(S.back)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-asphalt2 text-xl text-onDark hover:bg-asphalt3" style={{ boxShadow: '0 0 0 2px #15171b' }}>
+    <button data-back onClick={() => (sfx.ui(), onClick())} aria-label={label ?? t(S.back)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-asphalt2 text-xl text-onDark hover:bg-asphalt3" style={{ boxShadow: '0 0 0 2px #15171b' }}>
       ←
     </button>
   )

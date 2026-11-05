@@ -1,5 +1,5 @@
 // 月曜日：現場事務所「人に見える所」
-// 事務所に出しっぱなしの物（パスワードのふせん、開いたままの画面、図面、名簿、コピー機）と、外に見せていい物（許可票）
+// 事務所に出しっぱなしの物（パスワードのふせん、開いたままの画面、図面、名簿、コピー機、USBメモリのパスワード）と、外に見せていい物（許可票）
 import type { Lesson } from '../types'
 
 export const LESSON: Lesson = {
@@ -87,12 +87,12 @@ export const LESSON: Lesson = {
       },
       answer: true,
       why: {
-        ja: '2、3分でも、その間に画面を見られたり、さわられたりするかもしれない。ロックはすぐできるから、席を立つたびにしよう。',
+        ja: '2、3分でも、その間に画面を見られたり、さわられたりするかもしれないよ。ロックはすぐできるから、席を立つたびにしよう。',
         en: 'Even in a couple of minutes, someone could look at the screen or use the PC. Locking takes a second, so do it every time you get up.',
       },
       wrongWhy: {
-        ja: '2、3分なら大丈夫、と思うよね。でも、電話や呼び出しで、戻るのが遅くなることはよくあるんだ。',
-        en: "It's easy to think a couple of minutes is fine. But a phone call or someone stopping you often keeps you away longer.",
+        ja: '2、3分なら大丈夫、と思うよね。でも、画面をのぞくだけなら、数秒でできちゃうんだ。電話などで、戻るのが遅れることもよくあるよ。',
+        en: "It's easy to think a couple of minutes is fine. But a quick look at the screen takes only seconds. And a phone call can easily keep you away longer.",
       },
       tip: { ja: '席を立つときは、Windowsキー＋L', en: 'Leaving your desk? Press Windows key + L' },
     },
@@ -110,26 +110,26 @@ export const LESSON: Lesson = {
       ask: { ja: 'この図面、どうする？', en: 'What do you do with the drawing?' },
       choices: [
         { ja: '上に、別の紙をかぶせておく', en: 'Cover it with another sheet of paper' },
-        { ja: '『見ないでください』とお願いする', en: 'Ask him, "Please don\'t look at it"' },
+        { ja: '「見ないでください」とお願いする', en: 'Ask him, "Please don\'t look at it"' },
         { ja: '少し待ってもらい、先にしまう', en: 'Ask him to wait, and put it away first' },
       ],
       correct: 2,
       why: {
-        ja: '『少しお待ちください』と言うのは、失礼じゃないよ。見られる前にしまうのが、いちばん確かなんだ。',
+        ja: '「少しお待ちください」と言うのは、失礼じゃないよ。見られる前にしまうのが、いちばん確かなんだ。',
         en: 'Saying "Just a moment, please" is not rude. Putting it away before anyone sees it is the surest way.',
       },
       wrongWhy: [
         {
-          ja: '紙をかぶせても、はしが見えたり、めくられたりするよ。棚にしまえば、もう見られないね。',
-          en: 'A cover sheet can slip, show the edges, or get lifted. Once it is in the cabinet, nobody can see it.',
+          ja: '紙をかぶせても、はしが見えたり、めくられたりするよ。しまっておけば、見られる心配はないね。',
+          en: "With a sheet on top, the edges can still show, or someone can lift it. Once it's put away, there's nothing to see.",
         },
         {
           ja: 'お願いしても、目に入るものは止められないよ。見られて困る物は、先にしまっておこう。',
-          en: "Asking can't stop what his eyes land on. Put away anything that should not be seen before he comes in.",
+          en: "Asking won't stop him from seeing it. Put away anything he shouldn't see first.",
         },
         null,
       ],
-      tip: { ja: '人が来る前に、図面はしまう', en: 'Put drawings away before anyone comes in' },
+      tip: { ja: '人が来たら、まず図面をしまう', en: 'When someone comes in, put drawings away first' },
     },
     // 4. 作業員名簿の出しっぱなし（「目立たなければいい」）
     {
@@ -140,7 +140,7 @@ export const LESSON: Lesson = {
       pic: 'pic.worker_list_on_desk',
       situation: {
         ja: '作業員名簿のファイルが、事務所の入口の机に出しっぱなしになっている。だれでも手に取れる。',
-        en: 'The worker list file has been left out on the desk by the office door. Anyone could pick it up.',
+        en: 'The binder with the worker list has been left out on the desk by the office door. Anyone could pick it up.',
       },
       ask: { ja: 'この名簿、どうする？', en: 'What do you do with the list?' },
       choices: [
@@ -150,13 +150,13 @@ export const LESSON: Lesson = {
       ],
       correct: 0,
       why: {
-        ja: '名簿には、住所や生年月日、健康診断のことまで書いてある。使い終わったら、棚に入れて鍵をかけよう。',
+        ja: '名簿には、住所や生年月日、健康診断のことまで書いてあるんだ。使い終わったら、棚に入れて鍵をかけよう。',
         en: 'The list has addresses, birth dates, even health check details. When you are done with it, put it in the cabinet and lock it.',
       },
       wrongWhy: [
         null,
         {
-          ja: '表紙をふせても、開けばすぐ中が見えるよ。そのまま持っていかれることもあるんだ。',
+          ja: 'ふせて置いても、開けばすぐ中が見えるよ。そのまま持っていかれることもあるんだ。',
           en: 'Face down, it still opens in a second. Someone could also just walk off with it.',
         },
         {
@@ -180,11 +180,11 @@ export const LESSON: Lesson = {
       ask: { ja: 'あとで木村さんが取りに来る。そのままにしていい？', en: 'Kimura will come back for it later. Is it OK to leave it there?' },
       answer: false,
       why: {
-        ja: 'コピー機は、いろんな会社の人が使うよね。残っていた図面は、木村さんに届けよう。自分が印刷した時も、すぐ取りに行こう。',
-        en: 'People from all sorts of companies use the copier. Take the drawing to Kimura. When you print something yourself, go get it right away.',
+        ja: 'コピー機は、いろんな会社の人が使うよね。置いたままだと、だれでも見られるんだ。図面は木村さんに届けて、自分で印刷した時も、すぐ取りに行こう。',
+        en: 'People from all sorts of companies use the copier. If you leave it there, anyone can see it. Take the drawing to Kimura, and when you print something yourself, pick it up right away.',
       },
       wrongWhy: {
-        ja: 'あとで取りに来るまで、図面はだれでも見られる所にあるんだ。次にコピー機を使った人の目に入るよ。',
+        ja: '木村さんが取りに来るまで、図面はだれでも見られる所にあるんだ。次にコピー機を使う人の目に入っちゃうよ。',
         en: 'Until he comes back, the drawing sits where anyone can see it. The next person to use the copier will spot it.',
       },
       tip: { ja: '印刷した物を、コピー機に残さない', en: 'Never leave printouts in the copier' },
@@ -210,7 +210,7 @@ export const LESSON: Lesson = {
         ja: '名前が書いてあるから、隠したくなるよね。でもこれは、だれが工事をしているか、外の人に知らせるための物なんだ。',
         en: 'Names on a sign make you want to hide it. But this sign is there to tell people outside who is doing the work.',
       },
-      tip: { ja: '許可票や工事のお知らせは、外に出す物', en: 'Permit signs and notices are meant to be seen' },
+      tip: { ja: '許可票や工事のお知らせは、外に出しておく', en: 'Permit signs and notices stay up where people can see them' },
     },
     // 7. USBメモリにパスワードを貼る（実際にあった話）
     {
@@ -230,11 +230,11 @@ export const LESSON: Lesson = {
       answer: false,
       why: {
         ja: 'パスワードを貼ったままなくしたら、拾った人がすぐ中を見られるよ。パスワードは、USBメモリとは別にしておこう。',
-        en: 'Lose it with the password on it, and whoever finds it can open it right away. Keep the password apart from the USB stick.',
+        en: 'Lose it with the password on it, and whoever finds it can open it right away. Keep the password separate from the USB stick.',
       },
       wrongWhy: {
-        ja: '忘れたら困る、という気持ちはわかるよ。でも、本体に書いてあったら、パスワードをかけた意味がなくなっちゃうんだ。',
-        en: 'I know forgetting it would be a pain. But if it is written on the stick, the password does no good at all.',
+        ja: '忘れたら困る、という気持ちはわかるよ。でも、本体に貼ってあったら、パスワードをかけた意味がなくなっちゃうんだ。',
+        en: "I know forgetting it would be a pain. But if it's stuck right on the stick, the password does no good at all.",
       },
       tip: { ja: 'USBメモリに、パスワードを書かない', en: 'Never write the password on the USB stick' },
       real: 'nexco-usb',

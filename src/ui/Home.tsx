@@ -147,15 +147,15 @@ export function Home(p: {
             </button>
           )}
           <div className="mt-1 grid grid-cols-3 gap-2">
-            <button className="btn-dark flex-col gap-1 py-2 text-sm" onClick={() => (sfx.ui(), p.onNotebook())}>
+            <button className="btn-dark flex-col gap-1 py-2 text-sm" data-notebook onClick={() => (sfx.ui(), p.onNotebook())}>
               <Art id="icon.book" scale={2} />
               {t(S.notebook)}
             </button>
-            <button className="btn-dark flex-col gap-1 py-2 text-sm" onClick={() => (sfx.ui(), p.onScience())}>
+            <button className="btn-dark flex-col gap-1 py-2 text-sm" data-science onClick={() => (sfx.ui(), p.onScience())}>
               <Art id="icon.bulb" scale={2} />
               {t(S.science)}
             </button>
-            <button className="btn-dark flex-col gap-1 py-2 text-sm" onClick={() => (sfx.ui(), p.onHowto())}>
+            <button className="btn-dark flex-col gap-1 py-2 text-sm" data-howto onClick={() => (sfx.ui(), p.onHowto())}>
               <span className="font-pixel text-xl leading-6">?</span>
               {t(S.howto)}
             </button>

@@ -6,6 +6,7 @@
 // ============================================================
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CASES } from '../game/cases'
+import { lessonOf } from '../game/course'
 import { answer, finished, isRight, next, startSession, type Session, type SessionKind } from '../game/learn'
 import type { Lang, Question, TopicId } from '../game/types'
 import { errorKind, getAI, tutorRules, type SampleFn } from '../lib/ai'
@@ -104,7 +105,11 @@ export function Quiz(p: {
         <BackButton onClick={() => setQuit(true)} />
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center justify-between gap-2 text-sm text-onDark2">
-            <span className="truncate">{p.title}</span>
+            <span className="truncate">
+              {/* スマホでは曜日だけ（場所まで入れると切れるため） */}
+              <span className="sm:hidden">{p.kind === 'lesson' && p.lesson ? t(lessonOf(p.lesson).dayName) : p.title}</span>
+              <span className="hidden sm:inline">{p.title}</span>
+            </span>
             <span className="shrink-0 tabular-nums">{t(S.progress(Math.min(doneN + (s.answer?.ok ? 1 : 0), s.total), s.total))}</span>
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-asphalt3" role="progressbar" aria-valuemin={0} aria-valuemax={s.total} aria-valuenow={doneN}>
@@ -324,6 +329,8 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
   const [err, setErr] = useState<string | null>(null)
   const [off, setOff] = useState(false)
   const [text, setText] = useState('')
+  const [explain, setExplain] = useState(false)
+  const input = useRef<HTMLInputElement>(null)
   const ctl = useRef<AbortController | null>(null)
   const end = useRef<HTMLDivElement>(null)
   useEffect(() => () => ctl.current?.abort(), [])
@@ -391,6 +398,18 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
         {err && <p className="rounded-lg bg-[#f7d4cf] px-3 py-2 text-base text-[#8a1f1f]">{err}</p>}
         {!off && turns.length === 0 && !busy && (
           <div className="flex flex-wrap gap-2">
+            {/* 自分でわけを言ってみる（自己説明）。送るのは自分の言葉だけ */}
+            <button
+              data-ai-explain
+              className={`btn min-h-11 rounded-full px-3 text-base ${explain ? 'ring-4 ring-safety' : ''}`}
+              onClick={() => {
+                sfx.ui()
+                setExplain(true)
+                input.current?.focus()
+              }}
+            >
+              ✎ {t(S.aiExplain)}
+            </button>
             {S.aiChips.map((c, i) => (
               <button key={i} data-ai-chip={i} className="btn min-h-11 rounded-full px-3 text-base" onClick={() => void ask(t(c))}>
                 {t(c)}
@@ -398,6 +417,7 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
             ))}
           </div>
         )}
+        {!off && explain && turns.length === 0 && !busy && <p className="rounded-lg bg-paper2 px-3 py-2 text-base">{t(S.aiExplainHow)}</p>}
         {!off && (
           <form
             className="flex gap-2"
@@ -406,7 +426,7 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
               void ask(text)
             }}
           >
-            <input value={text} onChange={(e) => setText(e.target.value)} maxLength={300} placeholder={t(S.aiPlaceholder)} className="min-h-12 min-w-0 flex-1 rounded-xl bg-white px-3 text-lg text-ink" style={{ boxShadow: '0 0 0 2px #1d1f24' }} aria-label={t(S.aiPlaceholder)} disabled={busy} />
+            <input ref={input} value={text} onChange={(e) => setText(e.target.value)} maxLength={300} placeholder={t(explain && turns.length === 0 ? S.aiExplainHint : S.aiPlaceholder)} className="min-h-12 min-w-0 flex-1 rounded-xl bg-white px-3 text-lg text-ink" style={{ boxShadow: '0 0 0 2px #1d1f24' }} aria-label={t(S.aiPlaceholder)} disabled={busy} />
             {busy ? (
               <button type="button" className="btn text-base" onClick={() => ctl.current?.abort()}>
                 {t(S.aiStop)}
