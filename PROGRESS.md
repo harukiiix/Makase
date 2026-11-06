@@ -1,6 +1,6 @@
 # 進み具合（現場の見回り）
 
-遊べるページ：https://claude.ai/artifact/Xdew5eGhak1mpYjVpTFyDa（バージョン10。master と同じ中身）
+遊べるページ：https://claude.ai/artifact/Xdew5eGhak1mpYjVpTFyDa（バージョン11。master と同じ中身。下の「NOVA に任せる」はまだ入っていない）
 
 ## 決めたこと
 
@@ -28,3 +28,10 @@
 - 学びの専門家の確認と、不具合さがし（スマホ・PC・流れ・コード）は、使用量のため途中で止めた
 - 別の職場向けのコース（オフィス・IT企業、開発・個人開発）は作らない
 - 公開ページを更新した時は、master にも入れる
+
+## 最後の日「NOVA に任せる」（ハッカソン提出用、ブランチ feat/nova-day）
+
+- 名前は Makase、副題は「現場の見回り」。leakquest の feat/rebuild（Makase）の判定・データ・テストを `src/makase/` に移す。master と公開ページは提出の直前まで変えない
+- 流れ：はじまり → けさのメール → 朝（6画面）→ 昼（確認のカード、わけは出さない）→ 夕方（何が、だれに渡ったか）→ 持ち帰り（NOVA への指示の1行）
+- [x] 判定・データ・テストを移した（judge・summary・takeaway・会社データは中身そのまま。roles.ts は建設現場だけ。テスト 78件が通る）
+- [ ] 朝　[ ] NOVA の顔　[ ] 昼　[ ] 夕方と持ち帰り　[ ] ホームにつなぐ　[ ] README
