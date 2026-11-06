@@ -43,20 +43,21 @@ export function Done({ s, gains, progress, extra, moreDue = 0, onMoreReview, onH
 
   return (
     <div className="min-h-dvh scroll-pb-28 px-4 pb-32 pt-6 sm:px-6">
-      <div className="mx-auto grid max-w-xl gap-4 lg:max-w-4xl lg:grid-cols-2 lg:gap-6">
+      <div className="mx-auto grid max-w-xl gap-4 lg:max-w-2xl lg:gap-5">
         {/* 見出し（建物は、階が増えた時と完成した時だけ。スマホでは横に小さく） */}
-        <section className={`panel flex items-center gap-4 p-4 lg:p-6 ${showBuilding ? 'lg:row-span-4 lg:grid lg:content-center lg:justify-items-center lg:text-center' : 'lg:col-span-2'}`}>
+        {/* PC でも1列で、まん中に（左に建物、右に見出し） */}
+        <section className="panel flex items-center gap-4 p-4 lg:gap-6 lg:p-6">
           {showBuilding && (
-            <div className="shrink-0 overflow-hidden rounded-xl border-2 border-line lg:order-2">
+            <div className="shrink-0 overflow-hidden rounded-xl border-2 border-line">
               <span className="lg:hidden">
                 <Building floors={floors} all={LESSONS.length} done={finished} scale={1.5} drop={gains.newFloor} />
               </span>
               <span className="hidden lg:block">
-                <Building floors={floors} all={LESSONS.length} done={finished} scale={3} drop={gains.newFloor} />
+                <Building floors={floors} all={LESSONS.length} done={finished} scale={2.5} drop={gains.newFloor} />
               </span>
             </div>
           )}
-          <div className="grid min-w-0 gap-1 lg:order-1 lg:justify-items-center">
+          <div className="grid min-w-0 gap-1">
             <h1 className="text-2xl lg:text-4xl">{t(title)}</h1>
             {lesson && <p className="text-base text-ink2">{t(S.dayPlace(t(lesson.dayName), t(lesson.title)))}</p>}
             {failed && <p className="text-base text-ink2">{t(S.finalFailWhy)}</p>}
@@ -130,7 +131,7 @@ export function Done({ s, gains, progress, extra, moreDue = 0, onMoreReview, onH
         </section>
 
         {missed.length > 0 && s.kind !== 'ai' && (
-          <section className="panel p-4 lg:col-span-2">
+          <section className="panel p-4">
             <h2 className="text-base">{t(S.comeBack)}</h2>
             <ul className="mt-2 grid gap-1.5">
               {missed.map((id) => {
@@ -147,7 +148,7 @@ export function Done({ s, gains, progress, extra, moreDue = 0, onMoreReview, onH
       </div>
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t-2 border-hair bg-bg px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 sm:px-6">
-        <div className="mx-auto flex max-w-xl gap-3 lg:max-w-4xl lg:justify-end">
+        <div className="mx-auto flex max-w-xl gap-3 lg:max-w-2xl lg:justify-end">
           {onEnding ? (
             <button data-ending className="btn-main w-full text-xl lg:w-[22rem]" onClick={() => (sfx.ui(), onEnding())}>
               {t(S.toEnding)}
