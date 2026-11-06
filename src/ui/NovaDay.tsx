@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { oneLine } from '../makase/carry'
 import { COMPANY as C, dayLog, fieldKey, MORNING_FIELDS, MORNING_TOOLS, noonSteps, type FieldChoice, type MorningPicks } from '../makase/day'
-import { EXPERIMENT_NOTE, eveningOf, eveningTalk, guardsOf, NOT_TESTED_NOTE, type Guard, type Guards } from '../makase/evening'
+import { eveningOf, eveningTalk, guardsOf, type Guard, type Guards } from '../makase/evening'
 import { judgeDay } from '../makase/judge'
 import { todayOf } from '../makase/takeaway'
 import type { Answer, Permission } from '../makase/types'
@@ -576,12 +576,6 @@ function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine
               {W.HOME}
             </button>
           </div>
-          {/* 記録からわかったこと：必ず出すが、主役の1行より目立たないように、小さく下に */}
-          <section data-experiment className="rounded-md bg-surface2 px-3 py-2.5 text-sm leading-relaxed">
-            <h2 className="font-bold">{phrase(W.EXPERIMENT_HEAD)}</h2>
-            <p className="mt-0.5">{EXPERIMENT_NOTE}</p>
-            <p className="mt-0.5 text-ink2">{NOT_TESTED_NOTE}</p>
-          </section>
         </div>
       </main>
     </>

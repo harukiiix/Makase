@@ -77,7 +77,6 @@ export const COPIED = "コピーしました";
 export const COPY_FAIL = "コピーできませんでした。文を長押しして選んでください";
 export const AGAIN = "もう一度やる";
 export const HOME = "ホームへ";
-export const EXPERIMENT_HEAD = "記録からわかったこと";
 
 export const QUIT_SURE = "NOVA の日をやめますか？";
 export const QUIT_WHY = "ここまでの選びは消えます。";

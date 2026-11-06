@@ -12,6 +12,7 @@ import type { L10n, Line, Question } from './types'
 import { COMPANY, dayLog, noonSteps, type MorningPicks } from '../makase/day'
 import { EXPERIMENT_NOTE, NOT_TESTED_NOTE, eveningOf, eveningTalk, guardsOf } from '../makase/evening'
 import { judgeDay } from '../makase/judge'
+import { oneLine } from '../makase/carry'
 import * as NOVA_WORDS from '../makase/words'
 
 /** 日本語で使わない横文字（ふつうの言葉で言いかえる） */
@@ -204,6 +205,16 @@ describe('NOVA の日（最後の日）', () => {
       if (DASHES.test(ja)) bad.push(`${where} has a long dash`)
     }
     expect(bad).toEqual([])
+  })
+  it('言いすぎの言葉を使わない（保証・必ず防げる・安全です・AIは危険）', () => {
+    // 「必ず防げるという意味ではありません」のように打ち消す言い方は、言いすぎを防ぐ文なので許す
+    const OVER = /保証|必ず防げ(?!るという意味では)|安全です|AIは危険|AI は危険|これで安全/
+    const lines = [0, 1, 2, 3].map((i) => {
+      const today = i === 0 ? { leaked: true, causes: ['passed', 'allowed'] } : i === 1 ? { leaked: true, causes: ['passed', 'auto'] } : i === 2 ? { leaked: false, causes: ['toriaezu'] } : { leaked: false, causes: [] }
+      return oneLine(today as Parameters<typeof oneLine>[0])
+    })
+    const all: [string, string][] = [...texts(), ...lines.flatMap((l, i): [string, string][] => [[`oneLine ${i}`, l.line + l.why + l.note]])]
+    for (const [where, ja] of all) expect(OVER.test(ja), `${where}: ${ja}`).toBe(false)
   })
   it('売上・信用・点数は出さない', () => {
     for (const [where, ja] of texts()) expect(/売上|万円|信用|点数/.test(ja), where).toBe(false)
