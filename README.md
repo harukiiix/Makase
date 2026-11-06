@@ -4,7 +4,7 @@
 
 安全衛生を体で覚える現場のやり方で、情報もれと AI への任せ方を練習するアプリです。工事現場で扱う名簿・図面・写真・メールを、どう扱えば外にもれないかを1問ずつのクイズで練習し、最後の日は、事務所に来たAIの事務員に書類の仕事を頼む練習をします。
 
-- **遊ぶ（メイン）**：https://harukiiix.github.io/security-incident-theater/
+- **遊ぶ（メイン）**：https://harukiiix.github.io/makase/
 - **claude.ai で遊ぶ**：https://claude.ai/artifact/Xdew5eGhak1mpYjVpTFyDa （ここで開いた時だけ、AIの宮下さんに質問できます）
 - スマホでも PC でも遊べます。メインのリンクは、登録もログインもいりません（claude.ai の版は、claude.ai へのログインが要ります）
 
