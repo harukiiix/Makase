@@ -23,7 +23,8 @@ function floor(img: Img, i: number, done: boolean) {
   }
 }
 
-function draw(floors: number, all: number, done: boolean): Img {
+/** 絵を描く（確かめ用の PNG にも使う） */
+export function drawBuilding(floors: number, all: number, done: boolean): Img {
   const img = newImg(W, H, '#d4f0ff')
   // 空と雲
   rect(img, 0, 0, W, 30, '#d4f0ff')
@@ -45,18 +46,26 @@ function draw(floors: number, all: number, done: boolean): Img {
   }
   const top = BASE - all * FLOOR
   if (done) {
-    // 屋上と看板、木
+    // 完成：地面と歩道を建物の床の高さから（宙に浮いて見えないように）
+    rect(img, 0, BASE, W, H - BASE, 'a')
+    rect(img, 0, BASE, W, 3, 'c')
+    rect(img, 0, BASE + 3, W, 1, 'C')
+    // 屋上の手すりと、小さな設備（看板は文字が読めないので置かない）
     rect(img, X0 - 1, top - 2, X1 - X0 + 2, 2, 'C')
-    rect(img, X0 + 10, top - 8, 16, 6, 'n')
-    rect(img, X0 + 11, top - 7, 14, 4, 'y')
-    rect(img, X0 + 17, top - 7, 2, 4, 'n')
+    rect(img, X0 + 4, top - 5, 7, 3, 'G')
+    rect(img, X0 + 4, top - 5, 7, 1, 'w')
+    rect(img, X1 - 10, top - 4, 5, 2, 'G')
+    // 入口とひさし
+    rect(img, X0 + 12, BASE - 8, 12, 1, 'n')
     rect(img, X0 + 14, BASE - 6, 8, 6, 'I')
     rect(img, X0 + 15, BASE - 5, 6, 5, 't')
+    rect(img, X0 + 17, BASE - 5, 2, 5, 'I')
+    // 植え込みの木（根もとは歩道の上）
     for (const tx of [4, 60]) {
-      rect(img, tx + 3, BASE - 2, 2, 8, 'D')
-      rect(img, tx, BASE - 9, 8, 7, 'l')
-      rect(img, tx + 1, BASE - 10, 6, 1, 'l')
-      dither(img, tx, BASE - 9, 8, 7, 'l', 'e')
+      rect(img, tx + 3, BASE - 3, 2, 4, 'D')
+      rect(img, tx, BASE - 10, 8, 7, 'l')
+      rect(img, tx + 1, BASE - 11, 6, 1, 'l')
+      dither(img, tx, BASE - 10, 8, 7, 'l', 'e')
     }
   } else {
     // 仮囲い（白い板に緑の帯）
@@ -82,7 +91,7 @@ function draw(floors: number, all: number, done: boolean): Img {
  */
 export function Building({ floors, all, done, scale = 3, drop = false, className = '' }: { floors: number; all: number; done: boolean; scale?: number; drop?: boolean; className?: string }) {
   const base = drop && floors > 0 ? floors - 1 : floors
-  const src = imgURL(`building:${base}/${all}:${done}`, () => draw(base, all, done))
+  const src = imgURL(`building:${base}/${all}:${done}`, () => drawBuilding(base, all, done))
   if (base === floors) return <img src={src} width={W * scale} height={H * scale} className={`pixelated ${className}`} alt="" aria-hidden draggable={false} />
   const top = imgURL(`building-floor:${floors - 1}:${done}`, () => {
     const img = newImg(W, H)
