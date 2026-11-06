@@ -55,7 +55,7 @@ export function tutorRules(q: Question, pick: number, lang: Lang): string {
   return [
     `You are 宮下 (Miyashita), a kind, calm site supervisor at a Japanese construction site. You are teaching 森田ハル (Haru Morita), a new worker in their first week, how to stop information leaks on site: drawings, worker lists, site photos, emails, passwords, visitors, things carried outside. The site is a new bank branch, so drawings showing the vault room and cameras must not get out.`,
     ja
-      ? `Reply in natural, plain spoken Japanese, the way a real supervisor talks to a new worker (〜だね、〜しよう、〜かな). Use everyday words. Do not use katakana technical words such as インシデント, フィッシング, マルウェア, ランサムウェア, クラウド, アカウント, ログイン, リスク.`
+      ? `Reply in natural, plain spoken Japanese, the way a real supervisor talks to a new worker (〜だね、〜しよう、〜かな). Use everyday words. Do not use katakana technical words such as インシデント, フィッシング, マルウェア, ランサムウェア, クラウド, アカウント, ログイン, リスク. Write わかる, とき, あて先, いっしょ, ちがう in kana and 泥棒, 渡す, 探す in kanji. Call the bank (the client) 施主さん or 銀行; お客さん means only visitors to the office.`
       : `Reply in natural, plain, friendly English, the way a real supervisor talks to a new worker. Use everyday words, no technical jargon.`,
     `Keep it short: at most 3 short sentences (about ${ja ? '120 Japanese characters' : '60 words'}). No lists, no headings, no markdown.`,
     `If the worker gives their own reason (for example a message ending in 〜と思う or starting with "I think"), first say kindly what is right in it, then add the one thing that is missing or wrong, if any. Do not just repeat the explanation below.`,
@@ -86,6 +86,7 @@ export function practicePrompt(topic: { id: TopicId; title: L10n; motto: L10n },
     ex,
     ``,
     `Rules: one idea per question, a concrete moment on site, plain everyday Japanese (no katakana jargon such as インシデント, フィッシング, マルウェア, リスク, アカウント, ログイン), natural English translation, no trick questions, no double negatives. Wrong choices must be tempting real mistakes. Japanese lengths: situation at most 70 characters, ask at most 45, each choice at most 30, why at most 90, wrongWhy at most 90, tip at most 32.`,
+    `House style: the situation is plain narration (〜している、〜が来た). The why and wrongWhy are 宮下さん speaking casually and kindly (〜だよ、〜なんだ、〜しよう); the why gives the reason and must not repeat the situation or the wrongWhy. A tf ask describes one action and ends with 「これでいい？」 (English "Is that OK?"). A tip makes sense alone and has the shape 「〇〇は、〜する」 or 「〇〇は、〜しない」. Write わかる, とき, あて先, いっしょ, ちがう in kana and 泥棒, 渡す, 探す in kanji.`,
     `Make exactly 1 question of kind "tf" (answered with ○ = yes or ✕ = no) and 2 of kind "mc" (3 choices). Put the correct mc choice at different positions.`,
     `Reply with ONLY a JSON array of 3 objects, no other text. Each text field is {"ja": "...", "en": "..."}. Shapes:`,
     `{"kind":"tf","situation":{..},"ask":{..},"answer":true,"why":{..},"wrongWhy":{..},"tip":{..}}`,
@@ -95,7 +96,18 @@ export function practicePrompt(topic: { id: TopicId; title: L10n; motto: L10n },
 }
 
 const isL = (x: unknown): x is L10n => !!x && typeof (x as L10n).ja === 'string' && typeof (x as L10n).en === 'string' && !!(x as L10n).ja.trim() && !!(x as L10n).en.trim()
-const clip = (x: L10n, n: number): L10n => ({ ja: x.ja.slice(0, n), en: x.en.slice(0, n * 4) })
+/** AIの文も、アプリの表記にそろえる（content.test.ts の「house style」と同じ言葉） */
+const HOUSE: [RegExp, string][] = [
+  [/分か(?=[らりるれろっ])/g, 'わか'],
+  [/宛先/g, 'あて先'],
+  [/一緒/g, 'いっしょ'],
+  [/間違(?=[いうえっ])/g, 'まちが'],
+  [/(?<!間)違(?=[わいうえおっ])/g, 'ちが'],
+  [/これで正しい？/g, 'これでいい？'],
+  [/回収の車/g, '回収車'],
+]
+const house = (ja: string) => HOUSE.reduce((x, [re, to]) => x.replace(re, to), ja)
+const clip = (x: L10n, n: number): L10n => ({ ja: house(x.ja).slice(0, n), en: x.en.slice(0, n * 4) })
 
 /** AIの答えを、問題として使える形か確かめる（だめな物は捨てる） */
 export function toQuestions(raw: unknown, topic: TopicId, stamp: number): Question[] {
