@@ -176,10 +176,11 @@ export const LESSON: Lesson = {
       topic: 'outside',
       kind: 'mc',
       who: 'STRANGER',
-      pic: 'pic.stranger_at_station',
+      pic: 'pic.mail_phone_number',
+      place: { ja: '自宅', en: 'At home' },
       situation: {
-        ja: '帰りの駅で、男の人に声をかけられた。「点検でうかがった者です。銀行の金庫は、どの辺りでしたっけ？」',
-        en: 'At the station on your way home, a man stops you. "I came by for the inspection. Where was the bank\'s vault again?"',
+        ja: '休みの日、自分のスマホに知らない番号から電話が来た。「本社の設備の者です。点検の準備で、銀行の金庫がどの辺りか確かめたくて」',
+        en: 'On your day off, an unknown number calls your phone. "I\'m from head office facilities. For the inspection, I need to check where the bank\'s vault is."',
       },
       ask: {
         ja: 'どうするのがいい？',
@@ -187,23 +188,23 @@ export const LESSON: Lesson = {
       },
       choices: [
         { ja: '断って、事務所に知らせる', en: 'Say no, and tell the office' },
-        { ja: '点検の人だから、教えてあげる', en: "He's an inspector, so tell him" },
-        { ja: '断って、そのまま帰る', en: 'Say no, and just head home' },
+        { ja: '本社の人だから、教えてあげる', en: "He's from head office, so tell him" },
+        { ja: '断って、そのまま電話を切る', en: 'Say no, and just hang up' },
       ],
       correct: 0,
       why: {
-        ja: '本物の点検の人なら、駅で聞いたりせず、会社に問い合わせるよ。事務所なら、点検があったかどうか確かめられるんだ。',
-        en: 'A real inspector would contact the company, not stop you at a station. The office can check whether there really was an inspection.',
+        ja: '本当に本社の人なら、あなたのスマホに聞いたりせず、現場の事務所に問い合わせるよ。事務所なら、本当に本社の人か確かめられるんだ。',
+        en: 'Someone really from head office would ask the site office, not call your own phone. The office can check whether they really are.',
       },
       wrongWhy: [
         null,
         {
-          ja: '点検の人だと名乗っても、本当かどうかはその場ではわからないよ。それに、金庫の場所は外で話すことじゃないね。',
-          en: "Anyone can say they're an inspector, and you can't check it on the spot. Besides, where the vault is isn't something to talk about outside.",
+          ja: '本社の人だと名乗っても、電話では本当かどうかわからないよ。それに、金庫の場所は外で話すことじゃないね。',
+          en: "Anyone can say they're from head office, and you can't check it over the phone. Besides, where the vault is isn't something to talk about outside.",
         },
         {
-          ja: '断ったのは、よかったよ。でも、あの人は、ほかの作業員にも聞くかもしれない。事務所に知らせれば、みんなで気をつけられるね。',
-          en: 'It was good that you said no. But he may ask other workers too. If you tell the office, everyone can watch out.',
+          ja: '断ったのは、よかったよ。でも、その人は、ほかの作業員にも電話するかもしれない。事務所に知らせれば、みんなで気をつけられるね。',
+          en: 'It was good that you said no. But he may call other workers too. If you tell the office, everyone can watch out.',
         },
       ],
       tip: { ja: '外で現場のことを聞かれたら、答えずに事務所に知らせる', en: "Asked about the site outside? Don't answer. Tell the office." },

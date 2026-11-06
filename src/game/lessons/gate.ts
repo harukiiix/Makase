@@ -178,15 +178,16 @@ export const LESSON: Lesson = {
       topic: 'gate',
       kind: 'mc',
       who: 'YOU',
-      pic: 'pic.neighbor_asks_vault',
+      pic: 'pic.crew_photo_for_sns',
+      place: { ja: '休憩所', en: 'Site break room' },
       situation: {
-        ja: 'ゲートの前で、近所の人に「銀行になるんでしょ。金庫はどのへん？」と聞かれた。',
-        en: 'Outside the gate, a neighbor asks you, "It\'s going to be a bank, right? Where will the vault be?"',
+        ja: '休み時間。SNSで、前に仕事の話をした友だちから「銀行の工事なんでしょ。金庫ってどのへんにできるの？」とメッセージが来た。',
+        en: 'On a break, a friend you once told about your work messages you on social media: "It\'s a bank job, right? Where\'s the vault going to be?"',
       },
-      ask: { ja: 'なんて答えるのがいい？', en: "What's the best way to answer?" },
+      ask: { ja: 'なんて返すのがいい？', en: "What's the best reply?" },
       choices: [
         { ja: '中のことは話せない、とやさしく断る', en: "Politely say you can't talk about what's inside" },
-        { ja: '近所の人なので、知っていることを話す', en: "It's a neighbor, so tell them what you know" },
+        { ja: '友だちなので、知っていることを話す', en: "It's a friend, so tell them what you know" },
         { ja: '「1階の奥のほう」と、だいたいの場所だけ言う', en: 'Just give a rough idea, like "at the back of the first floor"' },
       ],
       correct: 0,
@@ -197,8 +198,8 @@ export const LESSON: Lesson = {
       wrongWhy: [
         null,
         {
-          ja: '近所の人でも、聞いた話がどこまで広がるかわからないよ。金庫の場所は、銀行の大事な秘密なんだ。',
-          en: "Even with a neighbor, you never know how far the story will travel. The vault's location is the bank's big secret.",
+          ja: '友だちでも、送った文は残るし、どこまで広がるかわからないよ。金庫の場所は、銀行の大事な秘密なんだ。',
+          en: "Even with a friend, a message stays, and you never know how far it will travel. The vault's location is the bank's big secret.",
         },
         {
           ja: 'だいたいの場所でも、銀行をねらう人には大きな手がかりになるよ。「1階の奥のほう」だけでも、探す場所がぐっと減るんだ。',
