@@ -6,7 +6,7 @@
 // ============================================================
 import { useEffect, useState } from 'react'
 import { LESSONS, lessonOf, questionOf } from '../game/course'
-import { DAY_CARD_EYEBROW, DAY_CARD_GO, DAY_CARD_NOTE, DAY_CARD_TEXT, DAY_SUB as NOVA_SUB, DAY_TITLE as NOVA_TITLE } from '../makase/words'
+import { DAY_CARD_EYEBROW, DAY_CARD_GO, DAY_CARD_NOTE, DAY_CARD_TEXT, DAY_EN, DAY_SUB, DAY_TITLE } from '../makase/words'
 import { dayNumber, dueIds, lessonOpen, PASS, rankOf, weakTopic, type Progress } from '../game/learn'
 import type { Lang, TopicId } from '../game/types'
 import { getAI } from '../lib/ai'
@@ -44,6 +44,11 @@ export function Home(p: {
   onNova?: () => void
 }) {
   const t = useT()
+  // 最後の日の名前と説明（英語の画面では英語で。中身は日本語だけ）
+  const en = p.lang === 'en'
+  const NOVA_TITLE = en ? DAY_EN.title : DAY_TITLE
+  const NOVA_SUB = en ? DAY_EN.sub : DAY_SUB
+  const nova = { eyebrow: en ? DAY_EN.eyebrow : DAY_CARD_EYEBROW, text: en ? DAY_EN.text : DAY_CARD_TEXT, note: en ? DAY_EN.note : DAY_CARD_NOTE, go: en ? DAY_EN.go : DAY_CARD_GO }
   const pr = p.progress
   const r = rankOf(pr.xp)
   const today = dayNumber()
@@ -92,14 +97,16 @@ export function Home(p: {
     <div className="min-h-dvh px-4 pb-12 pt-3 sm:px-6">
       <header className="mx-auto flex max-w-5xl items-center gap-2">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <Art id="icon.helmet" scale={2} tint={RANK_TINT.new} />
+          {/* せまい画面では、題の横の絵を省いて題名を切らさない */}
+          <Art id="icon.helmet" scale={2} tint={RANK_TINT.new} className="max-[399px]:hidden" />
           <h1 className="truncate font-pixel text-xl leading-none sm:text-2xl">{t(S.title)}</h1>
         </div>
         <LangButton lang={p.lang} onChange={p.setLang} />
         {/* あそびかたは右上に（いつでも開ける所） */}
         <button className="btn-quiet min-h-11 shrink-0 gap-1.5 border-2 border-hair px-2.5 text-sm text-ink2 hover:text-ink" data-howto onClick={go(p.onHowto)}>
           <Art id="icon.howto" scale={1.5} />
-          {t(S.howto)}
+          {/* 英語のせまい画面では、題名を切らさないよう「？」の絵だけに（読み上げでは名前を読む） */}
+          <span className={en ? 'max-[399px]:sr-only' : ''}>{t(S.howto)}</span>
         </button>
         <button className="btn-quiet h-11 w-11 shrink-0 p-0" data-settings aria-label={t.attr(S.settings)} onClick={go(p.onSettings)}>
           <Art id="icon.gear" scale={2} />
@@ -224,15 +231,15 @@ export function Home(p: {
                   <Art id="face.nova" scale={2.5} />
                 </span>
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-ink2">{DAY_CARD_EYEBROW}</div>
+                  <div className="text-sm font-bold text-ink2">{nova.eyebrow}</div>
                   <h2 className="text-xl leading-snug">{NOVA_TITLE}</h2>
                 </div>
               </div>
-              <p className="text-base leading-relaxed">{DAY_CARD_TEXT}</p>
-              <p className="text-sm text-ink2">{DAY_CARD_NOTE}</p>
+              <p className="text-base leading-relaxed">{nova.text}</p>
+              <p className="text-sm text-ink2">{nova.note}</p>
               <button className="btn w-full text-lg" onClick={go(p.onNova)}>
                 {p.nova?.done ? <Art id="icon.check" scale={1.5} /> : null}
-                {DAY_CARD_GO}
+                {nova.go}
               </button>
             </section>
           )}

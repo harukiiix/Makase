@@ -100,3 +100,12 @@ export const DAY_CARD_EYEBROW = "最後の日（約3分）";
 export const DAY_CARD_TEXT = "会社が事務所に入れたAIの事務員 NOVA に、名簿や図面の仕事を頼みます。何を渡し、何を送らせるかを決めて、1日を見届けます。";
 export const DAY_CARD_NOTE = "台本で動く練習です。本物のAIは動きません。5日を終えていなくても遊べます。";
 export const DAY_CARD_GO = "やってみる";
+/** 英語の画面のホームで出す、最後の日の名前と説明（最後の日の中身は、いまは日本語だけ） */
+export const DAY_EN = {
+  title: "Asking the AI clerk",
+  sub: "Final day · scripted practice, no real AI (Japanese only for now)",
+  eyebrow: "Final day (about 3 min)",
+  text: "Give work to NOVA, the AI clerk the company put in the site office. Decide what it may see and send, then watch the day play out.",
+  note: "Scripted practice. No real AI runs. You can play it before finishing the five days. This day is in Japanese only for now.",
+  go: "Try it",
+};
