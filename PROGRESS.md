@@ -1,6 +1,6 @@
 # 進み具合（現場の見回り）
 
-遊べるページ：GitHub Pages https://harukiiix.github.io/makase/ （master に push すると出る）と、claude.ai https://claude.ai/artifact/Xdew5eGhak1mpYjVpTFyDa（AIの宮下さんはこちらだけ）。バージョン11の中身はブランチ keep/v11-site-rounds に残してある
+遊べるページ：GitHub Pages https://harukiiix.github.io/Makase/ （master に push すると出る）と、claude.ai https://claude.ai/artifact/Xdew5eGhak1mpYjVpTFyDa（AIの宮下さんはこちらだけ）。バージョン11の中身はブランチ keep/v11-site-rounds に残してある
 
 ## 決めたこと
 
