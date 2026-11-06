@@ -36,6 +36,16 @@ export function LangToggle({ lang, onChange, className = '' }: { lang: Lang; onC
   )
 }
 
+/** 言葉の切りかえ（小さい1つのボタン）：今とちがう方の言葉だけを出す。ホームとノートで使う。設定の中は LangToggle のまま */
+export function LangButton({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => void }) {
+  const other: Lang = lang === 'ja' ? 'en' : 'ja'
+  return (
+    <button data-lang={other} lang={other} onClick={() => (sfx.ui(), onChange(other))} aria-label={other === 'en' ? 'English' : '日本語'} className="btn-quiet min-h-11 shrink-0 border-2 border-hair px-2.5 text-sm text-ink2 hover:text-ink">
+      {other === 'en' ? 'English' : '日本語'}
+    </button>
+  )
+}
+
 /** 左上の、丸い「もどる」 */
 export function BackButton({ onClick, label }: { onClick: () => void; label?: string }) {
   const t = useT()

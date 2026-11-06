@@ -13,7 +13,7 @@ import { getAI } from '../lib/ai'
 import { sfx } from '../lib/platform'
 import { Art } from './Art'
 import { Building } from './Building'
-import { LangToggle } from './Common'
+import { LangButton } from './Common'
 import { useT } from './i18n'
 import { RANK_NAME, S } from './strings'
 
@@ -95,7 +95,7 @@ export function Home(p: {
           <Art id="icon.helmet" scale={2} tint={RANK_TINT.new} />
           <h1 className="truncate font-pixel text-xl leading-none sm:text-2xl">{t(S.title)}</h1>
         </div>
-        <LangToggle lang={p.lang} onChange={p.setLang} />
+        <LangButton lang={p.lang} onChange={p.setLang} />
         <button className="btn-quiet h-11 w-11 shrink-0 p-0" data-settings aria-label={t.attr(S.settings)} onClick={go(p.onSettings)}>
           <Art id="icon.gear" scale={2} />
         </button>
@@ -158,7 +158,7 @@ export function Home(p: {
                         <span className="block text-sm text-ink2">{sub}</span>
                       </span>
                       <span className="shrink-0" aria-hidden>
-                        {st?.done ? <Art id="icon.check" scale={2} /> : !open ? <Art id="icon.lock" scale={2} className="opacity-60" /> : isNext ? <span className="rounded-md bg-act px-2 py-0.5 text-sm font-bold text-actInk">{t(S.nextMark)}</span> : null}
+                        {st?.done ? <Art id="icon.check" scale={2} /> : isNext ? <span className="rounded-md bg-act px-2 py-0.5 text-sm font-bold text-actInk">{t(S.nextMark)}</span> : null}
                       </span>
                     </button>
                   </li>
@@ -174,7 +174,7 @@ export function Home(p: {
                     <span className="block text-sm text-ink2">{passed ? t(S.best(Math.round((pr.finalBest ?? 0) * 100))) : allDone ? t(S.finalWhy) : t(S.finalLocked)}</span>
                   </span>
                   <span className="shrink-0" aria-hidden>
-                    {passed ? <Art id="icon.check" scale={2} /> : !allDone ? <Art id="icon.lock" scale={2} className="opacity-60" /> : null}
+                    {passed ? <Art id="icon.check" scale={2} /> : null}
                   </span>
                 </button>
               </li>

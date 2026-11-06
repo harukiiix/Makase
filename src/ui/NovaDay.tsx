@@ -15,7 +15,7 @@ import * as W from '../makase/words'
 import type { Lang } from '../game/types'
 import { sfx } from '../lib/platform'
 import { Art } from './Art'
-import { BackButton, LangToggle, Panel, Sheet, useMedia } from './Common'
+import { BackButton, Panel, Sheet, useMedia } from './Common'
 import { Talk } from './Talk'
 
 type Phase = 'intro' | 'mail' | 'morning' | 'noon' | 'talk' | 'evening' | 'take'
@@ -40,19 +40,16 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
     setNonce((n) => n + 1)
   }
 
-  if (phase === 'intro')
-    return <Talk key="intro" beats={W.INTRO.map((l) => ({ who: l.who, t: both(l.text) }))} header={W.DAY_TITLE} speed={p.speed} onDone={() => setPhase('mail')} />
+  if (phase === 'intro') return <Talk key="intro" beats={W.INTRO.map((l) => ({ who: l.who, t: both(l.text) }))} header={W.DAY_TITLE} speed={p.speed} onDone={() => setPhase('mail')} />
 
   const log = phase === 'talk' || phase === 'evening' || phase === 'take' ? dayLog(picks, answers) : null
   const result = log ? judgeDay(log, C) : null
   const ev = log && result ? eveningOf(result, log, C) : null
 
-  if (phase === 'talk' && ev)
-    return <Talk key="evening" beats={eveningTalk(ev).map((l) => ({ who: l.who, t: both(l.text) }))} header={`${W.DAY_TITLE}・${W.EVENING}`} speed={p.speed} onDone={() => setPhase('evening')} />
+  if (phase === 'talk' && ev) return <Talk key="evening" beats={eveningTalk(ev).map((l) => ({ who: l.who, t: both(l.text) }))} header={`${W.DAY_TITLE}・${W.EVENING}`} speed={p.speed} onDone={() => setPhase('evening')} />
 
   const morningSteps = MORNING_FIELDS.length + MORNING_TOOLS.length + 1
-  const progress =
-    phase === 'mail' ? { label: W.MORNING, n: 0, of: morningSteps } : phase === 'morning' ? { label: W.MORNING, n: step, of: morningSteps } : phase === 'noon' ? { label: W.NOON, n: 1, of: 1 } : { label: W.EVENING, n: 1, of: 1 }
+  const progress = phase === 'mail' ? { label: W.MORNING, n: 0, of: morningSteps } : phase === 'morning' ? { label: W.MORNING, n: step, of: morningSteps } : phase === 'noon' ? { label: W.NOON, n: 1, of: 1 } : { label: W.EVENING, n: 1, of: 1 }
   const back = () => {
     if (phase === 'morning' && step > 0) return setStep(step - 1)
     if (phase === 'morning') return setPhase('mail')
@@ -74,7 +71,6 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
               <div className="tape h-full transition-[width] duration-300" style={{ width: `${(100 * progress.n) / Math.max(1, progress.of)}%` }} />
             </div>
           </div>
-          <LangToggle lang={p.lang} onChange={p.setLang} />
         </div>
       </header>
 
@@ -94,13 +90,7 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
       )}
       {phase === 'noon' && <Noon picks={picks} onDone={(a) => (setAnswers(a), setPhase('talk'))} />}
       {phase === 'evening' && ev && log && <EveningList ev={ev} guards={guardsOf(ev, log, C)} onNext={() => setPhase('take')} />}
-      {phase === 'take' && log && result && (
-        <Takeaway
-          today={todayOf(result, log, C)}
-          onAgain={restart}
-          onHome={() => p.onDone(ev?.leaked ?? false)}
-        />
-      )}
+      {phase === 'take' && log && result && <Takeaway today={todayOf(result, log, C)} onAgain={restart} onHome={() => p.onDone(ev?.leaked ?? false)} />}
 
       {quit && (
         <Sheet label={W.QUIT_SURE} onClose={() => setQuit(false)}>
@@ -292,6 +282,7 @@ function Noon({ picks, onDone }: { picks: MorningPicks; onDone: (a: Record<strin
   const cur = steps.findIndex((s) => s.mode === 'ask' && !answers[s.conf.id])
   const done = cur < 0
   const shown = done ? steps : steps.slice(0, cur)
+  const [openLog, setOpenLog] = useState(false)
   const shownAt = useRef(0)
   const endRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -312,17 +303,24 @@ function Noon({ picks, onDone }: { picks: MorningPicks; onDone: (a: Record<strin
       <main className="min-h-0 flex-1 overflow-y-auto">
         <div className={`${wrap} grid gap-3 pb-6 pt-3 lg:max-w-3xl lg:pt-8`}>
           <p className="text-base text-ink2">{W.NOON_INTRO}</p>
-          <ol className="grid gap-1.5" aria-label={W.NOON}>
-            {shown.map((s) => (
-              <li key={s.conf.id} className="rounded-md bg-surface2 px-3 py-1.5 text-sm text-ink2">
-                {s.mode === 'blocked'
-                  ? W.blockedLine(emp(s.conf.employeeId).name, tool(s.conf.call?.tool))
-                  : s.mode === 'auto'
-                    ? W.autoLine(emp(s.conf.employeeId).name, tool(s.conf.call?.tool), s.content ?? '', s.to)
-                    : `${emp(s.conf.employeeId).name}：${s.conf.text}　→ ${answers[s.conf.id] === 'allow' ? W.ALLOW : W.STOP}`}
-              </li>
-            ))}
-          </ol>
+          {/* これまでの動きは1行にまとめ、押すと開く（確認のカードを下に押しやらないように） */}
+          {shown.length > 0 && (
+            <button data-log aria-expanded={openLog} className="btn-quiet min-h-11 justify-start border-2 border-hair px-3 text-left text-base text-ink2" onClick={() => (sfx.ui(), setOpenLog((v) => !v))}>
+              {W.logCount(shown.length)}
+              <span aria-hidden className={`ml-auto inline-block transition-transform ${openLog ? 'rotate-180' : ''}`}>
+                ▾
+              </span>
+            </button>
+          )}
+          {openLog && (
+            <ol className="grid gap-1.5" aria-label={W.NOON}>
+              {shown.map((s) => (
+                <li key={s.conf.id} className="rounded-md bg-surface2 px-3 py-1.5 text-sm text-ink2">
+                  {s.mode === 'blocked' ? W.blockedLine(emp(s.conf.employeeId).name, tool(s.conf.call?.tool)) : s.mode === 'auto' ? W.autoLine(emp(s.conf.employeeId).name, tool(s.conf.call?.tool), s.content ?? '', s.to) : `${emp(s.conf.employeeId).name}：${s.conf.text}　→ ${answers[s.conf.id] === 'allow' ? W.ALLOW : W.STOP}`}
+                </li>
+              ))}
+            </ol>
+          )}
           {card && (
             <section key={card.conf.id} className="rise panel grid gap-3 p-4 lg:p-6" aria-live="polite">
               <div className="flex items-center gap-3">
@@ -401,9 +399,7 @@ function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>;
           </section>
 
           {/* 2. わな：メールに紛れていた一文 */}
-          {guards.trap && (
-            <Board label={W.TRAP_HEAD}>{guards.trap}</Board>
-          )}
+          {guards.trap && <Board label={W.TRAP_HEAD}>{guards.trap}</Board>}
 
           {/* 3. 朝と昼の守り（✓ か ✕ だけ） */}
           <ul className="grid gap-2">
@@ -552,11 +548,17 @@ function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine
             <p className="mt-1 text-base text-ink2">{W.TAKE_SUB}</p>
           </div>
           <p className="text-base">{one.why}</p>
-          <pre data-line className="select-text whitespace-pre-wrap break-all rounded-xl border-2 border-line bg-surface p-4 font-mono text-base leading-relaxed">{one.line}</pre>
+          <pre data-line className="select-text whitespace-pre-wrap break-all rounded-xl border-2 border-line bg-surface p-4 font-mono text-base leading-relaxed">
+            {one.line}
+          </pre>
           <button data-copy className="btn-main w-full text-xl lg:w-[22rem]" onClick={() => void copy()}>
             {copied === 'ok' ? W.COPIED : W.COPY}
           </button>
-          {copied === 'fail' && <p className="text-base text-ng" role="status">{W.COPY_FAIL}</p>}
+          {copied === 'fail' && (
+            <p className="text-base text-ng" role="status">
+              {W.COPY_FAIL}
+            </p>
+          )}
           <p className="text-sm text-ink2">{one.note}</p>
           <section data-experiment className="rounded-lg border-2 border-hair bg-surface p-4">
             <h2 className="text-base font-bold">{W.EXPERIMENT_HEAD}</h2>

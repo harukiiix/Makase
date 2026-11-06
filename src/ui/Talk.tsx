@@ -120,70 +120,73 @@ export function Talk({
         </button>
       </header>
 
-      {/* 話している人（大きく） */}
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-3 py-3">
-        {bg && <img src={sceneURL(bg)} alt="" aria-hidden className="pixelated aspect-[4/3] max-h-[40dvh] w-auto max-w-full rounded-xl border-2 border-line object-contain" draggable={false} />}
-        {!bg && !face && art && (
-          <div className="overflow-hidden rounded-2xl border-2 border-line bg-surface2" aria-hidden>
-            {art}
-          </div>
-        )}
-        {!bg && face && (
-          <figure key={b.who} className="pop grid justify-items-center gap-1.5" aria-hidden>
-            <div className="overflow-hidden rounded-2xl border-2 border-line bg-surface2">
-              <Art id={face} scale={low ? 3 : pc ? 6 : 5} />
+      {/* PCでは、絵と文の箱をまとめて画面のまん中に置く（スマホでは文の箱は下） */}
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col lg:justify-center lg:gap-6">
+        {/* 話している人（大きく） */}
+        <div className="flex w-full flex-1 flex-col items-center justify-center gap-3 py-3 lg:flex-none">
+          {bg && <img src={sceneURL(bg)} alt="" aria-hidden className="pixelated aspect-[4/3] max-h-[40dvh] w-auto max-w-full rounded-xl border-2 border-line object-contain" draggable={false} />}
+          {!bg && !face && art && (
+            <div className="overflow-hidden rounded-2xl border-2 border-line bg-surface2" aria-hidden>
+              {art}
             </div>
-          </figure>
-        )}
-        {/* 話の中身を、小さな絵でも */}
-        {b.pic && b.pic.length > 0 && (
-          <div key={`pic-${i}`} className="pop flex max-w-full items-center gap-3 rounded-xl border-2 border-line bg-surface px-4 py-3" aria-hidden>
-            {b.pic.map((p, k) => (
-              <Art key={k} id={p} scale={3} />
-            ))}
-          </div>
-        )}
-      </div>
+          )}
+          {!bg && face && (
+            <figure key={b.who} className="pop grid justify-items-center gap-1.5" aria-hidden>
+              <div className="overflow-hidden rounded-2xl border-2 border-line bg-surface2">
+                <Art id={face} scale={low ? 3 : pc ? 7 : 5} />
+              </div>
+            </figure>
+          )}
+          {/* 話の中身を、小さな絵でも */}
+          {b.pic && b.pic.length > 0 && (
+            <div key={`pic-${i}`} className="pop flex max-w-full items-center gap-3 rounded-xl border-2 border-line bg-surface px-4 py-3" aria-hidden>
+              {b.pic.map((p, k) => (
+                <Art key={k} id={p} scale={3} />
+              ))}
+            </div>
+          )}
+        </div>
 
-      <div className="mx-auto w-full max-w-3xl">
-        {/* 選択肢は文の上に出す（文を押して読み進めていた指が、そのまま選ばないように） */}
-        {showChoices && choices && (
-          <div className="rise mb-3 grid gap-2" onClick={(e) => e.stopPropagation()}>
-            <div className="text-base font-bold text-ink2">{t(S.yourChoice)}</div>
-            {choices.map((c, ci) => (
-              <button
-                key={ci}
-                data-choice={ci}
-                className="btn justify-start text-left text-lg"
-                onClick={() => {
-                  if (performance.now() - choicesAt.current < 700) return
-                  sfx.ui()
-                  onDone(ci)
-                }}
-              >
-                {t(c)}
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="panel min-h-[8rem] px-4 py-3 short:min-h-0 sm:px-5 sm:py-4">
-          {name && <div className="mb-1 text-base font-bold text-ink2">{name}</div>}
-          <p className={`text-lg leading-relaxed sm:text-xl sm:leading-relaxed ${b.who === 'SYS' ? 'text-ink2' : ''}`} aria-live="polite">
-            {text.slice(0, n)}
-            {!full && <span className="blink">▌</span>}
-            {!full && (
-              <span className="invisible" aria-hidden>
-                {text.slice(n)}
-              </span>
-            )}
-          </p>
-          <div className="mt-1 flex h-5 justify-end text-sm text-ink2">
-            {full && !(last && choices) && (
-              <span className="blink">
-                ▼ <span className="[@media(hover:none)]:hidden">{t(S.clickNext)}</span>
-                <span className="hidden [@media(hover:none)]:inline">{t(S.tapNext)}</span>
-              </span>
-            )}
+        <div className="w-full">
+          {/* 選択肢は文の上に出す（文を押して読み進めていた指が、そのまま選ばないように） */}
+          {showChoices && choices && (
+            <div className="rise mb-3 grid gap-2" onClick={(e) => e.stopPropagation()}>
+              <div className="text-base font-bold text-ink2">{t(S.yourChoice)}</div>
+              {choices.map((c, ci) => (
+                <button
+                  key={ci}
+                  data-choice={ci}
+                  className="btn justify-start text-left text-lg"
+                  onClick={() => {
+                    if (performance.now() - choicesAt.current < 700) return
+                    sfx.ui()
+                    onDone(ci)
+                  }}
+                >
+                  {t(c)}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="panel min-h-[8rem] px-4 py-3 short:min-h-0 sm:px-5 sm:py-4">
+            {name && <div className="mb-1 text-base font-bold text-ink2">{name}</div>}
+            <p className={`text-lg leading-relaxed sm:text-xl sm:leading-relaxed ${b.who === 'SYS' ? 'text-ink2' : ''}`} aria-live="polite">
+              {text.slice(0, n)}
+              {!full && <span className="blink">▌</span>}
+              {!full && (
+                <span className="invisible" aria-hidden>
+                  {text.slice(n)}
+                </span>
+              )}
+            </p>
+            <div className="mt-1 flex h-5 justify-end text-sm text-ink2">
+              {full && !(last && choices) && (
+                <span className="blink">
+                  ▼ <span className="[@media(hover:none)]:hidden">{t(S.clickNext)}</span>
+                  <span className="hidden [@media(hover:none)]:inline">{t(S.tapNext)}</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -14,7 +14,7 @@ import type { Lang, Question, TopicId } from '../game/types'
 import { errorKind, getAI, tutorRules, type SampleFn } from '../lib/ai'
 import { FAST, sfx } from '../lib/platform'
 import { Art } from './Art'
-import { BackButton, LangToggle, Panel, Sheet, useMedia } from './Common'
+import { BackButton, Panel, Sheet, useMedia } from './Common'
 import { useT } from './i18n'
 import { FACE, S } from './strings'
 
@@ -254,7 +254,6 @@ export function Quiz(p: {
               <div className="tape h-full transition-[width] duration-300" style={{ width: `${(100 * cleared) / Math.max(1, s.total)}%` }} />
             </div>
           </div>
-          <LangToggle lang={p.lang} onChange={p.setLang} />
         </div>
       </header>
 

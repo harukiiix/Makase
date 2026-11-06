@@ -14,6 +14,7 @@ import { Building } from './ui/Building'
 import { HowtoSheet, Notebook, Science, SettingsSheet } from './ui/Screens'
 import { S } from './ui/strings'
 import { Talk } from './ui/Talk'
+import { useMedia } from './ui/Common'
 import { NovaDay } from './ui/NovaDay'
 import { loadNova, writeNova, type NovaRecord } from './lib/nova'
 
@@ -76,6 +77,8 @@ export default function App() {
     window.scrollTo(0, 0)
   }, [screen.k])
 
+  // 会話の絵の大きさ（PCでは大きく）
+  const wide = useMedia('(min-width: 1024px)')
   const speed = FAST || settings.textSpeed === 'instant' ? 'instant' : settings.textSpeed
   const topicOf = (id: string) => questionOf(id)?.topic
 
@@ -103,7 +106,6 @@ export default function App() {
       setScreen({
         k: 'talk',
         beats: PROLOGUE,
-        header: S.title,
         floors: 0,
         next: () => {
           setProgress((p) => ({ ...p, started: true }))
@@ -204,7 +206,7 @@ export default function App() {
             speed={speed}
             onDone={screen.next}
             // 話す人の顔がない行（語り）で、まん中に出す絵：レッスンの場所か、建物
-            art={screen.floors !== undefined ? <Building floors={Math.min(screen.floors, LESSONS.length)} all={LESSONS.length} done={screen.floors > LESSONS.length} scale={3} /> : screen.art ? <Art id={screen.art} scale={4} /> : undefined}
+            art={screen.floors !== undefined ? <Building floors={Math.min(screen.floors, LESSONS.length)} all={LESSONS.length} done={screen.floors > LESSONS.length} scale={wide ? 5 : 4} /> : screen.art ? <Art id={screen.art} scale={wide ? 7 : 5} /> : undefined}
           />
         )
       case 'quiz': {

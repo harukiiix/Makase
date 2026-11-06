@@ -39,14 +39,6 @@ export function Done({ s, gains, progress, extra, moreDue = 0, onMoreReview, onH
   const lesson = s.lesson ? lessonOf(s.lesson) : undefined
   const floors = LESSONS.filter((l) => progress.lessons[l.id]?.done).length
   const finished = progress.finalBest !== null && gains.passed
-  const bonusRows: [keyof Gains['bonus'], typeof S.bonusLesson][] = [
-    ['lesson', S.bonusLesson],
-    ['perfect', S.bonusPerfect],
-    ['review', S.bonusReview],
-    ['final', S.bonusFinal],
-  ]
-  const bonuses = bonusRows.filter(([k]) => gains.bonus[k])
-
   const showBuilding = gains.newFloor || finished
 
   return (
@@ -93,8 +85,8 @@ export function Done({ s, gains, progress, extra, moreDue = 0, onMoreReview, onH
           </section>
         )}
 
-        {/* ポイントと、1回で正解した数 */}
-        <section className="panel grid grid-cols-2 p-0">
+        {/* ポイント・1回で正解した数・階級を1つの箱に。新しいバッジは、その下に1行で */}
+        <section data-score className="panel grid grid-cols-2 p-0">
           <div className="grid gap-1 p-4">
             <div className="text-sm text-ink2">{t(S.gained)}</div>
             <div className="flex items-center gap-2 font-num text-4xl leading-none">
@@ -111,46 +103,30 @@ export function Done({ s, gains, progress, extra, moreDue = 0, onMoreReview, onH
               </span>
             </div>
           </div>
-          {bonuses.length > 0 && (
-            <ul className="col-span-2 flex flex-wrap gap-2 border-t-2 border-hair px-4 py-3 text-sm">
-              {bonuses.map(([k, label]) => (
-                <li key={k} className="rounded-md bg-surface2 px-2 py-0.5">
-                  {t(label)} +{gains.bonus[k]}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {gains.badges.length > 0 && (
-          <section className="panel p-4">
-            <h2 className="text-base text-ink2">{t(S.newBadges)}</h2>
-            <ul className="mt-2 grid gap-2">
-              {gains.badges.map((b) => (
-                <li key={b} className="pop flex items-center gap-3 rounded-lg bg-surface2 p-2">
-                  <Art id="icon.star" scale={2} />
-                  <span>
-                    <span className="block font-bold">{t(BADGE_TEXT[b]?.name)}</span>
-                    <span className="block text-sm text-ink2">{t(BADGE_TEXT[b]?.how)}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {/* 階級 */}
-        <section className="panel flex items-center gap-3 p-4">
-          <span className="shrink-0 rounded-lg border-2 border-line bg-surface2 p-1">
-            <Art id="icon.helmet" scale={3} tint={RANK_TINT[r.rank.id]} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-xl font-bold">{t(RANK_NAME[r.rank.id])}</div>
-            <div className="mt-1.5 h-3.5 overflow-hidden rounded-full border-2 border-edge bg-surface2">
-              <div className="tape h-full" style={{ width: `${Math.round(r.share * 100)}%` }} />
+          <div className="col-span-2 flex items-center gap-3 border-t-2 border-hair p-4">
+            <span className="shrink-0 rounded-lg border-2 border-line bg-surface2 p-1">
+              <Art id="icon.helmet" scale={2} tint={RANK_TINT[r.rank.id]} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-lg font-bold">{t(RANK_NAME[r.rank.id])}</div>
+              <div className="mt-1 h-3.5 overflow-hidden rounded-full border-2 border-edge bg-surface2">
+                <div className="tape h-full" style={{ width: `${Math.round(r.share * 100)}%` }} />
+              </div>
+              <div className="mt-1 text-sm text-ink2">{r.next ? t(S.toNext(r.toNext, t(RANK_NAME[r.next.id]))) : t(S.topRank)}</div>
             </div>
-            <div className="mt-1 text-sm text-ink2">{r.next ? t(S.toNext(r.toNext, t(RANK_NAME[r.next.id]))) : t(S.topRank)}</div>
           </div>
+          {gains.badges.length > 0 && (
+            <p data-badges className="col-span-2 flex flex-wrap items-center gap-x-2 gap-y-1 border-t-2 border-hair px-4 py-3 text-base">
+              <span className="text-sm text-ink2">{t(S.newBadges)}</span>
+              {gains.badges.map((b, i) => (
+                <span key={b} className="pop inline-flex items-center gap-1 font-bold">
+                  <Art id="icon.star" scale={1.5} />
+                  {t(BADGE_TEXT[b]?.name)}
+                  {i < gains.badges.length - 1 && <span className="text-ink2">{t.lang === 'ja' ? '・' : ','}</span>}
+                </span>
+              ))}
+            </p>
+          )}
         </section>
 
         {missed.length > 0 && s.kind !== 'ai' && (

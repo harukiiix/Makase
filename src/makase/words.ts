@@ -94,3 +94,4 @@ export const LEAKED_TO = "社外に出たもの";
 export const DETAILS = "くわしく見る";
 export const DETAILS_TITLE = "くわしいふり返り";
 export const CLOSE = "閉じる";
+export const logCount = (n: number) => `これまでの動き ${n}件`;

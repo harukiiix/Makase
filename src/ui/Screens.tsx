@@ -8,7 +8,7 @@ import type { Lang } from '../game/types'
 import { getAI } from '../lib/ai'
 import { sfx, type Settings } from '../lib/platform'
 import { Art } from './Art'
-import { BackButton, LangToggle, Sheet } from './Common'
+import { BackButton, LangButton, LangToggle, Sheet } from './Common'
 import { useT } from './i18n'
 import { BADGE_TEXT, S } from './strings'
 
@@ -39,7 +39,7 @@ function Page({ title, lead, lang, setLang, onBack, children }: { title: string;
       <header className="mx-auto max-w-2xl">
         <div className="flex items-center justify-between gap-3">
           <BackButton onClick={onBack} />
-          <LangToggle lang={lang} onChange={setLang} />
+          <LangButton lang={lang} onChange={setLang} />
         </div>
         <h1 className="mt-3 text-3xl">{title}</h1>
         {lead && <p className="mt-1 text-base text-ink2">{lead}</p>}
