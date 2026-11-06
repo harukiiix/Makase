@@ -13,7 +13,32 @@ const JA_CHAR = /[぀-ヿ㐀-鿿！-｠]/
 let parser: Parser | null = null
 const cache = new Map<string, string>()
 /** 文節の区切りが入ってしまうが、1語として読みたい言葉 */
-const GLUE = ['手順書', 'おばあちゃん', 'おばあさん', 'あて先'].map((w) => [new RegExp(w.split('').join(`${ZW}?`), 'g'), w] as const)
+const GLUE = [
+  '手順書',
+  'おばあちゃん',
+  'おばあさん',
+  'あて先',
+  'しくみ',
+  'あそびかた',
+  'まちがえ',
+  'まちがい',
+  'もどる',
+  'はやい',
+  'おはよう',
+  'ひとつずつ',
+  'にくく',
+  'もらおう',
+  'さがす',
+  'はがす',
+  'はがし',
+  'わかった',
+  'つづける',
+  '見回り',
+].map((w) => [new RegExp(w.split('').join(`${ZW}?`), 'g'), w] as const)
+/** ひらがなだけの短い言葉（ボタンの「もどる」など）は分けない */
+const SHORT_KANA = /^[ぁ-ゖー]{1,6}$/
+/** 「＋」「／」は、前後の字と離さない（「Windowsキー＋L」「1／5階」） */
+const STICKY = new RegExp(`${ZW}?([＋／])${ZW}?`, 'g')
 
 /** 日本語の文を、文節の間でだけ折り返せるようにする */
 export function phrase(s: string): string {
@@ -25,8 +50,9 @@ export function phrase(s: string): string {
   const p = parser
   const out = s
     .split(ZW)
-    .map((part) => GLUE.reduce((x, [re, w]) => x.replace(re, w), p.parse(part).join(ZW)))
+    .map((part) => (SHORT_KANA.test(part) ? part : GLUE.reduce((x, [re, w]) => x.replace(re, w), p.parse(part).join(ZW))))
     .join(ZW)
+    .replace(STICKY, '$1')
   if (cache.size > 4000) cache.clear()
   cache.set(s, out)
   return out
@@ -45,7 +71,9 @@ export function tr(x: L10n | string | undefined | null, lang: Lang): string {
 export function useT() {
   const lang = useContext(LangContext)
   const t = (x: L10n | string | undefined | null) => tr(x, lang)
-  return Object.assign(t, { lang })
+  /** aria-label や placeholder 用（折り返しの目印を入れない。音声での操作で名前が合うように） */
+  const attr = (x: L10n | string | undefined | null) => plain(tr(x, lang))
+  return Object.assign(t, { lang, attr })
 }
 
 export function defaultLang(): Lang {
