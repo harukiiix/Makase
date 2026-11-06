@@ -127,7 +127,7 @@ function Stage({ face = 'face.nova', phoneHidden }: { face?: string; phoneHidden
   )
 }
 
-function Board({ children, label, face }: { children: React.ReactNode; label?: string; /** スマホで、札の横に小さく出す人の顔 */ face?: string }) {
+function Board({ children, label, face, compact }: { children: React.ReactNode; label?: string; /** スマホで、札の横に小さく出す人の顔 */ face?: string; /** PC でも文字を大きくしすぎない（メールのように長い物） */ compact?: boolean }) {
   return (
     <div className="board px-4 py-2.5 sm:px-5 sm:py-4">
       {face && (
@@ -140,7 +140,7 @@ function Board({ children, label, face }: { children: React.ReactNode; label?: s
           <span className="px-2">{label}</span>
         </div>
       )}
-      <div className="whitespace-pre-line text-[1.0625rem] leading-snug sm:text-lg sm:leading-relaxed lg:text-2xl lg:leading-relaxed">{children}</div>
+      <div className={`whitespace-pre-line text-[1.0625rem] leading-snug sm:text-lg sm:leading-relaxed ${compact ? 'lg:text-xl lg:leading-relaxed' : 'lg:text-2xl lg:leading-relaxed'}`}>{children}</div>
     </div>
   )
 }
@@ -209,7 +209,7 @@ function Mail({ onNext }: { onNext: () => void }) {
     >
       <Ask>{W.MAIL_ASK}</Ask>
       {C.incoming.map((m) => (
-        <Board key={m.id} label={W.MAIL_HEAD}>
+        <Board key={m.id} label={W.MAIL_HEAD} compact>
           <p className="font-bold">{m.title}</p>
           <p className="text-base text-chalk2">{m.from}</p>
           {m.lines.map((l, i) => (
