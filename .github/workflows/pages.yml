@@ -24,7 +24,7 @@ jobs:
       - run: npx vitest run
       - run: npm run build
         env:
-          PAGES_BASE: /makase/
+          PAGES_BASE: /Makase/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
