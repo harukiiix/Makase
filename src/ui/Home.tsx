@@ -109,7 +109,7 @@ export function Home(p: {
           <span className={en ? 'max-[399px]:sr-only' : ''}>{t(S.howto)}</span>
         </button>
         <button className="btn-quiet h-11 w-11 shrink-0 p-0" data-settings aria-label={t.attr(S.settings)} onClick={go(p.onSettings)}>
-          <Art id="icon.gear" scale={2} />
+          <Art id="icon.gear" scale={2} className="dark-light" />
         </button>
       </header>
       <p className="mx-auto mt-1 max-w-5xl text-base text-ink2">{t(S.subtitle)}</p>

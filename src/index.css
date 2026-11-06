@@ -183,3 +183,9 @@ ol.panel > li > button:focus-visible, .rows > * > button:focus-visible { outline
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: var(--color-hair); }
 * { scrollbar-color: var(--color-hair) transparent; }
+
+/* 暗い表示では、黒っぽいドット絵のアイコン（設定の歯車など）を明るく出す（暗い地に溶けて見えなくならないように） */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dark-light { filter: invert(1) brightness(1.15); }
+}
+:root[data-theme="dark"] .dark-light { filter: invert(1) brightness(1.15); }
