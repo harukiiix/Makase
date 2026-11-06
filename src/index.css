@@ -138,20 +138,27 @@ body {
   .btn:disabled, .btn-main:disabled { opacity: .45; cursor: not-allowed; }
   /* いちばん押してほしいボタン（1画面に1つ） */
   .btn-main { background: var(--color-act); color: var(--color-actInk); min-height: 3.5rem; font-size: 1.125rem; }
-  .btn-main:hover:not(:disabled) { background: #ffcf2e; }
+  @media (hover: hover) { .btn-main:hover:not(:disabled) { background: #ffcf2e; } }
   /* ふつうのボタン */
   .btn { background: var(--color-surface); color: var(--color-ink); }
-  .btn:hover:not(:disabled) { background: var(--color-surface2); }
+  @media (hover: hover) { .btn:hover:not(:disabled) { background: var(--color-surface2); } }
   .btn[aria-expanded="true"], .btn[aria-pressed="true"] { background: var(--color-surface2); }
   /* 説明の中の小さなボタン：枠だけ（影なし）。開いている時は紺 */
   .chip { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.75rem; padding: .3rem .9rem; border: 2px solid var(--color-edge); border-radius: 999px; background: var(--color-surface); color: var(--color-ink); font-size: 1rem; font-weight: 700; -webkit-tap-highlight-color: transparent; }
-  .chip:hover { background: var(--color-surface2); }
+  @media (hover: hover) { .chip:hover { background: var(--color-surface2); } }
   .chip[aria-expanded="true"], .chip[aria-pressed="true"] { background: var(--color-ink); color: var(--color-surface); }
   /* 目立たせないボタン（線と影なし） */
   .btn-quiet { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; padding: .35rem .75rem; border-radius: 8px; font-weight: 700; color: var(--color-ink); -webkit-tap-highlight-color: transparent; }
-  .btn-quiet:hover:not(:disabled) { background: color-mix(in srgb, var(--color-ink) 8%, transparent); }
+  @media (hover: hover) { .btn-quiet:hover:not(:disabled) { background: color-mix(in srgb, var(--color-ink) 8%, transparent); } }
 }
 button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid var(--color-rule); outline-offset: 3px; }
+
+/* スマホ：ボタンや絵を押したまま待っても、文字が選ばれて「コピー」が出ないように。
+   2回すばやく押しても拡大しないように。読む文と入力欄は、これまでどおり選べる */
+html { -webkit-tap-highlight-color: transparent; }
+button, [role="button"], [role="radio"], summary, label, img, svg, .no-select { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+button, [role="button"], [role="radio"], summary, a { touch-action: manipulation; }
+img { -webkit-user-drag: none; }
 /* 枠の中に並んだ行（今週の予定など）は、枠に切られないように内側に */
 ol.panel > li > button:focus-visible, .rows > * > button:focus-visible { outline-offset: -4px; border-radius: 10px; }
 

@@ -101,7 +101,7 @@ export function Talk({
   const name = t(SPEAKER[b.who])
   const face = FACE[b.who]
   return (
-    <div className="flex min-h-dvh cursor-pointer flex-col px-4 pb-4 pt-3 sm:px-6 sm:pb-8" onClick={advance}>
+    <div className="no-select flex min-h-dvh cursor-pointer flex-col px-4 pb-4 pt-3 sm:px-6 sm:pb-8" onClick={advance}>
       <header className="mx-auto flex w-full max-w-3xl items-center gap-3">
         <span className="min-w-0 flex-1 truncate text-base font-bold text-ink2">{header}</span>
         <button
