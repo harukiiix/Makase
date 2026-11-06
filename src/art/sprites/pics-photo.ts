@@ -81,7 +81,7 @@ export const SPRITES: Record<string, Sprite> = {
       'nnKnnnnnnnnKnnnKBnnKKnnnnKcccccccccccccccccccccc',
     ],
   },
-  // 2. 工事中の銀行の中で、ハルが腕をのばして自撮り。うしろはコンクリートの壁（型の穴）、ガラスのない窓、窓の外に足場。スマホの横に白い吹き出しと家とハート（家族に送る）
+  // 2. 工事中の銀行の中で、あなたが腕をのばして自撮り。うしろはコンクリートの壁（型の穴）、ガラスのない窓、窓の外に足場。スマホの横に白い吹き出しと家とハート（家族に送る）
   'pic.selfie_inside_bank': {
     rows: [
       'cccccccccccccccccccccccccccccccccccccccccccccccc',
@@ -163,7 +163,7 @@ export const SPRITES: Record<string, Sprite> = {
       'DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD',
     ],
   },
-  // 4. うしろから見たハル（黄色いヘルメットに緑のシール）が、会社のタブレット（紺のケース）を両手で天井に向ける。天井のパネルが1枚あいて、銀色のダクトが見える。画面には同じ天井と、左下に小さな緑の黒板
+  // 4. うしろから見たあなた（黄色いヘルメットに緑のシール）が、会社のタブレット（紺のケース）を両手で天井に向ける。天井のパネルが1枚あいて、銀色のダクトが見える。画面には同じ天井と、左下に小さな緑の黒板
   'pic.tablet_record_photo': {
     rows: [
       'wgwwwwwwwwwwwwwwgkkkkkkkkkkkkkkgwwwwwwwwwwwwwwgw',
@@ -204,7 +204,7 @@ export const SPRITES: Record<string, Sprite> = {
       'nnnnnnnnnnnnnnnnKKKKKKKKKKKKKKKnnnnnnnnnnnnnnnnn',
     ],
   },
-  // 5. 金庫室の厚い壁（つくりかけ、上は鉄筋、金庫の扉）の横で、ハルが遠くを見て汗。ずっと遠くの小さな事務所の窓に図面（白い紙に青い線と赤い部屋）。間に点線の道（戻るのが遠い）。スマホやタブレットは描かない
+  // 5. 金庫室の厚い壁（つくりかけ、上は鉄筋、金庫の扉）の横で、あなたが遠くを見て汗。ずっと遠くの小さな事務所の窓に図面（白い紙に青い線と赤い部屋）。間に点線の道（戻るのが遠い）。スマホやタブレットは描かない
   'pic.walk_back_for_drawing': {
     rows: [
       'ssssssssssssssssssssssssssssssssssssssssssssssss',

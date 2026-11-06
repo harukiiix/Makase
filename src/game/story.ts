@@ -9,7 +9,7 @@ export const PROLOGUE: Line[] = [
   },
   {
     who: 'BOSS',
-    t: { ja: 'おはよう。森田ハルさんだね。現場監督の宮下です。', en: "Morning. You must be Haru Morita. I'm Miyashita, the site supervisor." },
+    t: { ja: 'おはよう。今日から来てくれた新人さんだね。現場監督の宮下です。', en: "Morning. You must be our new worker. I'm Miyashita, the site supervisor." },
   },
   {
     who: 'YOU',
@@ -44,7 +44,7 @@ export const PROLOGUE: Line[] = [
 export const ENDING: Line[] = [
   {
     who: 'BOSS',
-    t: { ja: '森田さん、おつかれさま。銀行の支店、できあがったね。', en: 'Good work, Haru. The bank branch is finished.' },
+    t: { ja: 'おつかれさま。銀行の支店、できあがったね。', en: 'Good work. The bank branch is finished.' },
   },
   {
     who: 'CLIENT',
