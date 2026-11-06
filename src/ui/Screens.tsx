@@ -123,7 +123,8 @@ export function Notebook({ progress, lang, setLang, onBack }: { progress: Progre
                 <div className="text-sm text-ink2">{t(S.list2(t(c.who), t(c.when)))}</div>
                 <p className="mt-1 text-base leading-relaxed">{t(c.body)}</p>
                 <a className="mt-1 inline-flex min-h-11 items-center text-sm text-rule underline" href={c.url} target="_blank" rel="noreferrer">
-                  {t(S.kv(t(S.source), c.source))} ({host(c.url)})
+                  {t(S.kv(t(S.source), t(c.source)))}
+                  {t.lang === 'ja' ? `（${host(c.url)}）` : ` (${host(c.url)})`}
                 </a>
               </article>
             ) : null
@@ -149,7 +150,7 @@ export function Science({ lang, setLang, onBack }: { lang: Lang; setLang: (l: La
               <div className="text-sm font-bold text-ink2">{t(S.scienceHere)}</div>
               <p className="text-base leading-relaxed">
                 {t(pr.here)}
-                {ai && pr.hereAI ? t(pr.hereAI) : null}
+                {ai && pr.hereAI ? (t.lang === 'ja' ? '' : ' ') + t(pr.hereAI) : null}
               </p>
             </div>
             {pr.refs.length > 0 && (

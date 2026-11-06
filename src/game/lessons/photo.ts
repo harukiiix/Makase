@@ -88,7 +88,7 @@ export const LESSON: Lesson = {
         ja: '初めての現場がうれしくて、工事中の銀行の中で、自分の写真を撮った。親にも見せたい。',
         en: "You're excited about your first site, so you took a photo of yourself inside the bank under construction. You'd like to show your parents.",
       },
-      ask: { ja: '家族にだけ、LINEで送る。これでいい？', en: 'You send it on LINE, just to your family. Is that OK?' },
+      ask: { ja: '家族にだけ、LINEで送る。これでいい？', en: 'You send it just to your family, in a messaging app. Is that OK?' },
       answer: false,
       why: {
         ja: '自分の写真でも、後ろに銀行の中が写っているよね。中のようすは施主さんの秘密だから、家族にも見せられないんだ。',

@@ -504,7 +504,7 @@ function Feedback({ ref, q, pick, ok, gained, combo, order, ai, onAsk, sheet }: 
             <div className="text-sm text-ink2">{t(S.list2(t(rc.who), t(rc.when)))}</div>
             <p className="mt-1 text-base leading-relaxed">{t(rc.body)}</p>
             <a className="mt-1 inline-flex min-h-11 items-center text-sm text-rule underline" href={rc.url} target="_blank" rel="noreferrer">
-              {t(S.kv(t(S.source), rc.source))}
+              {t(S.kv(t(S.source), t(rc.source)))}
             </a>
           </div>
         )}
@@ -566,8 +566,8 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
     }
   }
 
-  // 自分で書いた文とAIの答えは、文節の目印がないので、ふつうの日本語の折り返しにする
-  const bubble = 'max-w-[88%] whitespace-pre-wrap rounded-xl px-3 py-2 text-lg leading-relaxed [line-break:strict] [overflow-wrap:anywhere] [word-break:normal]'
+  // AIの答えには文節の目印を入れる。自分で書いた文は目印がないので、どこで折り返してもよい
+  const bubble = 'max-w-[88%] whitespace-pre-wrap rounded-xl px-3 py-2 text-lg leading-relaxed [line-break:strict] [overflow-wrap:anywhere]'
   return (
     <Sheet label={t.attr(S.aiTitle)} onClose={onClose}>
       <div className="flex items-center justify-between gap-3 border-b-2 border-hair px-5 py-3">
@@ -584,13 +584,13 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
       <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-5 py-4">
         <p className="text-sm text-ink2">{t(S.aiNote)}</p>
         {turns.map((m, i) => (
-          <div key={i} className={`${bubble} ${m.role === 'user' ? 'justify-self-end bg-ink text-surface' : 'justify-self-start border-2 border-hair bg-surface2'}`}>
-            {m.content}
+          <div key={i} className={`${bubble} ${m.role === 'user' ? 'justify-self-end bg-ink text-surface [word-break:normal]' : 'justify-self-start border-2 border-hair bg-surface2'}`}>
+            {m.role === 'user' ? m.content : t(m.content)}
           </div>
         ))}
         {busy && (
           <div className={`${bubble} justify-self-start border-2 border-hair bg-surface2`} aria-live="polite">
-            {live || <span className="blink">{t(S.aiThinking)}</span>}
+            {live ? t(live) : <span className="blink">{t(S.aiThinking)}</span>}
           </div>
         )}
         {err && <p className="rounded-lg border-2 border-ng bg-ngBg px-3 py-2 text-base">{err}</p>}

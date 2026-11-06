@@ -91,7 +91,7 @@ export interface RealCase {
   body: L10n
   who: L10n
   when: L10n
-  source: string
+  source: L10n
   url: string
 }
 
