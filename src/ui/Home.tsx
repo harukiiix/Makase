@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react'
 import { LESSONS, lessonOf, questionOf } from '../game/course'
 import { DAY_SUB as NOVA_SUB, DAY_TITLE as NOVA_TITLE } from '../makase/words'
-import { dayNumber, dueIds, lessonOpen, PASS, rankOf, RANKS, weakTopic, type Progress } from '../game/learn'
+import { dayNumber, dueIds, lessonOpen, PASS, rankOf, weakTopic, type Progress } from '../game/learn'
 import type { Lang, TopicId } from '../game/types'
 import { getAI } from '../lib/ai'
 import { sfx } from '../lib/platform'
@@ -224,48 +224,36 @@ export function Home(p: {
               <span className="block text-sm font-normal text-ink2">{t(S.notebookWhy)}</span>
             </span>
           </button>
-          <section className="panel grid gap-3 p-4" aria-label={t.attr(S.rank)}>
-            <div className="flex items-center gap-3">
-              <span className="shrink-0 rounded-lg border-2 border-line bg-surface2 p-1">
-                <Art id="icon.helmet" scale={3} tint={RANK_TINT[r.rank.id]} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-sm text-ink2">{t(S.rank)}</div>
-                <div className="text-xl font-bold leading-snug">{t(RANK_NAME[r.rank.id])}</div>
+          {/* 自分の記録：階級・ポイント・建物を1つの箱に（左に建物の絵、右に階級と帯） */}
+          <section data-record className="panel grid gap-3 p-4" aria-label={t.attr(S.rank)}>
+            <div className="flex items-center gap-4 max-[359px]:flex-col max-[359px]:items-start">
+              <div className="shrink-0 overflow-hidden rounded-lg border-2 border-line" role="img" aria-label={t.attr(passed ? t(S.buildingDone) : t(S.building(done, LESSONS.length)))}>
+                <Building floors={done} all={LESSONS.length} done={passed} scale={2} />
               </div>
-              <div className="text-right">
-                <div className="text-sm text-ink2">{t(S.pointsLabel)}</div>
-                <div className="font-num text-2xl leading-snug">{pr.xp}</div>
+              <div className="grid min-w-0 flex-1 gap-2">
+                <div className="flex items-center gap-2">
+                  <Art id="icon.helmet" scale={2} tint={RANK_TINT[r.rank.id]} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm text-ink2">{t(S.rank)}</div>
+                    <div className="text-xl font-bold leading-snug">{t(RANK_NAME[r.rank.id])}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-ink2">{t(S.pointsLabel)}</div>
+                    <div className="font-num text-2xl leading-snug">{pr.xp}</div>
+                  </div>
+                </div>
+                <div>
+                  <div className="h-3.5 overflow-hidden rounded-full border-2 border-edge bg-surface2" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(r.share * 100)} aria-label={t.attr(r.next ? t(S.toNext(r.toNext, t(RANK_NAME[r.next.id]))) : t(S.topRank))}>
+                    <div className="tape h-full" style={{ width: `${Math.round(r.share * 100)}%` }} />
+                  </div>
+                  <div className="mt-1 text-sm text-ink2">{r.next ? t(S.toNext(r.toNext, t(RANK_NAME[r.next.id]))) : t(S.topRank)}</div>
+                </div>
+                <div className="text-base font-bold">{passed ? t(S.buildingDone) : t(S.building(done, LESSONS.length))}</div>
               </div>
             </div>
-            <div>
-              <div className="h-3.5 overflow-hidden rounded-full border-2 border-edge bg-surface2" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(r.share * 100)} aria-label={t.attr(r.next ? t(S.toNext(r.toNext, t(RANK_NAME[r.next.id]))) : t(S.topRank))}>
-                <div className="tape h-full" style={{ width: `${Math.round(r.share * 100)}%` }} />
-              </div>
-              <div className="mt-1 text-sm text-ink2">{r.next ? t(S.toNext(r.toNext, t(RANK_NAME[r.next.id]))) : t(S.topRank)}</div>
-            </div>
-            {/* 階級のならび（目標が見えるように） */}
-            <ol className="flex items-start justify-between gap-1" aria-label={t.attr(S.rankLadder)}>
-              {RANKS.map((x, i) => (
-                <li key={x.id} className={`grid min-w-0 flex-1 justify-items-center text-center text-xs leading-tight break-words ${i === r.index ? 'font-bold text-ink' : 'text-ink2'}`}>
-                  <Art id="icon.helmet" scale={1.5} tint={RANK_TINT[x.id]} className={i <= r.index ? '' : 'opacity-35'} />
-                  <span className="mt-0.5">{t(RANK_NAME[x.id])}</span>
-                </li>
-              ))}
-            </ol>
             <div className="flex items-center gap-2 border-t-2 border-hair pt-3">
               <Art id="icon.flag" scale={2} className={streakAlive && playedToday ? '' : 'opacity-50'} />
               <span className="text-base font-bold">{streakText}</span>
-            </div>
-          </section>
-
-          <section className="panel flex items-center gap-4 p-4 max-[359px]:flex-col max-[359px]:items-start" aria-label={t.attr(S.buildingLabel)}>
-            <div className="shrink-0 overflow-hidden rounded-lg border-2 border-line">
-              <Building floors={done} all={LESSONS.length} done={passed} scale={2} />
-            </div>
-            <div className="min-w-0">
-              <div className="text-lg font-bold">{passed ? t(S.buildingDone) : t(S.building(done, LESSONS.length))}</div>
-              <p className="mt-1 text-sm text-ink2">{passed ? t(S.buildingDoneSub) : t(S.buildingHow)}</p>
             </div>
           </section>
           <p className="text-center text-sm text-ink2">{t(S.fiction)}</p>
