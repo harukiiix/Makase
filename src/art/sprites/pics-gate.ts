@@ -248,7 +248,7 @@ export const SPRITES: Record<string, Sprite> = {
       'nKnnnnnnnnKnnnnnnnnKnnKBnnnnnnnKkkkkkkkkkkkkkkkk',
     ],
   },
-  // 6. ゲートの前で、買い物帰りの近所の人がハルに話しかける。吹き出しに金庫と「？」（4. と同じ人）
+  // 6. ゲートの前で、買い物帰りの近所の人があなたに話しかける。吹き出しに金庫と「？」（4. と同じ人）
   'pic.neighbor_asks_vault': {
     pal: { j: '#e0a0b4', J: '#b56f86' },
     rows: [

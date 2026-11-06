@@ -216,7 +216,6 @@ export function SettingsSheet({ s, set, onReset, onAbout, onClose }: { s: Settin
             <LangToggle lang={s.lang} onChange={(lang) => set({ ...s, lang })} />
           </div>
           {row(S.sound, s.sound ? S.on : S.off, () => set({ ...s, sound: !s.sound }))}
-          {row(S.music, s.music ? S.on : S.off, () => set({ ...s, music: !s.music }))}
           {row(S.textSpeed, S.speeds[s.textSpeed], () => set({ ...s, textSpeed: s.textSpeed === 'normal' ? 'fast' : s.textSpeed === 'fast' ? 'instant' : 'normal' }))}
           <div>
             <button data-about className="flex min-h-14 w-full items-center justify-between gap-3 px-4 py-2 text-left text-lg hover:bg-surface2" onClick={() => (sfx.ui(), onAbout())}>

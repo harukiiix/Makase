@@ -4,7 +4,7 @@ import { applySession, countAsk, dayNumber, dueIds, interleave, lessonOpen, newP
 import { ENDING, PROLOGUE } from './game/story'
 import type { L10n, Lang, Line, Question, TopicId } from './game/types'
 import { errorKind, getAI, practicePrompt, toQuestions } from './lib/ai'
-import { FAST, loadProgress, loadResume, loadSettings, setAudio, startMusic, writeProgress, writeResume, writeSettings, type Resume, type Settings } from './lib/platform'
+import { FAST, loadProgress, loadResume, loadSettings, setAudio, writeProgress, writeResume, writeSettings, type Resume, type Settings } from './lib/platform'
 import { Done } from './ui/Done'
 import { Home } from './ui/Home'
 import { LangContext, tr } from './ui/i18n'
@@ -60,17 +60,8 @@ export default function App() {
     document.documentElement.lang = lang
   }, [lang])
   useEffect(() => {
-    setAudio(settings.sound, settings.music)
-  }, [settings])
-  useEffect(() => {
-    const go = () => settings.music && startMusic()
-    window.addEventListener('pointerdown', go, { once: true })
-    window.addEventListener('keydown', go, { once: true })
-    return () => {
-      window.removeEventListener('pointerdown', go)
-      window.removeEventListener('keydown', go)
-    }
-  }, [settings.music])
+    setAudio(settings.sound)
+  }, [settings.sound])
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [screen.k])

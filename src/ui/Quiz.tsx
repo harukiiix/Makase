@@ -59,6 +59,14 @@ export function Quiz(p: {
   const [dense, setDense] = useState(0)
   const [sheetH, setSheetH] = useState(0)
   const doneRef = useRef(false)
+  /** 問題が出た時刻（指で「次へ」を2回押した時に、次の問題の答えまで押してしまわないように） */
+  const shownAt = useRef(0)
+  const touch = useRef(false)
+  useEffect(() => {
+    const on = (e: PointerEvent) => (touch.current = e.pointerType === 'touch')
+    window.addEventListener('pointerdown', on, { capture: true })
+    return () => window.removeEventListener('pointerdown', on, { capture: true })
+  }, [])
   const mainRef = useRef<HTMLElement>(null)
   const answersRef = useRef<HTMLDivElement>(null)
   const fbRef = useRef<HTMLElement>(null)
@@ -145,6 +153,7 @@ export function Quiz(p: {
 
   const pick = (orig: number) => {
     if (!q || s.answer) return
+    if (touch.current && performance.now() - shownAt.current < 350) return
     const ns = answer(s, q, orig)
     setS(ns)
     p.onSave?.(ns)
@@ -158,6 +167,7 @@ export function Quiz(p: {
     window.setTimeout(() => setFb(true), 280)
   }
   const go = () => {
+    shownAt.current = performance.now()
     sfx.ui()
     setFb(false)
     setChat(false)
@@ -174,7 +184,10 @@ export function Quiz(p: {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
       if (!s.answer && q) {
         const n = q.kind === 'tf' ? { '1': 0, '2': 1, o: 0, x: 1, O: 0, X: 1 }[e.key] : { '1': 0, '2': 1, '3': 2 }[e.key]
-        if (n !== undefined) pick(q.kind === 'tf' ? n : order[n])
+        if (n !== undefined) {
+          touch.current = false
+          pick(q.kind === 'tf' ? n : order[n])
+        }
       } else if (s.answer && fb && e.key === 'Enter') {
         e.preventDefault()
         go()

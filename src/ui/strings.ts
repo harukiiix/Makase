@@ -148,7 +148,6 @@ export const S = {
   // ---- 設定
   language: L('ことば', 'Language'),
   sound: L('効果音', 'Sound'),
-  music: L('音楽', 'Music'),
   textSpeed: L('会話の文字の速さ', 'Dialogue text speed'),
   on: L('あり', 'On'),
   off: L('なし', 'Off'),
@@ -197,7 +196,7 @@ export const BADGE_TEXT: Record<string, { name: L10n; how: L10n }> = {
 /** 話す人の名前 */
 export const SPEAKER: Record<string, L10n> = {
   BOSS: L('宮下さん（現場監督）', 'Miyashita (site supervisor)'),
-  YOU: L('森田ハル（あなた）', 'Haru Morita (you)'),
+  YOU: L('あなた', 'You'),
   GUARD: L('大塚さん（警備員）', 'Otsuka (gate guard)'),
   KIMURA: L('木村さん（内装の職長）', 'Kimura (interior foreman)'),
   SAWA: L('沢口さん（事務）', 'Sawaguchi (office)'),

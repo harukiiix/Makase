@@ -82,7 +82,7 @@ export const SPRITES: Record<string, Sprite> = {
       'ddddddDDDDDDDDDDDDDDDDDDDDDDDDDDDDdddddDDDdddddd',
     ],
   },
-  // だれもいない机：画面に図面が開いたまま。いすは空いて、ハルがトイレへ出ていく
+  // だれもいない机：画面に図面が開いたまま。いすは空いて、あなたがトイレへ出ていく
   'pic.screen_lock': {
     rows: [
       'GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG',

@@ -40,7 +40,7 @@ export const SPRITES: Record<string, Sprite> = {
       '.KwGGGgGGGGGGGGgGGGGGGGGgGgggK..',
     ],
   },
-  // 森田ハル（新人・あなた）の顔：黄色いヘルメットの横に緑の丸いシール（新規入場者の印）、紺の作業着、少し緊張した笑顔
+  // あなた（新人）の顔：黄色いヘルメットの横に緑の丸いシール（新規入場者の印）、紺の作業着、少し緊張した笑顔
   'face.you': {
     rows: [
       '................................',
@@ -300,7 +300,7 @@ export const SPRITES: Record<string, Sprite> = {
       '..KKKKK.KKKKK.',
     ],
   },
-  // 森田ハル：黄色いヘルメットの横に緑のシール、紺の作業着
+  // あなた（新人）：黄色いヘルメットの横に緑のシール、紺の作業着
   'person.you': {
     rows: [
       '.....KKKKK....',

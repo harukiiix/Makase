@@ -62,7 +62,6 @@ export interface Settings {
   /** 表示言語（日本語／英語） */
   lang: Lang
   sound: boolean
-  music: boolean
   textSpeed: 'normal' | 'fast' | 'instant'
   motion: boolean
 }
@@ -85,12 +84,15 @@ function browserLang(): Lang {
   }
 }
 export function loadSettings(): Settings {
-  const d: Settings = { lang: browserLang(), sound: true, music: true, textSpeed: 'normal', motion: true }
+  const d: Settings = { lang: browserLang(), sound: true, textSpeed: 'normal', motion: true }
   const forced = urlLang()
   try {
     const raw = localStorage.getItem(SKEY)
     if (raw) {
-      const s: Settings = { ...d, ...JSON.parse(raw) }
+      // 前の版で保存した music（音楽）は、もう使わないので捨てる
+      const { music: _music, ...saved } = JSON.parse(raw) as Settings & { music?: boolean }
+      void _music
+      const s: Settings = { ...d, ...saved }
       if (s.lang !== 'ja' && s.lang !== 'en') s.lang = d.lang
       return forced ? { ...s, lang: forced } : s
     }
@@ -114,7 +116,6 @@ export const FAST = typeof location !== 'undefined' && new URLSearchParams(locat
 let ctx: AudioContext | null = null
 let master: GainNode | null = null
 let sfxOn = true
-let musicOn = true
 
 function ac() {
   if (!ctx) {
@@ -127,10 +128,9 @@ function ac() {
   return ctx
 }
 
-export function setAudio(sound: boolean, music: boolean) {
+/** 効果音のあり・なし（音楽は流さない） */
+export function setAudio(sound: boolean) {
   sfxOn = sound
-  musicOn = music
-  if (!music) stopMusic()
 }
 
 function tone(freq: number, dur: number, type: OscillatorType = 'square', gain = 0.05, when = 0, slide = 0) {
@@ -211,54 +211,4 @@ export const sfx = {
   win: () => [392, 523, 659, 784, 659, 784, 1047].forEach((f, i) => tone(f, 0.11, 'square', 0.04, i * 0.08)),
   lose: () => [392, 370, 349, 311].forEach((f, i) => tone(f, 0.2, 'square', 0.04, i * 0.16)),
   page: () => noise(0.05, 0.03, 0, 2500),
-}
-
-// --------- BGM：明るく、落ちついた現場の朝（長調のゆっくりした8ビット） ---------
-let musicTimer: number | null = null
-export function startMusic() {
-  if (!musicOn || musicTimer !== null) return
-  try {
-    ac()
-  } catch {
-    return
-  }
-  // C - G - Am - F（各1小節）
-  const prog = [
-    [131, 165, 196, 262],
-    [98, 123, 147, 196],
-    [110, 131, 165, 220],
-    [87, 110, 131, 175],
-  ]
-  const melody = [0, 2, 3, 2, 1, 2, 0, -1]
-  let step = 0
-  const tick = () => {
-    if (!musicOn || !ctx) return
-    const bar = Math.floor(step / 16) % prog.length
-    const ch = prog[bar]
-    const s = step % 16
-    const t = ctx.currentTime
-    const play = (f: number, d: number, type: OscillatorType, g: number) => {
-      const o = ctx!.createOscillator()
-      const gn = ctx!.createGain()
-      o.type = type
-      o.frequency.value = f
-      gn.gain.setValueAtTime(g, t)
-      gn.gain.exponentialRampToValueAtTime(0.0001, t + d)
-      o.connect(gn).connect(master!)
-      o.start(t)
-      o.stop(t + d + 0.02)
-    }
-    if (s % 8 === 0) play(ch[0] / 2, 1.0, 'triangle', 0.045)
-    if (s % 4 === 2) play(ch[1], 0.12, 'square', 0.008)
-    if (s % 4 === 0) {
-      const m = melody[(Math.floor(step / 4) + bar) % melody.length]
-      if (m >= 0) play(ch[m] * 2, 0.22, 'square', 0.012)
-    }
-    step++
-  }
-  musicTimer = window.setInterval(tick, 150)
-}
-export function stopMusic() {
-  if (musicTimer !== null) clearInterval(musicTimer)
-  musicTimer = null
 }
