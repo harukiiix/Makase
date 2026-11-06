@@ -189,7 +189,7 @@ export const SPEAKER: Record<string, L10n> = {
   GUARD: L('大塚さん（警備員）', 'Otsuka (gate guard)'),
   KIMURA: L('木村さん（内装の職長）', 'Kimura (interior foreman)'),
   SAWA: L('沢口さん（事務）', 'Sawaguchi (office)'),
-  STRANGER: L('点検の人', 'The "inspector"'),
+  STRANGER: L('点検の人', 'Inspector'),
   CLIENT: L('支店長', 'Branch manager'),
   SYS: L('', ''),
 }
