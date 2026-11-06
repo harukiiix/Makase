@@ -402,7 +402,8 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
     }
   }
 
-  const bubble = 'max-w-[88%] whitespace-pre-wrap break-words rounded-xl px-3 py-2 text-lg leading-relaxed'
+  // 自分で書いた文とAIの答えは、文節の目印がないので、どこで折り返してもよいことにする
+  const bubble = 'max-w-[88%] whitespace-pre-wrap break-words rounded-xl px-3 py-2 text-lg leading-relaxed [word-break:normal]'
   return (
     <Sheet label={t(S.aiTitle)} onClose={onClose}>
       <div className="flex items-center justify-between gap-3 border-b-2 border-hair px-5 py-3">

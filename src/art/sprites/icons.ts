@@ -154,4 +154,38 @@ export const SPRITES: Record<string, Sprite> = {
       '............',
     ],
   },
+  // あそびかた：白い丸に「？」
+  'icon.howto': {
+    rows: [
+      '...KKKKKK...',
+      '..KWWWWWWK..',
+      '.KWWKKKKWWK.',
+      'KWWKWWWWKWWK',
+      'KWWWWWWWKWWK',
+      'KWWWWWKKWWWK',
+      'KWWWWKWWWWWK',
+      'KWWWWKWWWWWK',
+      'KWWWWWWWWWWK',
+      '.KWWWKKWWWK.',
+      '..KWWWWWWK..',
+      '...KKKKKK...',
+    ],
+  },
+  // 設定：歯車
+  'icon.gear': {
+    rows: [
+      '.....KK.....',
+      '..KK.KK.KK..',
+      '..KKKKKKKK..',
+      '...KCCCCK...',
+      '.KKKCKKCKKK.',
+      'KKKCK..KCKKK',
+      'KKKCK..KCKKK',
+      '.KKKCKKCKKK.',
+      '...KCCCCK...',
+      '..KKKKKKKK..',
+      '..KK.KK.KK..',
+      '.....KK.....',
+    ],
+  },
 }

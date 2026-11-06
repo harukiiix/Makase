@@ -81,9 +81,6 @@ export function Home(p: {
           <Art id="icon.helmet" scale={2} tint={RANK_TINT.new} />
           <h1 className="truncate font-pixel text-xl leading-none sm:text-2xl">{t(S.title)}</h1>
         </div>
-        <button className="btn-quiet h-11 w-11 p-0 text-xl" aria-label={t(S.settings)} onClick={go(p.onSettings)}>
-          ⚙
-        </button>
         <LangToggle lang={p.lang} onChange={p.setLang} />
       </header>
       <p className="mx-auto mt-1 max-w-5xl text-base text-ink2">{t(S.subtitle)}</p>
@@ -217,20 +214,22 @@ export function Home(p: {
             </button>
           )}
 
-          <nav className="grid grid-cols-3 gap-1" aria-label={t(S.others)}>
-            <button className="btn-quiet flex-col gap-1 py-2 text-sm" data-notebook onClick={go(p.onNotebook)}>
+          <nav className="grid grid-cols-4 gap-1" aria-label={t(S.others)}>
+            <button className="btn-quiet flex-col gap-1 px-1 py-2 text-sm leading-snug" data-notebook onClick={go(p.onNotebook)}>
               <Art id="icon.book" scale={2} />
               {t(S.notebook)}
             </button>
-            <button className="btn-quiet flex-col gap-1 py-2 text-sm" data-science onClick={go(p.onScience)}>
+            <button className="btn-quiet flex-col gap-1 px-1 py-2 text-sm leading-snug" data-science onClick={go(p.onScience)}>
               <Art id="icon.bulb" scale={2} />
               {t(S.science)}
             </button>
-            <button className="btn-quiet flex-col gap-1 py-2 text-sm" data-howto onClick={go(p.onHowto)}>
-              <span className="font-pixel text-xl leading-6" aria-hidden>
-                ?
-              </span>
+            <button className="btn-quiet flex-col gap-1 px-1 py-2 text-sm leading-snug" data-howto onClick={go(p.onHowto)}>
+              <Art id="icon.howto" scale={2} />
               {t(S.howto)}
+            </button>
+            <button className="btn-quiet flex-col gap-1 px-1 py-2 text-sm leading-snug" data-settings onClick={go(p.onSettings)}>
+              <Art id="icon.gear" scale={2} />
+              {t(S.settings)}
             </button>
           </nav>
           <p className="text-center text-sm text-ink2">{t(S.fiction)}</p>

@@ -33,7 +33,7 @@ export const S = {
   streakNone: L('今日やると、1日目です', 'Play today to start a streak'),
   buildingLabel: L('建物', 'Building'),
   building: (n: number, all: number) => L(`建物 ${n}／${all}階`, `Building: ${n} of ${all} floors`),
-  buildingHow: L('レッスンを1つ終えるごとに、1階ずつできていきます。', 'Each lesson you finish adds one floor.'),
+  buildingHow: L('レッスンを1つ終えると、1階できます。', 'Each lesson you finish adds a floor.'),
   buildingDone: L('建物ができあがりました', 'The building is finished'),
   buildingDoneSub: L('まとめテストに合格しました。', 'You passed the final test.'),
   best: (p: number) => L(`1回で正解 ${p}%`, `${p}% right first time`),
