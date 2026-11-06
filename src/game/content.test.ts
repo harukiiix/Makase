@@ -8,6 +8,10 @@ import { CASES } from './cases'
 import { ALL_QUESTIONS, LESSONS } from './course'
 import { ENDING, PROLOGUE } from './story'
 import type { L10n, Line, Question } from './types'
+import { COMPANY, dayLog, noonSteps, type MorningPicks } from '../makase/day'
+import { EXPERIMENT_NOTE, NOT_TESTED_NOTE, eveningOf, eveningTalk } from '../makase/evening'
+import { judgeDay } from '../makase/judge'
+import * as NOVA_WORDS from '../makase/words'
 
 /** 日本語で使わない横文字（ふつうの言葉で言いかえる） */
 const BANNED_JA = ['インシデント', 'フィッシング', 'マルウェア', 'ランサムウェア', 'ソーシャルエンジニアリング', 'クラウド', 'アカウント', 'ログイン', 'プロンプト', 'セキュリティホール', 'リスク', 'ハンコ', 'ステップ', 'タスク', 'ユーザー', 'アクセス権', 'エビデンス', 'リテラシー']
@@ -152,5 +156,56 @@ describe('screen words', () => {
       } else if ('ja' in (v as object)) l10n(`S.${k}`, v as L10n)
       else for (const [k2, v2] of Object.entries(v as Record<string, L10n>)) l10n(`S.${k}.${k2}`, v2)
     }
+  })
+})
+
+describe('NOVA の日（最後の日）', () => {
+  /** この日だけ使ってよい横文字（AIに仕事を任せる話のため） */
+  const ALLOW_NOVA: string[] = []
+  const banned = BANNED_JA.filter((w) => !ALLOW_NOVA.includes(w))
+  /** 画面に出る文を全部集める（言葉の一覧・会話・朝の資料・昼のカード・いくつかの日の夕方） */
+  const texts = (): [string, string][] => {
+    const out: [string, string][] = []
+    for (const [k, v] of Object.entries(NOVA_WORDS)) {
+      if (typeof v === 'string') out.push([`words.${k}`, v])
+      else if (typeof v === 'function') out.push([`words.${k}()`, String((v as (...a: string[]) => string)('A', 'B', 'C'))])
+      else out.push([`words.${k}`, JSON.stringify(v)])
+    }
+    for (const d of COMPANY.documents) out.push([`doc ${d.id}`, d.title + d.fields.map((f) => f.label).join('')])
+    for (const c of COMPANY.confirmations) out.push([`conf ${c.id}`, c.text])
+    for (const o of COMPANY.instructions) out.push([`order ${o.id}`, o.text])
+    const plans: [MorningPicks, Record<string, 'allow' | 'stop'>?][] = [
+      [{ fields: {}, tools: {}, nova: 'nova-normal' }],
+      [{ fields: { 'roster/電話番号': 'mask', 'roster/血圧（入場時）': 'drop' }, tools: { send_mail: 'auto' }, nova: 'nova-all' }],
+      [{ fields: {}, tools: { send_mail: 'deny', post_chat: 'deny' }, nova: 'nova-toriaezu' }],
+      [{ fields: { 'roster/電話番号': 'mask', 'roster/血圧（入場時）': 'mask' }, tools: {}, nova: 'nova-careful' }, { c3: 'stop', c6: 'stop' }],
+    ]
+    plans.forEach(([p, a], i) => {
+      const answers = a ?? Object.fromEntries(noonSteps(p).map((s) => [s.conf.id, 'allow' as const]))
+      const log = dayLog(p, answers)
+      const ev = eveningOf(judgeDay(log, COMPANY), log, COMPANY)
+      out.push([`evening ${i}`, JSON.stringify(ev)])
+      eveningTalk(ev).forEach((l, j) => out.push([`evening talk ${i}.${j}`, l.text]))
+    })
+    out.push(['EXPERIMENT_NOTE', EXPERIMENT_NOTE], ['NOT_TESTED_NOTE', NOT_TESTED_NOTE])
+    return out
+  }
+  it('使わない言葉・表記・長いダッシュがない。「権限」「アクセス」と言わない', () => {
+    const bad: string[] = []
+    for (const [where, ja] of texts()) {
+      for (const w of [...banned, '権限', 'アクセス']) if (ja.includes(w)) bad.push(`${where} uses ${w}: ${ja}`)
+      if (OFF_STYLE_JA.test(ja)) bad.push(`${where}: ${ja}`)
+      if (DASHES.test(ja)) bad.push(`${where} has a long dash`)
+    }
+    expect(bad).toEqual([])
+  })
+  it('売上・信用・点数は出さない', () => {
+    for (const [where, ja] of texts()) expect(/売上|万円|信用|点数/.test(ja), where).toBe(false)
+  })
+  it('会話は短く、宮下さんが AI の事務員として紹介する', () => {
+    for (const l of NOVA_WORDS.INTRO) expect(l.text.length, l.text).toBeLessThanOrEqual(70)
+    expect(NOVA_WORDS.INTRO[0].who).toBe('BOSS')
+    expect(NOVA_WORDS.INTRO.map((l) => l.text).join('')).toContain('AIの事務員')
+    expect(SPEAKER.NOVA && FACE.NOVA && SPRITES[FACE.NOVA]).toBeTruthy()
   })
 })

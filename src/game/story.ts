@@ -75,4 +75,8 @@ export const ENDING: Line[] = [
     who: 'BOSS',
     t: { ja: 'もう新人じゃないね。ヘルメットの緑のシール、はがしていいよ。', en: "You're not new here anymore. You can take the green new-worker sticker off your helmet." },
   },
+  {
+    who: 'BOSS',
+    t: { ja: 'そうだ、来週から事務所に、AIの事務員が来るんだ。日報やメールを手伝ってくれるよ。', en: "Oh, and starting next week, an AI clerk is coming to the office. It'll help with daily reports and email." },
+  },
 ]
