@@ -4,7 +4,7 @@ import { applySession, countAsk, dayNumber, dueIds, interleave, lessonOpen, newP
 import { ENDING, PROLOGUE } from './game/story'
 import type { L10n, Lang, Line, Question, TopicId } from './game/types'
 import { errorKind, getAI, practicePrompt, toQuestions } from './lib/ai'
-import { FAST, loadProgress, loadSettings, setAudio, startMusic, writeProgress, writeSettings, type Settings } from './lib/platform'
+import { FAST, loadProgress, loadResume, loadSettings, setAudio, startMusic, writeProgress, writeResume, writeSettings, type Resume, type Settings } from './lib/platform'
 import { Done } from './ui/Done'
 import { Home } from './ui/Home'
 import { LangContext, tr } from './ui/i18n'
@@ -18,7 +18,7 @@ import { Talk } from './ui/Talk'
 type Screen =
   | { k: 'home'; note?: L10n }
   | { k: 'talk'; beats: Line[]; header?: L10n; art?: string; floors?: number; next: () => void }
-  | { k: 'quiz'; kind: SessionKind; lesson?: TopicId; title: L10n; questions: Question[]; aiMade?: boolean; nonce: number }
+  | { k: 'quiz'; kind: SessionKind; lesson?: TopicId; title: L10n; questions: Question[]; aiMade?: boolean; mix?: boolean; resume?: Session; nonce: number }
   | { k: 'done'; s: Session; gains: Gains; questions: Question[] }
   | { k: 'making' }
   | { k: 'notebook' }
@@ -32,6 +32,15 @@ export default function App() {
   })
   const [screen, setScreen] = useState<Screen>({ k: 'home' })
   const [sheet, setSheet] = useState<'settings' | 'howto' | null>(null)
+  // 途中のレッスン（問題がもう無いものは捨てる）
+  const [resume, setResumeState] = useState<Resume | null>(() => {
+    const r = loadResume()
+    return r && r.ids.every((id) => questionOf(id)) ? r : null
+  })
+  const setResume = (r: Resume | null) => {
+    setResumeState(r)
+    writeResume(r)
+  }
   const nonce = useRef(0)
   const lang = settings.lang
   const setLang = (l: Lang) => setSettings({ ...settings, lang: l })
@@ -70,14 +79,23 @@ export default function App() {
   const topicOf = (id: string) => questionOf(id)?.topic
 
   // ---------------- 進行 ----------------
-  const quiz = (kind: SessionKind, title: L10n, questions: Question[], lesson?: TopicId, aiMade?: boolean) => setScreen({ k: 'quiz', kind, title, questions, lesson, aiMade, nonce: ++nonce.current })
+  const quiz = (kind: SessionKind, title: L10n, questions: Question[], lesson?: TopicId, aiMade?: boolean, mix?: boolean) => {
+    // 新しく始めたら、前の途中のものは終わりにする（続きは1つだけ）
+    if (resume) setResume(null)
+    setScreen({ k: 'quiz', kind, title, questions, lesson, aiMade, mix, nonce: ++nonce.current })
+  }
+  const continueResume = () => {
+    if (!resume) return
+    const qs = resume.ids.map((id) => questionOf(id)).filter((q): q is Question => !!q)
+    setScreen({ k: 'quiz', kind: resume.kind, title: resume.title, questions: qs, lesson: resume.lesson, mix: resume.mix, resume: resume.session, nonce: ++nonce.current })
+  }
 
   const startLesson = (id: TopicId) => {
     const l = lessonOf(id)
     // 2回目からは並びを変える（答えの場所を覚えてしまわないように）
     const qs = progress.lessons[id]?.done ? shuffle(l.questions, dayNumber() + progress.answered) : l.questions
     const title = { ja: S.dayPlace(l.dayName.ja, l.place.ja).ja, en: S.dayPlace(l.dayName.en, l.place.en).en }
-    const go = () => quiz('lesson', title, qs, id)
+    const go = () => quiz('lesson', title, qs, id, false, !!progress.lessons[id]?.done)
     const intro = () => (l.intro.length ? setScreen({ k: 'talk', beats: l.intro, header: title, art: l.icon, next: go }) : go())
     if (!progress.started && PROLOGUE.length) {
       setScreen({
@@ -97,14 +115,14 @@ export default function App() {
   const startReview = () => {
     const ids = dueIds(progress.cards, dayNumber(), topicOf, 10)
     const qs = ids.map((id) => questionOf(id)).filter((q): q is Question => !!q)
-    if (qs.length) quiz('review', { ja: '今日の復習', en: "Today's review" }, qs)
+    if (qs.length) quiz('review', S.reviewTitle, qs, undefined, false, true)
   }
 
   const startFinal = () => {
     const seed = dayNumber() * 7 + progress.answered
     const picked = LESSONS.flatMap((l) => shuffle(l.questions, seed + l.id.length).slice(0, 2))
     const ids = interleave(shuffle(picked, seed).map((q) => q.id), topicOf)
-    quiz('final', S.finalTest, ids.map((id) => questionOf(id)!).filter(Boolean))
+    quiz('final', S.finalTest, ids.map((id) => questionOf(id)!).filter(Boolean), undefined, false, true)
   }
 
   const startPractice = async () => {
@@ -126,6 +144,7 @@ export default function App() {
   }
 
   const finishQuiz = (s: Session, questions: Question[]) => {
+    setResume(null)
     const { p, gains } = applySession(progress, s, dayNumber(), LESSONS.length)
     writeProgress(p)
     setProgressState(p)
@@ -151,12 +170,14 @@ export default function App() {
               progress={progress}
               lang={lang}
               setLang={setLang}
+              resume={resume ? { title: tr(resume.title, lang), left: resume.session.queue.length - (resume.session.answer?.ok ? 1 : 0) } : null}
+              onResume={continueResume}
+              onDropResume={() => setResume(null)}
               onLesson={startLesson}
               onReview={startReview}
               onFinal={startFinal}
               onPractice={() => void startPractice()}
               onNotebook={() => setScreen({ k: 'notebook' })}
-              onScience={() => setScreen({ k: 'science' })}
               onSettings={() => setSheet('settings')}
               onHowto={() => setSheet('howto')}
             />
@@ -176,7 +197,25 @@ export default function App() {
         )
       case 'quiz': {
         const sc = screen
-        return <Quiz key={sc.nonce} kind={sc.kind} lesson={sc.lesson} title={tr(sc.title, lang)} questions={sc.questions} aiMade={sc.aiMade} lang={lang} setLang={setLang} onAsked={() => setProgress(countAsk)} onQuit={() => setScreen({ k: 'home' })} onDone={(s) => finishQuiz(s, sc.questions)} />
+        return (
+          <Quiz
+            key={sc.nonce}
+            kind={sc.kind}
+            lesson={sc.lesson}
+            title={tr(sc.title, lang)}
+            questions={sc.questions}
+            aiMade={sc.aiMade}
+            mix={sc.mix}
+            resume={sc.resume}
+            // AIの問題は、その場かぎり（保存しない）
+            onSave={sc.kind === 'ai' ? undefined : (session) => setResume({ kind: sc.kind, lesson: sc.lesson, title: sc.title, ids: sc.questions.map((q) => q.id), mix: sc.mix, session, savedAt: Date.now() })}
+            lang={lang}
+            setLang={setLang}
+            onAsked={() => setProgress(countAsk)}
+            onQuit={() => setScreen({ k: 'home' })}
+            onDone={(s) => finishQuiz(s, sc.questions)}
+          />
+        )
       }
       case 'done': {
         const sc = screen
@@ -234,15 +273,17 @@ export default function App() {
         <SettingsSheet
           s={settings}
           set={setSettings}
+          onAbout={() => (setSheet(null), setScreen({ k: 'science' }))}
           onClose={() => setSheet(null)}
           onReset={() => {
+            setResume(null)
             setProgress(() => newProgress())
             setSheet(null)
             setScreen({ k: 'home' })
           }}
         />
       )}
-      {sheet === 'howto' && <HowtoSheet onClose={() => setSheet(null)} />}
+      {sheet === 'howto' && <HowtoSheet onAbout={() => (setSheet(null), setScreen({ k: 'science' }))} onClose={() => setSheet(null)} />}
     </LangContext.Provider>
   )
 }

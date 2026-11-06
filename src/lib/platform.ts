@@ -1,6 +1,6 @@
 // ブラウザ依存：保存・設定・サウンド（WebAudioで合成。音声ファイル不要）
-import { newProgress, type Progress } from '../game/learn'
-import type { Lang } from '../game/types'
+import { newProgress, type Progress, type Session } from '../game/learn'
+import type { L10n, Lang, TopicId } from '../game/types'
 
 const KEY = 'sit.v5'
 
@@ -20,6 +20,39 @@ export function loadProgress(): Progress {
 export function writeProgress(p: Progress) {
   try {
     localStorage.setItem(KEY, JSON.stringify(p))
+  } catch {
+    /* noop */
+  }
+}
+
+/** 途中のレッスン（電話・画面ロック・再読み込みで切れても、続きからできるように） */
+export interface Resume {
+  kind: Session['kind']
+  lesson?: TopicId
+  title: L10n
+  /** 出す問題（この順に作り直す） */
+  ids: string[]
+  /** 答えの並びを入れかえるか */
+  mix?: boolean
+  session: Session
+  savedAt: number
+}
+const RKEY = 'sit.v5.resume'
+export function loadResume(): Resume | null {
+  try {
+    const raw = localStorage.getItem(RKEY)
+    if (!raw) return null
+    const r = JSON.parse(raw) as Resume
+    if (!r || !Array.isArray(r.ids) || !r.session || !Array.isArray(r.session.queue) || r.session.queue.length === 0) return null
+    return r
+  } catch {
+    return null
+  }
+}
+export function writeResume(r: Resume | null) {
+  try {
+    if (r) localStorage.setItem(RKEY, JSON.stringify(r))
+    else localStorage.removeItem(RKEY)
   } catch {
     /* noop */
   }

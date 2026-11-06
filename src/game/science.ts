@@ -14,6 +14,10 @@ export interface Principle {
   name: L10n
   what: L10n
   here: L10n
+  /** AIが使える時だけ足す一文（claude.ai で開いた時） */
+  hereAI?: L10n
+  /** AIが使える時だけ出す項目 */
+  needsAI?: boolean
   refs: Ref[]
 }
 
@@ -65,10 +69,8 @@ export const PRINCIPLES: Principle[] = [
       'つまずいた所をやり直して、できてから先へ進むと、テストの成績が上がりやすくなります。',
       'Going back over what you missed, and moving on only once you have it, tends to raise test scores.',
     ),
-    here: L(
-      'まちがえた問題は、正しく答えられるまで、レッスンの最後にもう一度出ます。「AIの宮下さんと練習」では、いちばん苦手な話題の新しい問題が出ます。',
-      'A question you miss comes back at the end of the lesson until you get it right. "Practice with AI Miyashita" gives you new questions on your weakest topic.',
-    ),
+    here: L('まちがえた問題は、正しく答えられるまで、レッスンの最後にもう一度出ます。', 'A question you miss comes back at the end of the lesson until you get it right.'),
+    hereAI: L('「AIの宮下さんと練習」では、いちばん苦手な話題の新しい問題が出ます。', '"Practice with AI Miyashita" gives you new questions on your weakest topic.'),
     refs: [
       {
         cite: 'Kulik, C.-L. C., Kulik, J. A., & Bangert-Drowns, R. L. (1990). Effectiveness of mastery learning programs: A meta-analysis. Review of Educational Research, 60(2), 265-299.',
@@ -131,6 +133,7 @@ export const PRINCIPLES: Principle[] = [
   },
   {
     id: 'explain',
+    needsAI: true,
     name: L('「なぜ？」を自分で考える', 'Explain why in your own words'),
     what: L(
       '「なぜそうなるのか」を自分の言葉で説明しながら学ぶと、理解が深まりやすくなります。',

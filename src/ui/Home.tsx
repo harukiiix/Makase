@@ -1,8 +1,8 @@
 // ============================================================
 // ホーム
-//   いちばん上：今日やること（1つだけ大きく。押すボタンは黄色1つ）
-//   その下：今週の予定（月〜金とまとめテスト。工程表のように並べる）
-//   横か下：自分の階級・ポイント・続けた日数、のびていく建物、そのほか
+//   いちばん上：今日やること（1つだけ大きく。押すボタンは黄色1つ）。途中のレッスンがあれば、その続き
+//   その下：5日間の見回り（月〜金とまとめテスト。工程表のように並べる）、AIの練習、ノートとあそびかた
+//   横か下：自分の階級・ポイント・続けた日数、のびていく建物
 // ============================================================
 import { useEffect, useState } from 'react'
 import { LESSONS, lessonOf, questionOf } from '../game/course'
@@ -27,24 +27,29 @@ export function Home(p: {
   progress: Progress
   lang: Lang
   setLang: (l: Lang) => void
+  /** 途中のレッスン（あれば） */
+  resume?: { title: string; left: number } | null
+  onResume: () => void
+  onDropResume: () => void
   onLesson: (id: TopicId) => void
   onReview: () => void
   onFinal: () => void
   onPractice: () => void
   onNotebook: () => void
-  onScience: () => void
   onSettings: () => void
   onHowto: () => void
 }) {
   const t = useT()
   const pr = p.progress
   const r = rankOf(pr.xp)
+  const today = dayNumber()
   const done = LESSONS.filter((l) => pr.lessons[l.id]?.done).length
   const allDone = done === LESSONS.length
   const passed = pr.finalBest !== null && pr.finalBest >= PASS
-  const due = dueIds(pr.cards, dayNumber(), (id) => questionOf(id)?.topic).length
+  const due = dueIds(pr.cards, today, (id) => questionOf(id)?.topic).length
   const order = LESSONS.map((l) => l.id)
   const next = LESSONS.find((l) => !pr.lessons[l.id]?.done && lessonOpen(pr, order, l.id))
+  const firstLocked = LESSONS.findIndex((l) => !lessonOpen(pr, order, l.id))
   const [ai, setAi] = useState(false)
   useEffect(() => {
     let alive = true
@@ -53,12 +58,17 @@ export function Home(p: {
       alive = false
     }
   }, [])
-  const playedToday = pr.lastDay === dayNumber()
+  const playedToday = pr.lastDay === today
+  // 1日あいたら、続けた日数は切れている（次に遊んだ時に1日目から）
+  const streakAlive = pr.streak > 0 && pr.lastDay !== null && pr.lastDay >= today - 1
+  const streakText = !streakAlive ? t(S.streakNone) : playedToday ? t(S.streak(pr.streak)) : t(S.streakKeep(pr.streak + 1))
   const weak = done > 0 ? lessonOf(weakTopic(pr, (id) => questionOf(id)?.topic, LESSONS[0].id)) : null
   const go = (f: () => void) => () => (sfx.ui(), f())
+  const dayTile = (name: string) => (t.lang === 'ja' ? name.slice(0, 1) : name.slice(0, 2))
 
   // ---- 今日やること（1つ）
   const hero = (() => {
+    if (p.resume) return { key: 'resume', icon: 'icon.review', title: t(S.resumeTitle), sub: t(S.resumeSub(p.resume.title, p.resume.left)), cta: t(S.resumeGo), onClick: p.onResume, attr: { 'data-resume': true } }
     if (due > 0) return { key: 'review', icon: 'icon.review', title: t(S.reviewTitle), sub: t(S.reviewSub(due, minutes(due))), cta: t(S.reviewGo), onClick: p.onReview, attr: { 'data-review': true } }
     if (next)
       return {
@@ -82,14 +92,17 @@ export function Home(p: {
           <h1 className="truncate font-pixel text-xl leading-none sm:text-2xl">{t(S.title)}</h1>
         </div>
         <LangToggle lang={p.lang} onChange={p.setLang} />
+        <button className="btn-quiet h-11 w-11 shrink-0 p-0" data-settings aria-label={t.attr(S.settings)} onClick={go(p.onSettings)}>
+          <Art id="icon.gear" scale={2} />
+        </button>
       </header>
       <p className="mx-auto mt-1 max-w-5xl text-base text-ink2">{t(S.subtitle)}</p>
 
       <div className="mx-auto mt-4 grid max-w-5xl gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-6">
-        {/* ---- 左（スマホでは上）：今日やること → 今週の予定 */}
+        {/* ---- 左（スマホでは上）：今日やること → 5日間の見回り → そのほか */}
         <div className="grid content-start gap-4">
           {hero ? (
-            <section className="panel grid gap-4 p-4 sm:p-5" aria-label={t(S.todayJob)}>
+            <section className="panel grid gap-4 p-4 sm:p-5" aria-label={t.attr(S.todayJob)}>
               <div className="flex items-start gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-bold text-ink2">{t(S.todayJob)}</div>
@@ -100,9 +113,16 @@ export function Home(p: {
                   <Art id={hero.icon} scale={hero.key === 'lesson' ? 3 : 4} />
                 </div>
               </div>
-              <button {...hero.attr} className="btn-main w-full text-xl" onClick={go(hero.onClick)}>
-                {hero.cta}
-              </button>
+              <div className="grid gap-2">
+                <button {...hero.attr} className="btn-main w-full text-xl" onClick={go(hero.onClick)}>
+                  {hero.cta}
+                </button>
+                {hero.key === 'resume' && (
+                  <button data-drop-resume className="btn-quiet justify-self-center text-base text-ink2" onClick={go(p.onDropResume)}>
+                    {t(S.resumeDrop)}
+                  </button>
+                )}
+              </div>
             </section>
           ) : (
             <section className="panel p-4 sm:p-5">
@@ -112,35 +132,36 @@ export function Home(p: {
             </section>
           )}
 
-          {/* 今週の予定：曜日のマスと、題名と、ようす */}
+          {/* 5日間の見回り：曜日のマスと、題名と、ようす */}
           <section aria-labelledby="week">
             <h2 id="week" className="mb-2 text-base text-ink2">
               {t(S.week)}
             </h2>
             <ol className="panel divide-y-2 divide-hair overflow-hidden p-0">
-              {LESSONS.map((l) => {
+              {LESSONS.map((l, i) => {
                 const st = pr.lessons[l.id]
                 const open = lessonOpen(pr, order, l.id)
                 const isNext = next?.id === l.id
+                const sub = st?.done ? t(S.best(Math.round(st.best * 100))) : !open && i === firstLocked && i > 0 ? t(S.lockedAfter(t(LESSONS[i - 1].dayName))) : t(S.dayPlace(t(l.dayName), t(l.place)))
                 return (
                   <li key={l.id}>
                     <button data-lesson={l.id} disabled={!open} onClick={go(() => p.onLesson(l.id))} className={`flex w-full items-center gap-3 px-3 py-2.5 text-left disabled:cursor-not-allowed ${isNext ? 'bg-actBg' : 'enabled:hover:bg-surface2'}`}>
                       <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg font-pixel text-2xl ${st?.done ? 'bg-ok text-surface' : open ? 'bg-ink text-surface' : 'bg-surface2 text-ink2'}`} aria-hidden>
-                        {t(l.dayName).slice(0, 1)}
+                        {dayTile(t(l.dayName))}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className={`block text-lg font-bold leading-snug ${open ? '' : 'text-ink2'}`}>{t(l.title)}</span>
-                        <span className="block text-sm text-ink2">{open ? (st?.done ? t(S.best(Math.round(st.best * 100))) : t(S.dayPlace(t(l.dayName), t(l.place)))) : t(S.locked)}</span>
+                        <span className="block text-sm text-ink2">{sub}</span>
                       </span>
                       <span className="shrink-0" aria-hidden>
-                        {st?.done ? <Art id="icon.check" scale={2} /> : !open ? <Art id="icon.lock" scale={2} className="opacity-60" /> : isNext ? <span className="rounded-md bg-act px-2 py-0.5 text-sm font-bold text-actInk">{t(S.nowMark)}</span> : null}
+                        {st?.done ? <Art id="icon.check" scale={2} /> : !open ? <Art id="icon.lock" scale={2} className="opacity-60" /> : isNext ? <span className="rounded-md bg-act px-2 py-0.5 text-sm font-bold text-actInk">{t(S.nextMark)}</span> : null}
                       </span>
                     </button>
                   </li>
                 )
               })}
               <li>
-                <button data-final disabled={!allDone} onClick={go(p.onFinal)} className={`flex w-full items-center gap-3 px-3 py-2.5 text-left disabled:cursor-not-allowed ${allDone && !passed && due === 0 ? 'bg-actBg' : 'enabled:hover:bg-surface2'}`}>
+                <button data-final disabled={!allDone} onClick={go(p.onFinal)} className={`flex w-full items-center gap-3 px-3 py-2.5 text-left disabled:cursor-not-allowed ${allDone && !passed && due === 0 && !p.resume ? 'bg-actBg' : 'enabled:hover:bg-surface2'}`}>
                   <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${passed ? 'bg-ok' : allDone ? 'bg-ink' : 'bg-surface2'}`} aria-hidden>
                     <Art id="icon.star" scale={2} className={allDone ? '' : 'opacity-50'} />
                   </span>
@@ -155,11 +176,32 @@ export function Home(p: {
               </li>
             </ol>
           </section>
+
+          {ai && weak && (
+            <button data-practice onClick={go(p.onPractice)} className="btn w-full justify-start gap-3 p-3 text-left">
+              <Art id="icon.ai" scale={2.5} />
+              <span className="min-w-0">
+                <span className="block text-lg leading-snug">{t(S.aiPractice)}</span>
+                <span className="block text-sm font-normal text-ink2">{t(S.aiPracticeWhy(t(weak.title)))}</span>
+              </span>
+            </button>
+          )}
+
+          <nav className="grid grid-cols-2 gap-2" aria-label={t.attr(S.others)}>
+            <button className="btn justify-start gap-3 px-3 text-base" data-notebook onClick={go(p.onNotebook)}>
+              <Art id="icon.book" scale={2} />
+              {t(S.notebook)}
+            </button>
+            <button className="btn justify-start gap-3 px-3 text-base" data-howto onClick={go(p.onHowto)}>
+              <Art id="icon.howto" scale={2} />
+              {t(S.howto)}
+            </button>
+          </nav>
         </div>
 
-        {/* ---- 右（スマホでは下）：自分のようす、建物、AI、そのほか */}
+        {/* ---- 右（スマホでは下）：自分のようす、建物 */}
         <div className="grid content-start gap-4">
-          <section className="panel grid gap-3 p-4" aria-label={t(S.rank)}>
+          <section className="panel grid gap-3 p-4" aria-label={t.attr(S.rank)}>
             <div className="flex items-center gap-3">
               <span className="shrink-0 rounded-lg border-2 border-line bg-surface2 p-1">
                 <Art id="icon.helmet" scale={3} tint={RANK_TINT[r.rank.id]} />
@@ -174,27 +216,27 @@ export function Home(p: {
               </div>
             </div>
             <div>
-              <div className="h-3.5 overflow-hidden rounded-full border-2 border-line bg-surface2" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(r.share * 100)} aria-label={r.next ? t(S.toNext(r.toNext, t(RANK_NAME[r.next.id]))) : t(S.topRank)}>
+              <div className="h-3.5 overflow-hidden rounded-full border-2 border-edge bg-surface2" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(r.share * 100)} aria-label={t.attr(r.next ? t(S.toNext(r.toNext, t(RANK_NAME[r.next.id]))) : t(S.topRank))}>
                 <div className="tape h-full" style={{ width: `${Math.round(r.share * 100)}%` }} />
               </div>
               <div className="mt-1 text-sm text-ink2">{r.next ? t(S.toNext(r.toNext, t(RANK_NAME[r.next.id]))) : t(S.topRank)}</div>
             </div>
             {/* 階級のならび（目標が見えるように） */}
-            <ol className="flex items-end justify-between gap-1" aria-label={t(S.rankLadder)}>
+            <ol className="flex items-start justify-between gap-1" aria-label={t.attr(S.rankLadder)}>
               {RANKS.map((x, i) => (
-                <li key={x.id} className={`grid min-w-0 flex-1 justify-items-center text-center text-xs leading-tight ${i === r.index ? 'font-bold text-ink' : 'text-ink2'}`}>
+                <li key={x.id} className={`grid min-w-0 flex-1 justify-items-center text-center text-xs leading-tight [overflow-wrap:anywhere] ${i === r.index ? 'font-bold text-ink' : 'text-ink2'}`}>
                   <Art id="icon.helmet" scale={1.5} tint={RANK_TINT[x.id]} className={i <= r.index ? '' : 'opacity-35'} />
-                  <span className="mt-0.5 w-full truncate">{t(RANK_NAME[x.id])}</span>
+                  <span className="mt-0.5">{t(RANK_NAME[x.id])}</span>
                 </li>
               ))}
             </ol>
             <div className="flex items-center gap-2 border-t-2 border-hair pt-3">
-              <Art id="icon.flag" scale={2} className={pr.streak && playedToday ? '' : 'opacity-50'} />
-              <span className="text-base font-bold">{pr.streak ? t(S.streak(pr.streak)) : t(S.streakNone)}</span>
+              <Art id="icon.flag" scale={2} className={streakAlive && playedToday ? '' : 'opacity-50'} />
+              <span className="text-base font-bold">{streakText}</span>
             </div>
           </section>
 
-          <section className="panel flex items-center gap-4 p-4" aria-label={t(S.buildingLabel)}>
+          <section className="panel flex items-center gap-4 p-4 max-[359px]:flex-col max-[359px]:items-start" aria-label={t.attr(S.buildingLabel)}>
             <div className="shrink-0 overflow-hidden rounded-lg border-2 border-line">
               <Building floors={done} all={LESSONS.length} done={passed} scale={2} />
             </div>
@@ -203,35 +245,6 @@ export function Home(p: {
               <p className="mt-1 text-sm text-ink2">{passed ? t(S.buildingDoneSub) : t(S.buildingHow)}</p>
             </div>
           </section>
-
-          {ai && weak && (
-            <button data-practice onClick={go(p.onPractice)} className="btn w-full justify-start gap-3 p-3 text-left">
-              <Art id="icon.ai" scale={2.5} />
-              <span className="min-w-0">
-                <span className="block text-lg leading-snug">{t(S.aiPractice)}</span>
-                <span className="block text-sm font-normal text-ink2">{t(S.aiPracticeWhy(t(weak.title)))}</span>
-              </span>
-            </button>
-          )}
-
-          <nav className="grid grid-cols-4 gap-1" aria-label={t(S.others)}>
-            <button className="btn-quiet flex-col gap-1 px-1 py-2 text-sm leading-snug" data-notebook onClick={go(p.onNotebook)}>
-              <Art id="icon.book" scale={2} />
-              {t(S.notebook)}
-            </button>
-            <button className="btn-quiet flex-col gap-1 px-1 py-2 text-sm leading-snug" data-science onClick={go(p.onScience)}>
-              <Art id="icon.bulb" scale={2} />
-              {t(S.science)}
-            </button>
-            <button className="btn-quiet flex-col gap-1 px-1 py-2 text-sm leading-snug" data-howto onClick={go(p.onHowto)}>
-              <Art id="icon.howto" scale={2} />
-              {t(S.howto)}
-            </button>
-            <button className="btn-quiet flex-col gap-1 px-1 py-2 text-sm leading-snug" data-settings onClick={go(p.onSettings)}>
-              <Art id="icon.gear" scale={2} />
-              {t(S.settings)}
-            </button>
-          </nav>
           <p className="text-center text-sm text-ink2">{t(S.fiction)}</p>
         </div>
       </div>

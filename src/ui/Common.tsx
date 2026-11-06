@@ -19,15 +19,17 @@ export function useMedia(query: string) {
 /** 右上の English / 日本語（いま選んでいる方を、紺の地に白で） */
 export function LangToggle({ lang, onChange, className = '' }: { lang: Lang; onChange: (l: Lang) => void; className?: string }) {
   return (
-    <div className={`flex shrink-0 overflow-hidden rounded-lg border-2 border-line bg-surface ${className}`} role="radiogroup" aria-label="Language / ことば">
+    <div className={`flex shrink-0 overflow-hidden rounded-lg border-2 border-edge bg-surface ${className}`} role="radiogroup" aria-label="Language / ことば">
       {(
         [
-          ['en', 'English'],
-          ['ja', '日本語'],
+          ['en', 'English', 'EN'],
+          ['ja', '日本語', '日本語'],
         ] as const
-      ).map(([id, name]) => (
-        <button key={id} role="radio" aria-checked={lang === id} lang={id} onClick={() => lang !== id && (sfx.ui(), onChange(id))} className={`min-h-10 px-2 text-sm font-bold sm:px-3 sm:text-base ${lang === id ? 'bg-ink text-surface' : 'text-ink2 hover:bg-surface2 hover:text-ink'}`}>
-          {name}
+      ).map(([id, name, short]) => (
+        <button key={id} role="radio" aria-checked={lang === id} aria-label={name} lang={id} onClick={() => lang !== id && (sfx.ui(), onChange(id))} className={`min-h-11 px-2 text-sm font-bold sm:px-3 sm:text-base ${lang === id ? 'bg-ink text-surface' : 'text-ink2 hover:bg-surface2 hover:text-ink'}`}>
+          {/* せまい画面では English を EN に（題名や進み具合の場所を空けるため） */}
+          <span className="max-[399px]:hidden">{name}</span>
+          <span className="min-[400px]:hidden">{short}</span>
         </button>
       ))}
     </div>
@@ -38,7 +40,7 @@ export function LangToggle({ lang, onChange, className = '' }: { lang: Lang; onC
 export function BackButton({ onClick, label }: { onClick: () => void; label?: string }) {
   const t = useT()
   return (
-    <button data-back onClick={() => (sfx.ui(), onClick())} aria-label={label ?? t(S.back)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-line bg-surface text-xl font-bold text-ink hover:bg-surface2">
+    <button data-back onClick={() => (sfx.ui(), onClick())} aria-label={label ?? t.attr(S.back)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-edge bg-surface text-xl font-bold text-ink hover:bg-surface2">
       ←
     </button>
   )

@@ -24,6 +24,8 @@
   --color-ink: #1c2b3f;
   --color-ink2: #4a5a6e;
   --color-line: #1c2b3f;
+  /* 押せる物のふちと影（暗い表示では明るめにして、押せる形が見えるように） */
+  --color-edge: #1c2b3f;
   --color-hair: #c7cac2;
 
   --color-board: #2d4a3b;
@@ -53,6 +55,7 @@
     --color-ink: #eef1f4;
     --color-ink2: #a9b4c2;
     --color-line: #0b1017;
+    --color-edge: #6e7f94;
     --color-hair: #36424f;
     --color-board: #2a4537;
     --color-board2: #213a2d;
@@ -73,6 +76,7 @@
   --color-ink: #eef1f4;
   --color-ink2: #a9b4c2;
   --color-line: #0b1017;
+  --color-edge: #6e7f94;
   --color-hair: #36424f;
   --color-board: #2a4537;
   --color-board2: #213a2d;
@@ -103,8 +107,10 @@ body {
   button, input { font-family: inherit; color: inherit; }
   h1, h2, h3 { line-height: 1.4; font-weight: 700; }
   .font-pixel { font-family: var(--font-pixel); font-weight: 400; letter-spacing: 0.02em; }
-  /* 日本語は文節の間（t() が入れる目印）でだけ折り返す。入りきらない時だけ途中で折る */
-  html:lang(ja) body { word-break: keep-all; overflow-wrap: break-word; }
+  /* 日本語の本文は、ふつうの日本語の折り返し（行頭に「。」などを置かない）。
+     見出し・ボタン・短い札は、文節の間（t() が入れる目印）でだけ折り返し、行の長さをそろえる */
+  html:lang(ja) body { word-break: normal; line-break: strict; overflow-wrap: anywhere; }
+  html:lang(ja) :is(h1, h2, h3, button, .chip, label, figcaption, .phrase) { word-break: keep-all; overflow-wrap: break-word; text-wrap: balance; }
   p, li { text-wrap: pretty; }
 }
 
@@ -125,8 +131,8 @@ body {
   .tape { background: repeating-linear-gradient(-45deg, var(--color-act) 0 8px, #1c2b3f 8px 16px); }
 
   /* ボタンは押せる物だけ：下に影、押すと沈む */
-  .btn, .btn-main { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3rem; padding: .5rem 1.1rem; border: 2px solid var(--color-line); border-radius: 8px; font-weight: 700; line-height: 1.35; box-shadow: 0 4px 0 0 var(--color-line); transition: transform 60ms, box-shadow 60ms, background-color 120ms; -webkit-tap-highlight-color: transparent; }
-  .btn:active:not(:disabled), .btn-main:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 0 var(--color-line); }
+  .btn, .btn-main { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3rem; padding: .5rem 1.1rem; border: 2px solid var(--color-edge); border-radius: 8px; font-weight: 700; line-height: 1.35; box-shadow: 0 4px 0 0 var(--color-edge); transition: transform 60ms, box-shadow 60ms, background-color 120ms; -webkit-tap-highlight-color: transparent; }
+  .btn:active:not(:disabled), .btn-main:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 0 var(--color-edge); }
   .btn:disabled, .btn-main:disabled { opacity: .45; cursor: not-allowed; }
   /* いちばん押してほしいボタン（1画面に1つ） */
   .btn-main { background: var(--color-act); color: var(--color-actInk); min-height: 3.5rem; font-size: 1.125rem; }
@@ -136,7 +142,7 @@ body {
   .btn:hover:not(:disabled) { background: var(--color-surface2); }
   .btn[aria-expanded="true"], .btn[aria-pressed="true"] { background: var(--color-surface2); }
   /* 説明の中の小さなボタン：枠だけ（影なし）。開いている時は紺 */
-  .chip { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.75rem; padding: .3rem .9rem; border: 2px solid var(--color-line); border-radius: 999px; background: var(--color-surface); color: var(--color-ink); font-size: 1rem; font-weight: 700; -webkit-tap-highlight-color: transparent; }
+  .chip { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.75rem; padding: .3rem .9rem; border: 2px solid var(--color-edge); border-radius: 999px; background: var(--color-surface); color: var(--color-ink); font-size: 1rem; font-weight: 700; -webkit-tap-highlight-color: transparent; }
   .chip:hover { background: var(--color-surface2); }
   .chip[aria-expanded="true"], .chip[aria-pressed="true"] { background: var(--color-ink); color: var(--color-surface); }
   /* 目立たせないボタン（線と影なし） */
@@ -144,6 +150,8 @@ body {
   .btn-quiet:hover:not(:disabled) { background: color-mix(in srgb, var(--color-ink) 8%, transparent); }
 }
 button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid var(--color-rule); outline-offset: 3px; }
+/* 枠の中に並んだ行（今週の予定など）は、枠に切られないように内側に */
+ol.panel > li > button:focus-visible, .rows > * > button:focus-visible { outline-offset: -4px; border-radius: 10px; }
 
 /* ===== 動き（答えた時と、建物がのびる時だけ） ===== */
 @keyframes pop { 0% { transform: scale(.6) } 70% { transform: scale(1.12) } 100% { transform: scale(1) } }
@@ -151,7 +159,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 @keyframes rise { from { transform: translateY(8px); opacity: 0 } to { transform: none; opacity: 1 } }
 .rise { animation: rise 200ms steps(4) both; }
 @keyframes blink { 50% { opacity: 0 } }
-.blink { animation: blink 1s steps(1) infinite; }
+.blink { animation: blink 1s steps(1) 3; }
 @keyframes shake { 0%,100% { transform: none } 25% { transform: translateX(-4px) } 75% { transform: translateX(4px) } }
 .shake { animation: shake 160ms steps(4) 2; }
 /* 新しい階が、クレーンで上から降りてくる */
