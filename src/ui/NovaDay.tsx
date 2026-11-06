@@ -17,6 +17,7 @@ import { sfx } from '../lib/platform'
 import { Art } from './Art'
 import { BackButton, Panel, Sheet, useMedia } from './Common'
 import { Talk } from './Talk'
+import { phrase } from './i18n'
 
 type Phase = 'intro' | 'mail' | 'morning' | 'noon' | 'talk' | 'evening' | 'take'
 const wrap = 'mx-auto w-full max-w-xl px-4 lg:max-w-6xl lg:px-10'
@@ -115,26 +116,31 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
 }
 
 /** 人の絵（NOVA の顔）。PCでは左に大きく */
-function Stage({ face = 'face.nova' }: { face?: string }) {
+function Stage({ face = 'face.nova', phoneHidden }: { face?: string; phoneHidden?: boolean }) {
   const pc = useMedia('(min-width: 1024px)')
   return (
-    <div className="flex justify-center lg:sticky lg:top-0">
+    <div className={`${phoneHidden ? 'hidden lg:flex' : 'flex'} justify-center lg:sticky lg:top-0`}>
       <div className="overflow-hidden rounded-xl border-2 border-line bg-surface2">
-        <Art id={face} scale={pc ? 5 : 3} />
+        <Art id={face} scale={pc ? 5 : 2} />
       </div>
     </div>
   )
 }
 
-function Board({ children, label }: { children: React.ReactNode; label?: string }) {
+function Board({ children, label, face }: { children: React.ReactNode; label?: string; /** スマホで、札の横に小さく出す人の顔 */ face?: string }) {
   return (
     <div className="board px-4 py-2.5 sm:px-5 sm:py-4">
+      {face && (
+        <span className="float-right ml-2 overflow-hidden rounded-md border-2 border-board2 bg-surface2 lg:hidden" aria-hidden>
+          <Art id={face} scale={1.25} />
+        </span>
+      )}
       {label && (
         <div className="mb-1.5 inline-flex items-stretch overflow-hidden rounded-sm border-2 border-chalk2 font-pixel text-base text-chalk">
           <span className="px-2">{label}</span>
         </div>
       )}
-      <div className="whitespace-pre-line text-[1.0625rem] leading-relaxed sm:text-lg lg:text-2xl lg:leading-relaxed">{children}</div>
+      <div className="whitespace-pre-line text-[1.0625rem] leading-snug sm:text-lg sm:leading-relaxed lg:text-2xl lg:leading-relaxed">{children}</div>
     </div>
   )
 }
@@ -145,7 +151,7 @@ function Ask({ children }: { children: React.ReactNode }) {
       <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-line bg-act font-pixel text-lg text-actInk" aria-hidden>
         ?
       </span>
-      <h2 className="text-xl leading-snug lg:text-3xl lg:leading-snug">{children}</h2>
+      <h2 className="text-lg leading-snug sm:text-xl lg:text-3xl lg:leading-snug">{children}</h2>
     </div>
   )
 }
@@ -157,26 +163,28 @@ function Pick({ n, label, sub, chosen, onClick }: { n: number; label: string; su
       data-pick={n}
       onClick={onClick}
       aria-pressed={chosen}
-      className={`flex min-h-14 w-full items-center gap-3 rounded-lg border-2 px-3 py-2.5 text-left text-ink transition-[transform,box-shadow,background-color] duration-75 ${chosen ? 'border-line bg-surface2 shadow-[0_0_0_2px_var(--color-line)]' : 'border-edge bg-surface shadow-[0_4px_0_0_var(--color-edge)] hover:bg-surface2 active:translate-y-[3px] active:shadow-[0_1px_0_0_var(--color-edge)]'}`}
+      className={`flex min-h-12 w-full items-center gap-3 rounded-lg border-2 px-3 py-2 text-left lg:min-h-14 lg:py-2.5 text-ink transition-[transform,box-shadow,background-color] duration-75 ${chosen ? 'border-line bg-surface2 shadow-[0_0_0_2px_var(--color-line)]' : 'border-edge bg-surface shadow-[0_4px_0_0_var(--color-edge)] hover:bg-surface2 active:translate-y-[3px] active:shadow-[0_1px_0_0_var(--color-edge)]'}`}
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink text-lg font-bold text-surface" aria-hidden>
         {n}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-lg leading-snug lg:text-xl">{label}</span>
+        {/* 長い文は、文節の切れ目で折り返す（目印がないと、はみ出して切れる） */}
+        <span className="block text-lg leading-snug lg:text-xl">{phrase(label)}</span>
         {sub && <span className="block text-sm text-ink2">{sub}</span>}
       </span>
     </button>
   )
 }
 
-function Layout({ children, face, footer }: { children: React.ReactNode; face?: string; footer?: React.ReactNode }) {
+function Layout({ children, face, footer, phoneFaceInBoard }: { children: React.ReactNode; face?: string; footer?: React.ReactNode; /** スマホでは、人の絵を黒板の札の横に小さく出す（答えを画面に入れるため） */ phoneFaceInBoard?: boolean }) {
   return (
     <>
       <main className="min-h-0 flex-1 overflow-y-auto">
-        <div className={`${wrap} grid gap-3 pb-6 pt-3 sm:gap-4 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-x-12 lg:pt-10`}>
-          <Stage face={face} />
-          <div className="grid content-start gap-3 sm:gap-4">{children}</div>
+        {/* スマホでは、画面の高さいっぱいに並べ、答えのボタンを画面の下に寄せる（親指で押しやすく） */}
+        <div className={`${wrap} flex min-h-full flex-col gap-3 pb-6 pt-3 sm:gap-4 lg:grid lg:min-h-0 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-x-12 lg:pt-10`}>
+          <Stage face={face} phoneHidden={phoneFaceInBoard} />
+          <div className="flex flex-1 flex-col gap-3 sm:gap-4 lg:grid lg:content-start">{children}</div>
         </div>
       </main>
       {footer && (
@@ -235,10 +243,10 @@ function Morning({ step, picks, onPick }: { step: number; picks: MorningPicks; o
     const field = doc.fields.find((x) => x.label === f.field)!
     const cur = picks.fields[fieldKey(f)]
     return (
-      <Layout key={step}>
-        <Board label={`${W.MORNING} ${step + 1}`}>{W.fieldBoard(doc.title, field.label, field.value)}</Board>
+      <Layout key={step} phoneFaceInBoard>
+        <Board face="face.nova" label={`${W.MORNING} ${step + 1}`}>{W.fieldBoard(doc.title, field.label, field.value)}</Board>
         <Ask>{W.FIELD_ASK}</Ask>
-        <div className="grid gap-3">
+        <div className="mt-auto grid gap-3 pt-2 lg:mt-0 lg:pt-0">
           {W.FIELD_CHOICES.map((c, i) => (
             <Pick key={c.id} n={i + 1} label={c.label} sub={c.sub} chosen={cur === c.id} onClick={() => choose({ ...picks, fields: { ...picks.fields, [fieldKey(f)]: c.id as FieldChoice } })} />
           ))}
@@ -250,10 +258,10 @@ function Morning({ step, picks, onPick }: { step: number; picks: MorningPicks; o
     const id = MORNING_TOOLS[step - nf]
     const cur = picks.tools[id]
     return (
-      <Layout key={step}>
-        <Board label={`${W.MORNING} ${step + 1}`}>{W.toolBoard(id)}</Board>
+      <Layout key={step} phoneFaceInBoard>
+        <Board face="face.nova" label={`${W.MORNING} ${step + 1}`}>{W.toolBoard(id)}</Board>
         <Ask>{W.toolAsk(id)}</Ask>
-        <div className="grid gap-3">
+        <div className="mt-auto grid gap-3 pt-2 lg:mt-0 lg:pt-0">
           {W.TOOL_CHOICES.map((c, i) => (
             <Pick key={c.id} n={i + 1} label={c.label} sub={c.sub} chosen={cur === c.id} onClick={() => choose({ ...picks, tools: { ...picks.tools, [id]: c.id as Permission } })} />
           ))}
@@ -263,10 +271,10 @@ function Morning({ step, picks, onPick }: { step: number; picks: MorningPicks; o
   }
   const orders = C.instructions.filter((o) => o.employeeId === 'nova')
   return (
-    <Layout key={step} face="face.nova">
-      <Board label={`${W.MORNING} ${step + 1}`}>{W.ORDER_BOARD}</Board>
+    <Layout key={step} face="face.nova" phoneFaceInBoard>
+      <Board face="face.nova" label={`${W.MORNING} ${step + 1}`}>{W.ORDER_BOARD}</Board>
       <Ask>{W.ORDER_ASK}</Ask>
-      <div className="grid gap-3">
+      <div className="mt-auto grid gap-3 pt-2 lg:mt-0 lg:pt-0">
         {orders.map((o, i) => (
           <Pick key={o.id} n={i + 1} label={`「${o.text}」`} chosen={picks.nova === o.id} onClick={() => choose({ ...picks, nova: o.id })} />
         ))}
