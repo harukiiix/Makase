@@ -130,8 +130,8 @@ function Board({ children, label }: { children: React.ReactNode; label?: string 
   return (
     <div className="board px-4 py-2.5 sm:px-5 sm:py-4">
       {label && (
-        <div className="mb-1 inline-flex items-stretch overflow-hidden rounded-sm border border-chalk2/50 font-pixel text-sm text-chalk2">
-          <span className="px-1.5">{label}</span>
+        <div className="mb-1.5 inline-flex items-stretch overflow-hidden rounded-sm border-2 border-chalk2 font-pixel text-base text-chalk">
+          <span className="px-2">{label}</span>
         </div>
       )}
       <div className="whitespace-pre-line text-[1.0625rem] leading-relaxed sm:text-lg lg:text-2xl lg:leading-relaxed">{children}</div>

@@ -224,9 +224,9 @@ export function Quiz(p: {
         </div>
       )}
       {place && !packed && (
-        <div className="mb-1 inline-flex items-stretch overflow-hidden rounded-sm border border-chalk2/50 font-pixel text-sm text-chalk2">
-          <span className="border-r border-chalk2/50 px-1.5">{t(S.placeLabel)}</span>
-          <span className="px-1.5">{t(place)}</span>
+        <div className="mb-1.5 inline-flex items-stretch overflow-hidden rounded-sm border-2 border-chalk2 font-pixel text-base text-chalk">
+          <span className="border-r-2 border-chalk2 bg-chalk2/25 px-2">{t(S.placeLabel)}</span>
+          <span className="px-2">{t(place)}</span>
         </div>
       )}
       <p className={`leading-relaxed ${tiny || land ? 'text-base' : 'text-[1.0625rem] sm:text-lg'} lg:text-2xl lg:leading-relaxed`}>{t(q.situation)}</p>
