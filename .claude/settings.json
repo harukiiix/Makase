@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": ["Read(./.env)", "Read(./.env.*)", "Read(./secrets/**)"]
+  },
+  "hooks": {
+    "Stop": [{ "hooks": [{ "type": "command", "command": "sh \"$CLAUDE_PROJECT_DIR/.claude/hooks/run-tests.sh\"" }] }],
+    "PreToolUse": [
+      { "matcher": "Write|Edit|MultiEdit|NotebookEdit", "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-real-pii.mjs\"" }] },
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/check-before-push.mjs\"" }] }
+    ]
+  }
+}
