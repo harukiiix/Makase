@@ -9,11 +9,12 @@ import { SPRITES as picsGate } from './sprites/pics-gate'
 import { SPRITES as picsPhoto } from './sprites/pics-photo'
 import { SPRITES as picsSend } from './sprites/pics-send'
 import { SPRITES as picsOutside } from './sprites/pics-outside'
+import { SPRITES as nova } from './sprites/nova'
 
-export const SPRITES: Record<string, Sprite> = { ...people, ...icons, ...pics, ...picsSee, ...picsGate, ...picsPhoto, ...picsSend, ...picsOutside }
+export const SPRITES: Record<string, Sprite> = { ...people, ...icons, ...pics, ...picsSee, ...picsGate, ...picsPhoto, ...picsSend, ...picsOutside, ...nova }
 
 /** 大きな場面の絵（いまは使っていない。使う時はここに足す） */
 export const SCENES: Record<string, SceneArt> = {}
 
 /** 絵のまとまりごとの一覧（確認用：npx jiti scripts/preview.ts sheet <名前>） */
-export const SPRITE_GROUPS: Record<string, Record<string, Sprite>> = { people, icons, pics, 'pics-see': picsSee, 'pics-gate': picsGate, 'pics-photo': picsPhoto, 'pics-send': picsSend, 'pics-outside': picsOutside }
+export const SPRITE_GROUPS: Record<string, Record<string, Sprite>> = { people, icons, pics, 'pics-see': picsSee, 'pics-gate': picsGate, 'pics-photo': picsPhoto, 'pics-send': picsSend, 'pics-outside': picsOutside, nova }

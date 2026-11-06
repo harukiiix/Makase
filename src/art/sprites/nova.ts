@@ -1,0 +1,41 @@
+// NOVA（AIの相棒）：黄色いヘルメットをかぶった、白くて丸いロボット。顔は暗い画面で、目と口が光る。胸に黄色い名札
+import type { Sprite } from '../raster'
+
+export const SPRITES: Record<string, Sprite> = {
+  'face.nova': {
+    rows: [
+      '................................',
+      '...........KKKKKKKKKK...........',
+      '.........KKuuuyyyyyyKK..........',
+      '........KyuuyyyyyyyyyYK.........',
+      '.......KyyuyyyyyyyyyyyYK........',
+      '.......KyyyyyyyyyyyyyyYK........',
+      '.......KyyyyyyyyyyyyyyYK........',
+      '.....KKKYYYYYYYYYYYYYYYKKK......',
+      '.....KyyyyyyyyyyyyyyyyyyYK......',
+      '......KKKKKKKKKKKKKKKKKKK.......',
+      '......KWWWWWWWWWWWWWWWWwK.......',
+      '.....KWWWWWWWWWWWWWWWWWwwK......',
+      '.....KWWKKKKKKKKKKKKKKKwwK......',
+      '.....KWKIIIIIIIIIIIIIIIKwK......',
+      '....KKWKIIiiiIIIIIiiiIIKwKK.....',
+      '...KGKWKIIiSiIIIIIiSiIIKwKGK....',
+      '...KGKWKIIiiiIIIIIiiiIIKwKGK....',
+      '....KKWKIIIIIIIIIIIIIIIKwKK.....',
+      '.....KWKIIIIiIIIIIiIIIIKwK......',
+      '.....KWKIIIIIiiiiiIIIIIKwK......',
+      '.....KWWKKKKKKKKKKKKKKKwwK......',
+      '......KWWWWWWWWWWWWWWWwwK.......',
+      '.......KKwwwwwwwwwwwwwKK........',
+      '.........KKKKGGGGGKKKK..........',
+      '........KKKKKgGGGgKKKKK.........',
+      '.....KKKWWWWWWWWWWWWWwwwKKK.....',
+      '...KKWWWWWWWWWWWWWWWWWWwwwwKK...',
+      '..KWWWWWWWWWWWWWWWWWWWWWwwwwwK..',
+      '.KWWWGWWWWyyyyyyyWWWWWWWGwwwwwK.',
+      '.KWWWGWWWWyYyYyYyWWWWWWWGwwwwwK.',
+      '.KWWWGWWWWyyyyyyyWWWWWWWGwwwwwK.',
+      '.KWWWGWWWWWWWWWWWWWWWWWWGwwwwwK.',
+    ],
+  },
+}

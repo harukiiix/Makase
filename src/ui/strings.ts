@@ -205,6 +205,7 @@ export const SPEAKER: Record<string, L10n> = {
   SAWA: L('沢口さん（事務）', 'Sawaguchi (office)'),
   STRANGER: L('点検の人', 'Inspector'),
   CLIENT: L('支店長', 'Branch manager'),
+  NOVA: L('NOVA（AIの相棒）', 'NOVA (AI partner)'),
   SYS: L('', ''),
 }
 
@@ -217,4 +218,5 @@ export const FACE: Record<string, string> = {
   SAWA: 'face.sawa',
   STRANGER: 'face.stranger',
   CLIENT: 'face.client',
+  NOVA: 'face.nova',
 }
