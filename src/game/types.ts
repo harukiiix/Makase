@@ -12,7 +12,7 @@ export interface L10n {
 }
 
 /** 話す人 */
-export type Who = 'BOSS' | 'YOU' | 'GUARD' | 'KIMURA' | 'SAWA' | 'STRANGER' | 'CLIENT' | 'SYS'
+export type Who = 'BOSS' | 'YOU' | 'GUARD' | 'KIMURA' | 'SAWA' | 'STRANGER' | 'CLIENT' | 'NOVA' | 'SYS'
 
 /** レッスンの話題（1日に1つ） */
 export type TopicId = 'see' | 'gate' | 'photo' | 'send' | 'outside'

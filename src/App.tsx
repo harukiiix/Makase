@@ -14,6 +14,8 @@ import { Building } from './ui/Building'
 import { HowtoSheet, Notebook, Science, SettingsSheet } from './ui/Screens'
 import { S } from './ui/strings'
 import { Talk } from './ui/Talk'
+import { NovaDay } from './ui/NovaDay'
+import { loadNova, writeNova, type NovaRecord } from './lib/nova'
 
 type Screen =
   | { k: 'home'; note?: L10n }
@@ -23,6 +25,7 @@ type Screen =
   | { k: 'making' }
   | { k: 'notebook' }
   | { k: 'science' }
+  | { k: 'nova'; nonce: number }
 
 export default function App() {
   const [progress, setProgressState] = useState<Progress>(() => loadProgress())
@@ -42,6 +45,11 @@ export default function App() {
     writeResume(r)
   }
   const nonce = useRef(0)
+  const [nova, setNovaState] = useState<NovaRecord | null>(() => loadNova())
+  const setNova = (r: NovaRecord | null) => {
+    setNovaState(r)
+    writeNova(r)
+  }
   const lang = settings.lang
   const setLang = (l: Lang) => setSettings({ ...settings, lang: l })
 
@@ -182,6 +190,8 @@ export default function App() {
               onNotebook={() => setScreen({ k: 'notebook' })}
               onSettings={() => setSheet('settings')}
               onHowto={() => setSheet('howto')}
+              nova={nova}
+              onNova={() => setScreen({ k: 'nova', nonce: ++nonce.current })}
             />
           </>
         )
@@ -268,6 +278,20 @@ export default function App() {
         return <Notebook progress={progress} lang={lang} setLang={setLang} onBack={() => setScreen({ k: 'home' })} />
       case 'science':
         return <Science lang={lang} setLang={setLang} onBack={() => setScreen({ k: 'home' })} />
+      case 'nova':
+        return (
+          <NovaDay
+            key={screen.nonce}
+            lang={lang}
+            setLang={setLang}
+            speed={speed}
+            onQuit={() => setScreen({ k: 'home' })}
+            onDone={(leaked) => {
+              setNova({ done: true, leaked, at: Date.now() })
+              setScreen({ k: 'home' })
+            }}
+          />
+        )
     }
   }
 
@@ -282,6 +306,7 @@ export default function App() {
           onClose={() => setSheet(null)}
           onReset={() => {
             setResume(null)
+            setNova(null)
             setProgress(() => newProgress())
             setSheet(null)
             setScreen({ k: 'home' })

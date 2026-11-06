@@ -6,6 +6,7 @@
 // ============================================================
 import { useEffect, useState } from 'react'
 import { LESSONS, lessonOf, questionOf } from '../game/course'
+import { DAY_SUB as NOVA_SUB, DAY_TITLE as NOVA_TITLE } from '../makase/words'
 import { dayNumber, dueIds, lessonOpen, PASS, rankOf, RANKS, weakTopic, type Progress } from '../game/learn'
 import type { Lang, TopicId } from '../game/types'
 import { getAI } from '../lib/ai'
@@ -38,6 +39,9 @@ export function Home(p: {
   onNotebook: () => void
   onSettings: () => void
   onHowto: () => void
+  /** 最後の日「NOVA に任せる」（最初から遊べる） */
+  nova?: { done: boolean } | null
+  onNova?: () => void
 }) {
   const t = useT()
   const pr = p.progress
@@ -174,6 +178,22 @@ export function Home(p: {
                   </span>
                 </button>
               </li>
+              {p.onNova && (
+                <li>
+                  <button data-nova onClick={go(p.onNova)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left enabled:hover:bg-surface2">
+                    <span className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg ${p.nova?.done ? 'bg-ok' : 'bg-ink'}`} aria-hidden>
+                      <Art id="face.nova" scale={1.25} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-lg font-bold leading-snug">{NOVA_TITLE}</span>
+                      <span className="block text-sm text-ink2">{NOVA_SUB}</span>
+                    </span>
+                    <span className="shrink-0" aria-hidden>
+                      {p.nova?.done ? <Art id="icon.check" scale={2} /> : null}
+                    </span>
+                  </button>
+                </li>
+              )}
             </ol>
           </section>
 
