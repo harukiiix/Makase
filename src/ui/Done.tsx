@@ -96,13 +96,13 @@ export function Done({ s, gains, progress, extra, onHome, onNext, nextLabel, onE
         <section className="panel grid grid-cols-2 p-0">
           <div className="grid gap-1 p-4">
             <div className="text-sm text-ink2">{t(S.gained)}</div>
-            <div className="flex items-center gap-2 font-pixel text-4xl leading-none">
+            <div className="flex items-center gap-2 font-num text-4xl leading-none">
               <Art id="icon.star" scale={2} />+{shown}
             </div>
           </div>
           <div className="grid gap-1 border-l-2 border-hair p-4">
             <div className="text-sm text-ink2">{t(S.firstRightLabel)}</div>
-            <div className="font-pixel text-4xl leading-none">
+            <div className="font-num text-4xl leading-none">
               {right}
               <span className="text-xl text-ink2">／{ids.length}</span>
             </div>

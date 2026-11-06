@@ -212,7 +212,7 @@ export function Home(p: {
               </div>
               <div className="text-right">
                 <div className="text-sm text-ink2">{t(S.pointsLabel)}</div>
-                <div className="font-pixel text-2xl leading-snug">{pr.xp}</div>
+                <div className="font-num text-2xl leading-snug">{pr.xp}</div>
               </div>
             </div>
             <div>
@@ -224,7 +224,7 @@ export function Home(p: {
             {/* 階級のならび（目標が見えるように） */}
             <ol className="flex items-start justify-between gap-1" aria-label={t.attr(S.rankLadder)}>
               {RANKS.map((x, i) => (
-                <li key={x.id} className={`grid min-w-0 flex-1 justify-items-center text-center text-xs leading-tight [overflow-wrap:anywhere] ${i === r.index ? 'font-bold text-ink' : 'text-ink2'}`}>
+                <li key={x.id} className={`grid min-w-0 flex-1 justify-items-center text-center text-xs leading-tight break-words ${i === r.index ? 'font-bold text-ink' : 'text-ink2'}`}>
                   <Art id="icon.helmet" scale={1.5} tint={RANK_TINT[x.id]} className={i <= r.index ? '' : 'opacity-35'} />
                   <span className="mt-0.5">{t(RANK_NAME[x.id])}</span>
                 </li>

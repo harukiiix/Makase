@@ -107,6 +107,8 @@ body {
   button, input { font-family: inherit; color: inherit; }
   h1, h2, h3 { line-height: 1.4; font-weight: 700; }
   .font-pixel { font-family: var(--font-pixel); font-weight: 400; letter-spacing: 0.02em; }
+  /* 数字（ポイント・何問中何問）：英語のドット文字の 9 は読みにくいので、日本語のドット文字の数字を使う */
+  .font-num { font-family: "DotGothic16", var(--font-sans); font-weight: 400; letter-spacing: 0.02em; }
   /* 日本語の本文は、ふつうの日本語の折り返し（行頭に「。」などを置かない）。
      見出し・ボタン・短い札は、文節の間（t() が入れる目印）でだけ折り返し、行の長さをそろえる */
   html:lang(ja) body { word-break: normal; line-break: strict; overflow-wrap: anywhere; }

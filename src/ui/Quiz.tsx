@@ -440,7 +440,7 @@ function Feedback({ ref, q, pick, ok, gained, combo, order, ai, onAsk, sheet }: 
         </span>
         {combo >= 3 && <span className="rounded-md bg-ink px-2 py-0.5 text-sm font-bold text-surface">{t(S.combo(combo))}</span>}
         {gained > 0 && (
-          <span className="pop ml-auto flex items-center gap-1 font-pixel text-xl">
+          <span className="pop ml-auto flex items-center gap-1 font-num text-xl">
             <Art id="icon.star" scale={1.5} />
             {t(S.plusPoints(gained))}
           </span>
