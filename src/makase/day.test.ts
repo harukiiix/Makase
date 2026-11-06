@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { oneLine } from "./carry";
 import { COMPANY as c, dayLog, fieldKey, instructionsOf, MORNING_FIELDS, MORNING_TOOLS, noonSteps, setupOf, type MorningPicks } from "./day";
-import { EXPERIMENT_NOTE, NOT_TESTED_NOTE, eveningOf, eveningTalk } from "./evening";
+import { EXPERIMENT_NOTE, NOT_TESTED_NOTE, eveningOf, eveningTalk, guardsOf } from "./evening";
 import { judgeDay } from "./judge";
 import { todayOf } from "./takeaway";
 import type { Answer } from "./types";
 
-// 最後の日「NOVA に任せる」：朝の6画面の選び → 仕組み、昼のカード、夕方、持ち帰りの1行
+// 最後の日「AIの事務員に頼む練習」：朝の6画面の選び → 仕組み、昼のカード、夕方、持ち帰りの1行
 const none: MorningPicks = { fields: {}, tools: {}, nova: "nova-normal" };
 const masked: MorningPicks = { ...none, fields: { "roster/電話番号": "mask", "roster/血圧（入場時）": "mask" } };
 const allow = (p: MorningPicks) => Object.fromEntries(noonSteps(p).filter((s) => s.mode === "ask").map((s) => [s.conf.id, "allow" as Answer]));
@@ -89,6 +89,45 @@ describe("夕方（漏れたかは judgeDay の結果だけで決める）", () 
       const text = JSON.stringify(ev) + JSON.stringify(eveningTalk(ev));
       expect(text).not.toMatch(/売上|万円|信用|点数|宛先|分か|一緒|違う/);
       for (const l of ev.lines) expect(l.prevent).toMatch(/(です|ます|ません|ました|でした)$/);
+    }
+  });
+});
+
+describe("夕方の2つの守り（最初に見せる短い形）", () => {
+  const g = (p: MorningPicks, answers = allow(p)) => {
+    const { log, ev } = run(p, answers);
+    return { ev, gd: guardsOf(ev, log, c) };
+  };
+  it("全部許可：朝も昼も ✕ で、漏れた", () => {
+    const { ev, gd } = g(none);
+    expect(ev.leaked).toBe(true);
+    expect([gd.morning.ok, gd.noon.ok]).toEqual([false, false]);
+    expect(gd.trap).toContain("roster@kumiai-check.example");
+  });
+  it("伏せて許可：朝が ✓ で、漏れない", () => {
+    const { ev, gd } = g(masked);
+    expect(ev.leaked).toBe(false);
+    expect([gd.morning.ok, gd.noon.ok]).toEqual([true, false]);
+  });
+  it("伏せずに止める：昼が ✓ で、漏れない", () => {
+    const { ev, gd } = g(none, { ...allow(none), c6: "stop" });
+    expect(ev.leaked).toBe(false);
+    expect([gd.morning.ok, gd.noon.ok]).toEqual([false, true]);
+  });
+  it("聞かずに送る：昼は ✕（確認が来ない）。送らせない：昼は ✓", () => {
+    expect(g({ ...none, tools: { send_mail: "auto" } }).gd.noon.text).toContain("確認が来ませんでした");
+    expect(g({ ...none, tools: { send_mail: "deny" } }).gd.noon.ok).toBe(true);
+  });
+  it("「全部渡して」は、伏せても朝が ✕", () => {
+    const { ev, gd } = g({ ...masked, nova: "nova-all" });
+    expect(ev.leaked).toBe(true);
+    expect(gd.morning.ok).toBe(false);
+    expect(gd.morning.text).toContain("全部渡して");
+  });
+  it("どの文も短い（1行で読める長さ）", () => {
+    for (const p of [none, masked, { ...masked, nova: "nova-all" }]) {
+      const { gd } = g(p);
+      for (const t of [gd.morning.text, gd.noon.text, gd.lesson]) expect(t.length, t).toBeLessThanOrEqual(45);
     }
   });
 });

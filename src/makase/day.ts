@@ -3,7 +3,7 @@ import { defaultSetup, scriptedLog } from "./companies/index";
 import { confirmationMode } from "./judge";
 import type { Answer, Company, Confirmation, ConfirmationMode, DayLog, Permission, Setup } from "./types";
 
-// 最後の日「NOVA に任せる」の流れを決める純粋関数。画面は、ここで決めたものを出すだけにする
+// 最後の日「AIの事務員に頼む練習」の流れを決める純粋関数。画面は、ここで決めたものを出すだけにする
 // 朝は6画面：守るべき情報の目印がある3項目（渡す・伏せる・渡さない）、送る道具2つ（使わせない・聞いてから・任せる）、NOVA への指示。
 // 目印のない項目（氏名・資格・工程）は、仕事に要るので「渡す」に決めておく。日報係と図面係への指示は、ふつうの指示に決めておく
 

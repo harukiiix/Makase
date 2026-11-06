@@ -170,3 +170,43 @@ export function eveningTalk(ev: Evening): { who: "BOSS" | "NOVA"; text: string }
     { who: "BOSS", text: "何が、だれに渡ったか、いっしょに見ておこう。" },
   ];
 }
+
+/** 朝の守り・昼の守りが働いたか（ok）。夕方の最初に、印つきの2行だけで見せる */
+export type Guard = { ok: boolean; text: string };
+export type Guards = { trap: string; morning: Guard; noon: Guard; lesson: string };
+
+/**
+ * 危ない確認（届いた書類に紛れた頼みごとの送信）について、朝と昼の守りをまとめる。
+ * 漏れたかどうかは eveningOf の leaked（judgeDay の結果）を使う。ここは、そうなった元を短く言うだけ
+ */
+export function guardsOf(ev: Evening, log: DayLog, company: Company): Guards {
+  const danger = company.confirmations.find((c) => c.dangerous)!;
+  const setup = log.setup;
+  const exposed = setup ? exposedMarkers(company, log.instructions, setup) : new Set(company.markers.map((m) => m.id));
+  const inDanger = company.markers.filter((m) => m.find.some((x) => normalize(danger.call?.content ?? "").includes(normalize(x)))).map((m) => m.id);
+  const open = inDanger.filter((m) => exposed.has(m));
+  const passAll = setup ? passedAllDocs(company, log.instructions).size > 0 : false;
+  const label = (ids: string[]) => ids.map((id) => company.markers.find((m) => m.id === id)?.label ?? id).join("・");
+  const morning: Guard = open.length
+    ? { ok: false, text: passAll && inDanger.some((m) => setup?.masked.includes(m)) ? "「全部渡して」と頼んだので、伏せた欄まで渡りました" : `${label(open)}を、そのまま渡しました` }
+    : { ok: true, text: "守るべき欄を、伏せるか渡さないにしました" };
+  const mode = confirmationMode(company, log.instructions, setup, danger.id);
+  const noon: Guard =
+    mode === "blocked"
+      ? { ok: true, text: "メールを「送らせない」にしていたので、送られませんでした" }
+      : mode === "auto"
+        ? { ok: false, text: "メールを「聞かずに送る」にしていたので、確認が来ませんでした" }
+        : log.answers[danger.id] === "stop"
+          ? { ok: true, text: "社外への危ない確認を、「止める」にしました" }
+          : { ok: false, text: "社外への危ない確認に、「許可」を押しました" };
+  const lesson = ev.leaked
+    ? "人は見落とします。朝に守るべき欄を伏せておくと、昼に見落としても漏れません"
+    : morning.ok && noon.ok
+      ? "朝と昼の2つで守れました。どちらかを見落としても、もう一方が守ります"
+      : morning.ok
+        ? "朝に伏せておいたので、昼に許可しても漏れませんでした"
+        : "昼の確認で止められました。見落とすと漏れるので、朝に伏せておくと安心です";
+  const mail = company.incoming.find((d) => d.injectionLine !== undefined);
+  const trap = mail ? `「${mail.title}」の末尾に、名簿を社外の ${danger.call?.to} へ送らせる一文が紛れていました` : "";
+  return { trap, morning, noon, lesson };
+}

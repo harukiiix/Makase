@@ -39,7 +39,7 @@ export function Home(p: {
   onNotebook: () => void
   onSettings: () => void
   onHowto: () => void
-  /** 最後の日「NOVA に任せる」（最初から遊べる） */
+  /** 最後の日「AIの事務員に頼む練習」（最初から遊べる） */
   nova?: { done: boolean } | null
   onNova?: () => void
 }) {

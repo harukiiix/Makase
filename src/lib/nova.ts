@@ -1,4 +1,4 @@
-// 最後の日「NOVA に任せる」の記録（このブラウザに保存）。今の学びの記録（sit.v5）の形は変えず、別のキーにする
+// 最後の日「AIの事務員に頼む練習」の記録（このブラウザに保存）。今の学びの記録（sit.v5）の形は変えず、別のキーにする
 const KEY = 'sit.v5.nova'
 
 export type NovaRecord = { done: boolean; leaked: boolean; at: number }

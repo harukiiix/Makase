@@ -1,10 +1,10 @@
-// 最後の日「NOVA に任せる」の画面の言葉とせりふ（日本語を先に作る。英語は後で足す）
+// 最後の日「AIの事務員に頼む練習」の画面の言葉とせりふ（日本語を先に作る。英語は後で足す）
 // 言葉は現場の言葉にする：「権限」「アクセス」などは使わず、「送る前に聞く」のように言う
 import type { FieldChoice } from "./day";
 import type { Permission } from "./types";
 
-export const DAY_TITLE = "NOVA に任せる";
-export const DAY_SUB = "最後の日・AIの事務員といっしょに";
+export const DAY_TITLE = "AIの事務員に頼む練習";
+export const DAY_SUB = "最後の日・台本で動く練習です（本物のAIは動きません）";
 export const SIM_NOTE = "シミュレーションです（動きは台本）。名前・番号・あて先は、すべて架空です。";
 
 /** はじまりの会話（宮下さんが、会社が事務所に入れたAIの事務員として NOVA を紹介する） */
@@ -13,6 +13,7 @@ export const INTRO: { who: "BOSS" | "NOVA"; text: string }[] = [
   { who: "BOSS", text: "日報をまとめたり、メールを送ったり。書類の仕事を手伝ってくれる。" },
   { who: "NOVA", text: "NOVA です。安全書類の用意を担当します。日報係と図面係も、同じAIの事務員です。" },
   { who: "BOSS", text: "ただ、何を渡して、何を送らせるかは、こっちで決める。朝に決めて、昼は確認に答えよう。" },
+  { who: "BOSS", text: "今日はその練習だ。NOVA の動きは決まっていて、本物のAIは動かないよ。" },
 ];
 
 export const MAIL_HEAD = "けさ届いたメール";
@@ -82,3 +83,14 @@ export const QUIT_SURE = "NOVA の日をやめますか？";
 export const QUIT_WHY = "ここまでの選びは消えます。";
 export const KEEP = "つづける";
 export const QUIT = "やめる";
+
+export const TRAP_HEAD = "けさのメールに、紛れていた一文";
+export const GUARD_MORNING = "朝の守り";
+export const GUARD_NOON = "昼の守り";
+export const GUARD_OK = "守れた";
+export const GUARD_NG = "守れなかった";
+export const LESSON = "覚えよう";
+export const LEAKED_TO = "社外に出たもの";
+export const DETAILS = "くわしく見る";
+export const DETAILS_TITLE = "くわしいふり返り";
+export const CLOSE = "閉じる";

@@ -1,5 +1,5 @@
 // ============================================================
-// 最後の日「NOVA に任せる」：はじまりの会話 → けさのメール → 朝（6画面）→ 昼（確認のカード）→ 夕方 → 持ち帰る1行
+// 最後の日「AIの事務員に頼む練習」：はじまりの会話 → けさのメール → 朝（6画面）→ 昼（確認のカード）→ 夕方 → 持ち帰る1行
 //   見た目は問題の画面にそろえる（上の帯、人の絵、工事黒板、「？」の問い、答えのボタン）。
 //   昼は、答えのあとに わけ を出さない（慣れて押してしまう体験のため）。わけは夕方にまとめて出す。
 //   漏れたかどうかは judgeDay の結果だけで決める（夕方の中身は src/makase/evening.ts）
@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { oneLine } from '../makase/carry'
 import { COMPANY as C, dayLog, fieldKey, MORNING_FIELDS, MORNING_TOOLS, noonSteps, type FieldChoice, type MorningPicks } from '../makase/day'
-import { EXPERIMENT_NOTE, eveningOf, eveningTalk, NOT_TESTED_NOTE } from '../makase/evening'
+import { EXPERIMENT_NOTE, eveningOf, eveningTalk, guardsOf, NOT_TESTED_NOTE, type Guard, type Guards } from '../makase/evening'
 import { judgeDay } from '../makase/judge'
 import { todayOf } from '../makase/takeaway'
 import type { Answer, Permission } from '../makase/types'
@@ -15,7 +15,7 @@ import * as W from '../makase/words'
 import type { Lang } from '../game/types'
 import { sfx } from '../lib/platform'
 import { Art } from './Art'
-import { BackButton, LangToggle, Sheet, useMedia } from './Common'
+import { BackButton, LangToggle, Panel, Sheet, useMedia } from './Common'
 import { Talk } from './Talk'
 
 type Phase = 'intro' | 'mail' | 'morning' | 'noon' | 'talk' | 'evening' | 'take'
@@ -93,7 +93,7 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
         />
       )}
       {phase === 'noon' && <Noon picks={picks} onDone={(a) => (setAnswers(a), setPhase('talk'))} />}
-      {phase === 'evening' && ev && <EveningList ev={ev} onNext={() => setPhase('take')} />}
+      {phase === 'evening' && ev && log && <EveningList ev={ev} guards={guardsOf(ev, log, C)} onNext={() => setPhase('take')} />}
       {phase === 'take' && log && result && (
         <Takeaway
           today={todayOf(result, log, C)}
@@ -377,76 +377,54 @@ function Noon({ picks, onDone }: { picks: MorningPicks; onDone: (a: Record<strin
 }
 
 // ---------------- 夕方（何が、だれに渡ったか） ----------------
-function EveningList({ ev, onNext }: { ev: ReturnType<typeof eveningOf>; onNext: () => void }) {
-  const toneBox = { bad: 'border-ng bg-ngBg', good: 'border-ok bg-okBg', info: 'border-hair bg-surface' } as const
+function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>; guards: Guards; onNext: () => void }) {
+  const [more, setMore] = useState(false)
+  const leakedSend = ev.sent.find((x) => x.leaked.length > 0)
   return (
     <>
       <main className="min-h-0 flex-1 overflow-y-auto">
         <div className={`${wrap} grid gap-4 pb-6 pt-3 lg:max-w-3xl lg:pt-8`}>
-          <h1 data-verdict={ev.leaked ? 'leaked' : 'safe'} className={`rounded-xl border-2 px-4 py-3 text-xl font-bold ${ev.leaked ? 'border-ng bg-ngBg' : 'border-ok bg-okBg'}`}>
-            {ev.leaked ? W.LEAKED : W.NOT_LEAKED}
-          </h1>
-
-          <section className="panel grid gap-2 p-4">
-            <h2 className="text-base text-ink2">{W.TO_AI}</h2>
-            <p className="text-lg">{ev.toAI.length ? ev.toAI.join('・') : W.TO_AI_NONE}</p>
+          {/* 1. 結果：漏れたかどうか（judgeDay の結果だけで決める） */}
+          <section data-verdict={ev.leaked ? 'leaked' : 'safe'} className={`grid gap-2 rounded-xl border-2 px-4 py-3 ${ev.leaked ? 'border-ng bg-ngBg' : 'border-ok bg-okBg'}`}>
+            <h1 className={`flex items-center gap-2 text-2xl font-bold ${ev.leaked ? 'text-ng' : 'text-ok'}`}>
+              <Mark ok={!ev.leaked} />
+              {ev.leaked ? W.LEAKED : W.NOT_LEAKED}
+            </h1>
+            {leakedSend && (
+              <p className="text-lg leading-snug">
+                <span className="text-ink2">{W.LEAKED_TO}：</span>
+                <span className="font-bold">{leakedSend.leaked.join('・')}</span>
+                <span className="mx-1">→</span>
+                <span className="break-all font-bold">{leakedSend.to}</span>
+              </p>
+            )}
           </section>
 
-          <section className="panel grid gap-2 p-4">
-            <h2 className="text-base text-ink2">{W.SENT}</h2>
-            {ev.sent.length === 0 && <p className="text-lg">{W.SENT_NONE}</p>}
-            <ul className="grid gap-2">
-              {ev.sent.map((s, i) => (
-                <li key={i} className={`rounded-md border-2 p-3 ${s.leaked.length ? 'border-ng bg-ngBg' : 'border-hair'}`}>
-                  <p className="flex flex-wrap items-center gap-2 text-base">
-                    <span className={`rounded px-1.5 text-sm font-bold ${s.inside ? 'bg-surface2' : 'bg-ink text-surface'}`}>{s.inside ? W.INSIDE : W.OUTSIDE}</span>
-                    <span className="break-all font-bold">{s.to}</span>
-                  </p>
-                  <p className="mt-1 text-sm text-ink2">
-                    {s.who}・{s.tool}
-                  </p>
-                  <p className="mt-1 break-all text-base">{s.content}</p>
-                  {s.leaked.length > 0 && <p className="mt-1 font-bold text-ng">{s.leaked.join('・')}</p>}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {ev.causes.length > 0 && (
-            <section className="panel grid gap-2 p-4">
-              <h2 className="text-base text-ink2">{W.CAUSES}</h2>
-              <ul className="grid gap-2">
-                {ev.causes.map((c, i) => (
-                  <li key={i} className="rounded-md border-2 border-hair p-3">
-                    <p className="font-bold">{c.marker}</p>
-                    <p className="mt-1 text-base">
-                      <span className="mr-2 text-ink2">{W.CAUSE_MORNING}</span>
-                      {c.morning}
-                    </p>
-                    <p className="text-base">
-                      <span className="mr-2 text-ink2">{W.CAUSE_NOON}</span>
-                      {c.noon}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </section>
+          {/* 2. わな：メールに紛れていた一文 */}
+          {guards.trap && (
+            <Board label={W.TRAP_HEAD}>{guards.trap}</Board>
           )}
 
-          <section className="grid gap-2">
-            <h2 className="text-base text-ink2">{W.LOOK_BACK}</h2>
-            <ul className="grid gap-2">
-              {ev.lines.map((l, i) => (
-                <li key={i} className={`rounded-lg border-2 p-3 ${toneBox[l.tone]}`}>
-                  <p className="text-base font-bold">{l.what}</p>
-                  <p className="mt-1 text-base">
-                    <span className="mr-2 text-ink2">{W.HOW_TO_PREVENT}</span>
-                    {l.prevent}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </section>
+          {/* 3. 朝と昼の守り（✓ か ✕ だけ） */}
+          <ul className="grid gap-2">
+            <GuardRow head={W.GUARD_MORNING} g={guards.morning} />
+            <GuardRow head={W.GUARD_NOON} g={guards.noon} />
+          </ul>
+
+          {/* 4. 覚えること（1行） */}
+          <div className="flex items-start gap-3 rounded-lg border-2 border-rule bg-ruleBg px-3 py-2.5">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rule text-lg font-bold text-surface" aria-hidden>
+              !
+            </span>
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-rule">{W.LESSON}</div>
+              <div className="phrase text-lg font-bold leading-snug">{guards.lesson}</div>
+            </div>
+          </div>
+
+          <button data-details className="btn min-h-12 w-full text-lg lg:w-auto lg:justify-self-start" onClick={() => (sfx.ui(), setMore(true))}>
+            {W.DETAILS}
+          </button>
         </div>
       </main>
       <footer className="border-t-2 border-hair bg-bg px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
@@ -456,7 +434,88 @@ function EveningList({ ev, onNext }: { ev: ReturnType<typeof eveningOf>; onNext:
           </button>
         </div>
       </footer>
+      {more && <Details ev={ev} onClose={() => setMore(false)} />}
     </>
+  )
+}
+
+function Mark({ ok }: { ok: boolean }) {
+  return (
+    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-line text-surface ${ok ? 'bg-ok' : 'bg-ng'}`} aria-hidden>
+      <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="square">
+        {ok ? <path d="M2.5 8.5 6.5 12.5 13.5 4" /> : <path d="M4 4l8 8M12 4l-8 8" />}
+      </svg>
+    </span>
+  )
+}
+
+function GuardRow({ head, g }: { head: string; g: Guard }) {
+  return (
+    <li data-guard={g.ok ? 'ok' : 'ng'} className={`flex items-start gap-3 rounded-lg border-2 px-3 py-2.5 ${g.ok ? 'border-ok bg-surface' : 'border-ng bg-surface'}`}>
+      <Mark ok={g.ok} />
+      <div className="min-w-0">
+        <div className="text-sm font-bold text-ink2">
+          {head}・{g.ok ? W.GUARD_OK : W.GUARD_NG}
+        </div>
+        <div className="text-lg leading-snug">{g.text}</div>
+      </div>
+    </li>
+  )
+}
+
+/** くわしいふり返り：送られたもの全部と、出来事ごとの文 */
+function Details({ ev, onClose }: { ev: ReturnType<typeof eveningOf>; onClose: () => void }) {
+  const toneBox = { bad: 'border-ng bg-ngBg', good: 'border-ok bg-okBg', info: 'border-hair bg-surface' } as const
+  return (
+    <Panel
+      title={W.DETAILS_TITLE}
+      onClose={onClose}
+      closeLabel={W.CLOSE}
+      footer={
+        <button className="btn min-h-12 w-full text-lg" onClick={() => (sfx.ui(), onClose())}>
+          {W.CLOSE}
+        </button>
+      }
+    >
+      <div className="grid gap-4">
+        <section className="grid gap-2">
+          <h3 className="text-base font-bold text-ink2">{W.TO_AI}</h3>
+          <p className="text-lg">{ev.toAI.length ? ev.toAI.join('・') : W.TO_AI_NONE}</p>
+        </section>
+        <section className="grid gap-2">
+          <h3 className="text-base font-bold text-ink2">{W.SENT}</h3>
+          {ev.sent.length === 0 && <p className="text-lg">{W.SENT_NONE}</p>}
+          <ul className="grid gap-2">
+            {ev.sent.map((x, i) => (
+              <li key={i} className={`rounded-md border-2 p-3 ${x.leaked.length ? 'border-ng bg-ngBg' : 'border-hair'}`}>
+                <p className="flex flex-wrap items-center gap-2 text-base">
+                  <span className={`rounded px-1.5 text-sm font-bold ${x.inside ? 'bg-surface2' : 'bg-ink text-surface'}`}>{x.inside ? W.INSIDE : W.OUTSIDE}</span>
+                  <span className="break-all font-bold">{x.to}</span>
+                </p>
+                <p className="mt-1 text-sm text-ink2">
+                  {x.who}・{x.tool}
+                </p>
+                <p className="mt-1 break-all text-base">{x.content}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section className="grid gap-2">
+          <h3 className="text-base font-bold text-ink2">{W.LOOK_BACK}</h3>
+          <ul className="grid gap-2">
+            {ev.lines.map((l, i) => (
+              <li key={i} className={`rounded-lg border-2 p-3 ${toneBox[l.tone]}`}>
+                <p className="text-base font-bold">{l.what}</p>
+                <p className="mt-1 text-base">
+                  <span className="mr-2 text-ink2">{W.HOW_TO_PREVENT}</span>
+                  {l.prevent}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+    </Panel>
   )
 }
 

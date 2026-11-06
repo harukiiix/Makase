@@ -9,7 +9,7 @@ import { ALL_QUESTIONS, LESSONS } from './course'
 import { ENDING, PROLOGUE } from './story'
 import type { L10n, Line, Question } from './types'
 import { COMPANY, dayLog, noonSteps, type MorningPicks } from '../makase/day'
-import { EXPERIMENT_NOTE, NOT_TESTED_NOTE, eveningOf, eveningTalk } from '../makase/evening'
+import { EXPERIMENT_NOTE, NOT_TESTED_NOTE, eveningOf, eveningTalk, guardsOf } from '../makase/evening'
 import { judgeDay } from '../makase/judge'
 import * as NOVA_WORDS from '../makase/words'
 
@@ -184,7 +184,7 @@ describe('NOVA の日（最後の日）', () => {
       const answers = a ?? Object.fromEntries(noonSteps(p).map((s) => [s.conf.id, 'allow' as const]))
       const log = dayLog(p, answers)
       const ev = eveningOf(judgeDay(log, COMPANY), log, COMPANY)
-      out.push([`evening ${i}`, JSON.stringify(ev)])
+      out.push([`evening ${i}`, JSON.stringify(ev)], [`guards ${i}`, JSON.stringify(guardsOf(ev, log, COMPANY))])
       eveningTalk(ev).forEach((l, j) => out.push([`evening talk ${i}.${j}`, l.text]))
     })
     out.push(['EXPERIMENT_NOTE', EXPERIMENT_NOTE], ['NOT_TESTED_NOTE', NOT_TESTED_NOTE])
