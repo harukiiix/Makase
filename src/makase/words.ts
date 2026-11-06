@@ -95,3 +95,8 @@ export const DETAILS = "くわしく見る";
 export const DETAILS_TITLE = "くわしいふり返り";
 export const CLOSE = "閉じる";
 export const logCount = (n: number) => `これまでの動き ${n}件`;
+/** ホーム（PC）で、最後の日を紹介する箱 */
+export const DAY_CARD_EYEBROW = "最後の日（約3分）";
+export const DAY_CARD_TEXT = "会社が事務所に入れたAIの事務員 NOVA に、名簿や図面の仕事を頼みます。何を渡し、何を送らせるかを決めて、1日を見届けます。";
+export const DAY_CARD_NOTE = "台本で動く練習です。本物のAIは動きません。5日を終えていなくても遊べます。";
+export const DAY_CARD_GO = "やってみる";

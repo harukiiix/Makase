@@ -6,7 +6,7 @@
 // ============================================================
 import { useEffect, useState } from 'react'
 import { LESSONS, lessonOf, questionOf } from '../game/course'
-import { DAY_SUB as NOVA_SUB, DAY_TITLE as NOVA_TITLE } from '../makase/words'
+import { DAY_CARD_EYEBROW, DAY_CARD_GO, DAY_CARD_NOTE, DAY_CARD_TEXT, DAY_SUB as NOVA_SUB, DAY_TITLE as NOVA_TITLE } from '../makase/words'
 import { dayNumber, dueIds, lessonOpen, PASS, rankOf, weakTopic, type Progress } from '../game/learn'
 import type { Lang, TopicId } from '../game/types'
 import { getAI } from '../lib/ai'
@@ -216,6 +216,26 @@ export function Home(p: {
 
         {/* ---- 右（スマホでは下）：見回りノート、自分のようす、建物 */}
         <div className="grid content-start gap-4">
+          {/* PC：最後の日を紹介する箱（はじめて見る人にも見つけやすいように。スマホは一覧の行だけ） */}
+          {p.onNova && (
+            <section data-nova-card className="panel hidden gap-3 p-4 lg:grid" aria-label={NOVA_TITLE}>
+              <div className="flex items-start gap-3">
+                <span className="shrink-0 overflow-hidden rounded-lg border-2 border-line bg-surface2" aria-hidden>
+                  <Art id="face.nova" scale={2.5} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-ink2">{DAY_CARD_EYEBROW}</div>
+                  <h2 className="text-xl leading-snug">{NOVA_TITLE}</h2>
+                </div>
+              </div>
+              <p className="text-base leading-relaxed">{DAY_CARD_TEXT}</p>
+              <p className="text-sm text-ink2">{DAY_CARD_NOTE}</p>
+              <button className="btn w-full text-lg" onClick={go(p.onNova)}>
+                {p.nova?.done ? <Art id="icon.check" scale={1.5} /> : null}
+                {DAY_CARD_GO}
+              </button>
+            </section>
+          )}
           {/* 見回りノート：覚えたこと・まちがえた問題（自分の記録のそばに） */}
           <button className="btn w-full justify-start gap-3 p-3 text-left" data-notebook onClick={go(p.onNotebook)}>
             <Art id="icon.book" scale={2.5} />
