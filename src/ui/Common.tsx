@@ -41,7 +41,15 @@ export function LangButton({ lang, onChange }: { lang: Lang; onChange: (l: Lang)
   const other: Lang = lang === 'ja' ? 'en' : 'ja'
   return (
     <button data-lang={other} lang={other} onClick={() => (sfx.ui(), onChange(other))} aria-label={other === 'en' ? 'English' : '日本語'} className="btn-quiet min-h-11 shrink-0 border-2 border-hair px-2.5 text-sm text-ink2 hover:text-ink">
-      {other === 'en' ? 'English' : '日本語'}
+      {/* せまい画面では English を EN に（題名の場所を空けるため） */}
+      {other === 'en' ? (
+        <>
+          <span className="max-[399px]:hidden">English</span>
+          <span className="min-[400px]:hidden">EN</span>
+        </>
+      ) : (
+        '日本語'
+      )}
     </button>
   )
 }
