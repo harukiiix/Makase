@@ -1,4 +1,4 @@
-// 中身の点検：文が日英そろっているか、問題の形が正しいか、絵があるか、使わない言葉がないか
+// 中身の点検：文が日英そろっているか、問題の形が正しいか、絵があるか、使わない言葉や書き方がないか
 import { describe, expect, it } from 'vitest'
 import { SPRITES } from '../art'
 import { PALETTE } from '../art/palette'
@@ -12,6 +12,19 @@ import type { L10n, Line, Question } from './types'
 /** 日本語で使わない横文字（ふつうの言葉で言いかえる） */
 const BANNED_JA = ['インシデント', 'フィッシング', 'マルウェア', 'ランサムウェア', 'ソーシャルエンジニアリング', 'クラウド', 'アカウント', 'ログイン', 'プロンプト', 'セキュリティホール', 'リスク', 'ハンコ', 'ステップ', 'タスク', 'ユーザー', 'アクセス権', 'エビデンス', 'リテラシー']
 const DASHES = /[—–―]/
+/** 表記は一つにそろえる：わかる・あて先・いっしょ・ちがう・「これでいい？」・回収車 と書く */
+const OFF_STYLE_JA = /分か|宛先|一緒|違う|これで正しい|回収の車/
+
+/** 中身の日本語（ja と、出典の名前）を、どこにあるかと組にして全部集める */
+function jaTexts(where: string, x: unknown, out: [string, string][] = []): [string, string][] {
+  if (Array.isArray(x)) x.forEach((v, i) => jaTexts(`${where}[${i}]`, v, out))
+  else if (x && typeof x === 'object')
+    for (const [k, v] of Object.entries(x)) {
+      if ((k === 'ja' || k === 'source') && typeof v === 'string') out.push([`${where}.${k}`, v])
+      else jaTexts(`${where}.${k}`, v, out)
+    }
+  return out
+}
 
 function l10n(where: string, x: L10n | undefined | null, maxJa = 400) {
   expect(x, where).toBeTruthy()
@@ -100,6 +113,18 @@ describe('story and real cases', () => {
       for (const k of ['head', 'body', 'who', 'when'] as const) l10n(`case ${c.id}.${k}`, c[k])
       expect(c.url.startsWith('https://'), c.id).toBe(true)
     }
+  })
+})
+
+describe('house style', () => {
+  it('Japanese text in the lessons, story and cases uses one notation', () => {
+    const bad: string[] = []
+    for (const [name, content] of Object.entries({ LESSONS, PROLOGUE, ENDING, CASES })) {
+      const texts = jaTexts(name, content)
+      expect(texts.length, `${name} has Japanese text`).toBeGreaterThan(0)
+      for (const [where, ja] of texts) if (OFF_STYLE_JA.test(ja)) bad.push(`${where}: ${ja}`)
+    }
+    expect(bad, 'write わかる, あて先, いっしょ, ちがう, 「これでいい？」 and 回収車').toEqual([])
   })
 })
 

@@ -1,11 +1,11 @@
 // 木曜日：事務所のパソコン「メールとファイル」
-//   送る前に、相手（宛先・リンクを開ける人・AI）と中身（ファイル）を確かめる。知らない所から来たものは開かずに知らせる
+//   送る前に、相手（あて先・リンクを開ける人・AI）と中身（ファイル）を確かめる。知らない所から来たものは開かずに知らせる
 import type { Lesson } from '../types'
 
 export const LESSON: Lesson = {
   id: 'send',
   dayName: { ja: '木曜日', en: 'Thursday' },
-  place: { ja: '事務所のパソコン', en: 'Office computer' },
+  place: { ja: '現場事務所', en: 'Site office' },
   title: { ja: 'メールとファイル', en: 'Email and files' },
   intro: [
     {
@@ -14,7 +14,7 @@ export const LESSON: Lesson = {
     },
     {
       who: 'YOU',
-      t: { ja: 'メールは毎日使っています。何に気をつければいいですか。', en: 'I use email every day. What should I watch out for?' },
+      t: { ja: 'メールは毎日使っています。何に気をつければいいですか？', en: 'I use email every day. What should I watch out for?' },
     },
     {
       who: 'BOSS',
@@ -27,28 +27,28 @@ export const LESSON: Lesson = {
   motto: { ja: '送る前に、相手と中身を確かめる', en: "Before you send, check who it goes to and what's in it" },
   icon: 'pic.send',
   questions: [
-    // 1. いちばん多いまちがい：宛先の候補から、別の人を選んでしまう
+    // 1. いちばん多いまちがい：あて先の候補から、別の人を選んでしまう
     {
       kind: 'tf',
       id: 'send-01',
       topic: 'send',
-      who: 'BOSS',
+      who: 'YOU',
       pic: 'pic.mail_address_suggest',
       situation: {
-        ja: '設備屋の佐藤さんに、図面をメールで送る。宛先に「佐藤」と打ったら、候補が出てきたので、いちばん上を選んだ。',
+        ja: '設備屋の佐藤さんに、図面をメールで送る。あて先に「佐藤」と打ったら、候補が出てきたので、いちばん上を選んだ。',
         en: 'You\'re emailing drawings to Sato at the plumbing company. You typed "Sato" in the To box, some names came up, and you picked the top one.',
       },
-      ask: { ja: 'このまま送信していい？', en: 'OK to hit Send now?' },
+      ask: { ja: 'このまま送信する。これでいい？', en: 'You send it as it is. Is that OK?' },
       answer: false,
       why: {
-        ja: '候補の中に、同じ名前の別の人が入っていることもあるよ。メールは送ったら取り消せないから、アドレスまで見よう。',
-        en: "The list can include someone else with the same name. You can't take an email back once it's sent, so check the address too.",
+        ja: 'メールは、送ったら取り消せないんだ。この現場の図面なら、ちがう人に届いた時点で、もれたことになるよ。',
+        en: "Once an email is sent, you can't take it back. With this site's drawings, the moment they reach the wrong person, they've leaked.",
       },
       wrongWhy: {
         ja: '出てきた名前なら大丈夫、と思いがちだよね。でも、同じ名前の別の人かもしれないんだ。アドレスまで見て確かめよう。',
         en: "It's easy to trust the name that comes up. But it could be someone else with the same name. Check the address too.",
       },
-      tip: { ja: '送る前に、宛先のアドレスまで見る', en: 'Check the full address before you send' },
+      tip: { ja: 'メールのあて先は、アドレスまで見る', en: 'Check the full email address, not just the name' },
     },
     // 2. 送るファイルの中身：頼まれていない図面や、人の名前が残っている
     {
@@ -69,8 +69,8 @@ export const LESSON: Lesson = {
       ],
       correct: 0,
       why: {
-        ja: 'ファイルの中に、頼まれていない図面や人の名前が残っていることがあるよ。開いて全部見てから送ろう。',
-        en: 'A file can still hold drawings nobody asked for, or people\'s names. Open it and look through all of it before you send.',
+        ja: '相手には、ファイルの全部のページが届くんだ。届く前に中を確かめられるのは、送る自分だけだよ。',
+        en: "Every page in the file will reach them, and you're the only one who can check it before it goes.",
       },
       wrongWhy: [
         null,
@@ -83,29 +83,29 @@ export const LESSON: Lesson = {
           en: "A password doesn't stop the person you send it to. Any extra pages still reach them.",
         },
       ],
-      tip: { ja: '送る前に、ファイルを開いて中を見る', en: 'Open the file and look before you send' },
+      tip: { ja: 'ファイルは、開いて中を見てから送る', en: 'Open a file and look inside before you send it' },
       real: 'niigata-mail',
     },
-    // 3. にせのメール：名前は知っている人でも、アドレスがちがう
+    // 3. 偽のメール：名前は知っている人でも、アドレスがちがう
     {
       kind: 'tf',
       id: 'send-03',
       topic: 'send',
-      who: 'SAWA',
+      who: 'YOU',
       pic: 'pic.mail_odd_address',
       situation: {
-        ja: '設計事務所の山本さんの名前で、「金庫室の図面を送ってください」とメールが来た。でも、アドレスがいつもと違う。',
+        ja: '設計事務所の山本さんの名前で、「金庫室の図面を送ってください」とメールが来た。でも、アドレスがいつもとちがう。',
         en: 'An email from "Yamamoto at the design office" asks you to send the vault room drawings. But the address isn\'t the usual one.',
       },
-      ask: { ja: 'このアドレスに、図面を送っていい？', en: 'OK to send the drawings to this address?' },
+      ask: { ja: 'このアドレスに、図面を送る。これでいい？', en: 'You send the drawings to this address. Is that OK?' },
       answer: false,
       why: {
-        ja: '差出人の名前は、だれでも好きに書けるよ。アドレスがいつもと違うなら送らずに、前から知っている番号で山本さんに確かめよう。',
-        en: "Anyone can type any name as the sender. If the address isn't the usual one, don't send. Call Yamamoto at the number you already have and check.",
+        ja: '差出人の名前は、だれでも好きに書けるよ。図面は送らずに、前から知っている番号で山本さんに確かめよう。',
+        en: "Anyone can type any name as the sender. Don't send the drawings. Call Yamamoto at the number you already have and check.",
       },
       wrongWhy: {
-        ja: '知っている名前だと、つい信じちゃうよね。でも、名前が合っていても、本人とは限らないんだ。',
-        en: "A name you know is easy to trust. But a matching name doesn't prove it's really Yamamoto.",
+        ja: '知っている名前だと、つい信じちゃうよね。でも、別の人だったら、金庫室の図面をそのまま渡すことになるんだ。',
+        en: "A name you know is easy to trust. But if it's someone else, you'd be handing the vault room drawings straight to them.",
       },
       tip: { ja: '差出人は、名前ではなくアドレスを見る', en: "Check the sender's address, not the name" },
       real: 'toda-access',
@@ -115,7 +115,7 @@ export const LESSON: Lesson = {
       kind: 'mc',
       id: 'send-04',
       topic: 'send',
-      who: 'BOSS',
+      who: 'YOU',
       pic: 'pic.mail_phone_number',
       situation: {
         ja: '「支店長です。図面を今日中に送ってください」というメールが来た。最後に電話番号が書いてある。',
@@ -134,12 +134,12 @@ export const LESSON: Lesson = {
       },
       wrongWhy: [
         {
-          ja: 'その番号も、メールを書いた人が書いたものだよ。にせ者なら、にせ者につながるんだ。',
-          en: "Whoever wrote the email wrote that number too. If it's a fake, you'll reach the faker.",
+          ja: 'その番号も、メールの送り主が書いたものだよ。偽者なら、偽者につながるんだ。',
+          en: "The sender wrote that number too. If the sender is an impostor, you'll be calling the impostor.",
         },
         {
-          ja: '返信は、メールを書いた人に届くよね。にせ者なら「本人です」と答えるだけだよ。',
-          en: 'A reply goes to whoever wrote the email. A faker will just say, "Yes, it\'s me."',
+          ja: '返信は、メールの送り主に届くよね。偽者なら「本人です」と答えるだけだよ。',
+          en: 'A reply goes back to the sender. An impostor will just say, "Yes, it\'s me."',
         },
         null,
       ],
@@ -150,21 +150,21 @@ export const LESSON: Lesson = {
       kind: 'tf',
       id: 'send-05',
       topic: 'send',
-      who: 'SAWA',
+      who: 'YOU',
       pic: 'pic.zip_invoice_mail',
       situation: {
         ja: '知らない会社から「請求書を送ります」というメールが来た。「請求書.zip」というファイルが付いている。',
         en: 'An email from a company you don\'t know says, "Here is your invoice." A file named "invoice.zip" is attached.',
       },
-      ask: { ja: '開かずに、宮下さんに知らせる。これで正しい？', en: 'You leave it unopened and tell Miyashita. Is that right?' },
+      ask: { ja: '開かずに、宮下さんに知らせる。これでいい？', en: 'You leave it unopened and tell Miyashita. Is that OK?' },
       answer: true,
       why: {
-        ja: '知らない相手からのファイルは、開くとウイルスが入ることがあるよ。知らせてくれたら、みんなに注意できるね。',
-        en: "A file from someone you don't know can let a virus in when you open it. If you tell me, I can warn everyone.",
+        ja: '請求書のふりをして、ウイルスが届くことがあるんだ。知らせてくれたら、本物かどうかは、こっちで確かめるよ。',
+        en: "A virus can come dressed up as an invoice. If you tell me, I'll check whether it's a real one.",
       },
       wrongWhy: {
-        ja: '開いて確かめたくなるよね。でも、開くこと自体があぶないんだ。だまって消すのも困るよ。ほかの人にも、同じメールが来ているかもしれないからね。',
-        en: 'You may want to open it to check. But opening it is the danger. Quietly deleting it is no good either. Others may have got the same email.',
+        ja: '開いて確かめたくなるよね。でも、開くこと自体が危ないんだ。だまって消すのも困るよ。ほかの人にも、同じメールが来ているかもしれないからね。',
+        en: 'You may want to open it to check. But opening it is the danger. Quietly deleting it is no good either. Others may have received the same email.',
       },
       tip: { ja: '知らないファイルは、開かずに知らせる', en: "Don't open unknown files. Report them." },
       real: 'iwade-emotet',
@@ -174,7 +174,7 @@ export const LESSON: Lesson = {
       kind: 'mc',
       id: 'send-06',
       topic: 'send',
-      who: 'BOSS',
+      who: 'YOU',
       pic: 'pic.link_share_screen',
       situation: {
         ja: '塗装屋さんに、外壁の図面のリンクを送る。開ける人を選ぶ画面が出た。',
@@ -188,8 +188,8 @@ export const LESSON: Lesson = {
       ],
       correct: 1,
       why: {
-        ja: '図面を開ける人は、少ないほどもれにくいよ。リンクは、使う人だけが開けるようにしよう。',
-        en: 'The fewer people who can open a drawing, the less likely it is to leak. Set links so only the people who use them can open them.',
+        ja: '外壁の図面にも、入口や窓の場所が載っているんだ。開ける人は、少ないほどもれにくいよ。',
+        en: 'Even the outside wall drawings show where the doors and windows are. The fewer people who can open them, the less likely they are to leak.',
       },
       wrongWhy: [
         {
@@ -199,10 +199,10 @@ export const LESSON: Lesson = {
         null,
         {
           ja: '現場には、毎日いろんな会社の人が来るよね。外壁の図面を使わない人まで、開ける必要はないんだ。',
-          en: "People from many companies come to the site every day. Those who don't work on the walls don't need to open them.",
+          en: "People from many companies come to the site every day. Those who don't use the wall drawings have no need to open them.",
         },
       ],
-      tip: { ja: 'リンクは、使う人だけが開けるようにする', en: 'Share links only with the people who need them' },
+      tip: { ja: 'リンクは、使う人だけが開けるようにする', en: 'Set links so only the people who use them can open them' },
     },
     // 7. AI：仕事の書類は、会社が決めたAIだけで
     {
@@ -228,7 +228,7 @@ export const LESSON: Lesson = {
       },
       wrongWhy: [
         {
-          ja: '無料のAIに貼った文は、外の会社に送られるよ。そこでどう使われるか、こちらでは決められないんだ。',
+          ja: '無料のAIに貼った文は、外の会社に送られるよ。そこでどう使われるか、こっちでは決められないんだ。',
           en: "Text pasted into a free AI goes to an outside company. You can't decide how it's used there.",
         },
         {

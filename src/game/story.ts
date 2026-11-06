@@ -30,7 +30,7 @@ export const PROLOGUE: Line[] = [
   {
     who: 'BOSS',
     t: {
-      ja: 'そうだね。図面や作業員名簿、現場の写真がもれたら、どろぼうに地図をわたすのと同じなんだ。',
+      ja: 'そうだね。図面や作業員名簿、現場の写真がもれたら、泥棒に地図を渡すようなものなんだ。',
       en: "Right. If the drawings, the worker list or site photos get out, it's like handing a burglar a map.",
     },
   },
@@ -56,7 +56,7 @@ export const ENDING: Line[] = [
   {
     who: 'BOSS',
     t: {
-      ja: '「点検です」ってゲートに来た男の人、覚えてる？ 銀行をねらって、下見をしていたんだって。',
+      ja: '「点検です」ってゲートに来た男の人、覚えてる？　銀行をねらって、下見をしていたんだって。',
       en: 'Remember the man at the gate who said he was an inspector? Turns out he was scouting the bank to rob it.',
     },
   },
@@ -69,7 +69,7 @@ export const ENDING: Line[] = [
   },
   {
     who: 'YOU',
-    t: { ja: 'あの時、そのまま通さなくて本当によかったです。', en: "I'm really glad we didn't just let him in." },
+    t: { ja: 'あのとき、そのまま通さなくて本当によかったです。', en: "I'm really glad we didn't just let him in." },
   },
   {
     who: 'BOSS',

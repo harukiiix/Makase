@@ -25,7 +25,7 @@ export const LESSON: Lesson = {
     {
       who: 'BOSS',
       t: {
-        ja: 'うん。電車やお店では、だれが見て、だれが聞いているか分からないからね。',
+        ja: 'うん。電車やお店では、だれが見て、だれが聞いているかわからないからね。',
         en: "Yes. On the train or in a restaurant, you never know who's watching or listening.",
       },
     },
@@ -41,7 +41,7 @@ export const LESSON: Lesson = {
       id: 'outside-01',
       topic: 'outside',
       kind: 'mc',
-      who: 'BOSS',
+      who: 'YOU',
       pic: 'pic.drawings_on_train_lap',
       situation: {
         ja: '打ち合わせの帰り、電車で座れた。来週の段取りを、銀行の図面で確かめたい。',
@@ -58,21 +58,21 @@ export const LESSON: Lesson = {
       ],
       correct: 1,
       why: {
-        ja: '電車では、となりの人や前に立っている人から、手元がよく見えるよ。銀行の図面には、金庫やカメラの場所が描いてある。図面は現場で見よう。',
-        en: 'On a train, the person next to you and the people standing in front can see what is in your hands. The bank drawings show where the vault and cameras are. Look at them at the site.',
+        ja: '銀行の図面には、金庫室やカメラの場所が載っているんだ。電車では、となりや前に立つ人から、手元がよく見えるよ。図面は、現場で見よう。',
+        en: 'The bank drawings show where the vault room and the cameras are. On a train, the people beside you and standing in front of you can see what is in your hands. Look at the drawings at the site.',
       },
       wrongWhy: [
         {
-          ja: '小さくたたんでも、となりの人からは見えてしまうよ。図面は、ちらっと見られるだけでも困るんだ。',
-          en: 'Even if you fold them small, the person next to you can still see them. With drawings, even a quick look is a problem.',
+          ja: '小さくたたんでも、広げている所は、まわりから見えるよ。図面は、ちらっと見られるだけでも困るんだ。',
+          en: 'Even folded small, the part you have open can still be seen. With drawings, even a quick look is a problem.',
         },
         null,
         {
-          ja: 'すいていても、次の駅でだれが乗ってくるか分からないよ。電車の中では、図面を出さないのがいちばんだね。',
+          ja: 'すいていても、次の駅でだれが乗ってくるかわからないよ。電車の中では、図面を出さないのがいちばんだね。',
           en: "Even if the car is empty now, you can't know who will get on at the next station. It's best not to take drawings out on a train at all.",
         },
       ],
-      tip: { ja: '電車の中では、図面を出さない', en: "Don't take drawings out on the train" },
+      tip: { ja: '図面は、電車の中で出さない', en: "Don't take drawings out on the train" },
     },
 
     // 2. お店で現場の話をする
@@ -88,21 +88,21 @@ export const LESSON: Lesson = {
       },
       ask: {
         ja: '木村さんに「その話は、ここではやめましょう」と言う。これでいい？',
-        en: 'You tell him, "Let\'s not talk about that here." Is that right?',
+        en: 'You tell him, "Let\'s not talk about that here." Is that OK?',
       },
       answer: true,
       why: {
-        ja: 'それでいいんだよ。お店では、となりの席にだれがいるか分からない。金庫やカメラの話は、現場の中だけにしよう。',
-        en: "Yes, that's right. In a bar you never know who is at the next table. Keep talk about the vault and cameras inside the site.",
+        ja: 'それでいいんだよ。金庫の場所は、銀行をねらう人がいちばん知りたいことなんだ。その話は、現場の中だけにしよう。',
+        en: "Yes, that's right. The vault's location is exactly what someone planning to rob the bank wants to know. Keep that kind of talk inside the site.",
       },
       wrongWhy: {
-        ja: 'お店では、だれが聞いているか分からないよ。目上の人でも、止めていいんだ。「続きは現場で」と言えば、気まずくならないね。',
+        ja: 'お店では、だれが聞いているかわからないよ。目上の人でも、止めていいんだ。「続きは現場で」と言えば、気まずくならないね。',
         en: 'In a bar you never know who is listening. It\'s OK to stop someone senior. Say "Let\'s finish this at the site," and it won\'t feel awkward.',
       },
       tip: { ja: '現場のくわしい話は、お店や電車でしない', en: 'Keep site details out of bars and trains' },
     },
 
-    // 3. 飲み会に、仕事のデータを持って行く
+    // 3. 飲み会に、仕事のデータを持っていく
     {
       id: 'outside-03',
       topic: 'outside',
@@ -124,8 +124,8 @@ export const LESSON: Lesson = {
       ],
       correct: 2,
       why: {
-        ja: 'お酒が入ると、だれでも忘れ物をしやすくなるよ。飲み会の日は、仕事の物を持って行かないのがいちばんだね。',
-        en: 'After a few drinks, anyone gets forgetful. On a night out, the best thing is not to bring work things at all.',
+        ja: '持っていかなければ、お店に忘れることも、落とすこともないよ。事務所にしまって鍵をかけておけば、飲み会も安心して楽しめるね。',
+        en: "If you don't bring it, you can't leave it at the bar or drop it. Lock it up in the office, and you can enjoy the evening without worrying.",
       },
       wrongWhy: [
         {
@@ -133,12 +133,12 @@ export const LESSON: Lesson = {
           en: 'You may mean to be careful, but drinking makes you forget. People leave bags in bars and on the train home all the time.',
         },
         {
-          ja: '少しだけのつもりでも、つい飲んでしまうものだよ。持って行かなければ、なくすこともないね。',
-          en: "You may plan to drink only a little, but it's easy to have more. If you don't bring it, you can't lose it.",
+          ja: '一杯だけのつもりでも、つい飲みすぎてしまうものだよ。それに、少し飲んだだけでも、うっかりしやすくなるんだ。',
+          en: "You may plan to have just one, but it's easy to have more. And even a little alcohol makes you careless.",
         },
         null,
       ],
-      tip: { ja: '飲み会には、仕事の物を持って行かない', en: "Don't bring work things to a night out" },
+      tip: { ja: '飲み会には、仕事の物を持っていかない', en: "Don't bring work things to a night out" },
       real: 'nexco-usb',
     },
 
@@ -147,26 +147,27 @@ export const LESSON: Lesson = {
       id: 'outside-04',
       topic: 'outside',
       kind: 'tf',
-      who: 'BOSS',
+      who: 'YOU',
+      place: { ja: 'コンビニの駐車場', en: 'Store parking lot' },
       pic: 'pic.drawings_on_dashboard',
       situation: {
         ja: '本社に図面を届ける途中、コンビニに寄る。図面は、車のダッシュボードの上にある。',
         en: 'On the way to drop off drawings at the head office, you stop at a convenience store. The drawings are on the dashboard.',
       },
       ask: {
-        ja: 'すぐ戻るから、図面は車に置いたままでいい？',
-        en: "You'll be right back. Is it OK to leave the drawings in the car?",
+        ja: 'すぐ戻るので、図面を車に置いたまま店に入る。これでいい？',
+        en: "You'll be right back, so you leave the drawings in the car and go into the store. Is that OK?",
       },
       answer: false,
       why: {
-        ja: 'ダッシュボードの図面は、外から窓ごしに見えるよ。窓を割って取られることもある。車を離れるときは、図面も持って行こう。',
-        en: 'Drawings on the dashboard can be seen through the windshield. Someone could also break a window and take them. When you leave the car, take the drawings with you.',
+        ja: 'ダッシュボードに置いた物は、外から丸見えなんだ。図面を見れば、銀行の工事だとすぐわかるよ。車を離れるときは、図面も持っていこう。',
+        en: 'Anything on the dashboard is in plain view from outside, and one look at the drawings shows they are for the bank. When you leave the car, take the drawings with you.',
       },
       wrongWhy: {
-        ja: '数分でも、通る人には図面が見えるし、取られることもあるよ。鍵をかけていても同じだね。',
-        en: "Even for a few minutes, people walking by can see the drawings, and they can be stolen. Locking the car doesn't change that.",
+        ja: '鍵をかけていても、窓ガラスを割られたら同じなんだ。数分あれば、図面を持っていかれてしまうよ。',
+        en: "Locking the car won't help if someone smashes a window. A few minutes is all it takes to grab the drawings.",
       },
-      tip: { ja: '車を離れるときは、図面も持って行く', en: 'Take the drawings with you when you leave the car' },
+      tip: { ja: '図面は、車に置いていかない', en: "Don't leave drawings in the car" },
     },
 
     // 5. 外で、知らない人に現場のことを聞かれる
@@ -191,18 +192,18 @@ export const LESSON: Lesson = {
       ],
       correct: 0,
       why: {
-        ja: '本当の点検の人なら、駅で聞いたりせず、会社に問い合わせるよ。知らせてくれたら、現場のみんなにも気をつけてもらえるね。',
-        en: 'A real inspector would ask the company, not stop you at a station. If you tell us, everyone on the site can watch out for him.',
+        ja: '本物の点検の人なら、駅で聞いたりせず、会社に問い合わせるよ。事務所なら、点検があったかどうか確かめられるんだ。',
+        en: 'A real inspector would contact the company, not stop you at a station. The office can check whether there really was an inspection.',
       },
       wrongWhy: [
         null,
         {
-          ja: '点検の人だと名乗っても、本当かどうかはその場では分からないよ。それに、金庫の場所は外で話すことじゃないね。',
+          ja: '点検の人だと名乗っても、本当かどうかはその場ではわからないよ。それに、金庫の場所は外で話すことじゃないね。',
           en: "Anyone can say they're an inspector, and you can't check it on the spot. Besides, where the vault is isn't something to talk about outside.",
         },
         {
-          ja: '断れたのは、いいね。でも、その人はほかの人にも聞くかもしれない。事務所に知らせれば、みんなで気をつけられるよ。',
-          en: "It's good that you said no. But he may try asking someone else. If you tell the office, everyone can watch out.",
+          ja: '断ったのは、よかったよ。でも、あの人は、ほかの作業員にも聞くかもしれない。事務所に知らせれば、みんなで気をつけられるね。',
+          en: 'It was good that you said no. But he may ask other workers too. If you tell the office, everyone can watch out.',
         },
       ],
       tip: { ja: '外で現場のことを聞かれたら、答えずに事務所に知らせる', en: "Asked about the site outside? Don't answer. Tell the office." },
@@ -214,23 +215,24 @@ export const LESSON: Lesson = {
       topic: 'outside',
       kind: 'tf',
       who: 'KIMURA',
+      place: { ja: '現場の前の道路', en: 'Street by the site' },
       pic: 'pic.drawings_by_roadside',
       situation: {
         ja: '木村さんが、次の現場へ移るところ。道具を車に積むあいだ、図面の袋を道路わきに置いた。',
         en: 'Kimura is heading to another site. While he loads tools into the van, he puts the bag of drawings down by the road.',
       },
       ask: {
-        ja: '積み終わるまで、図面はそこに置いたままでいい？',
-        en: "Is it OK to leave the drawings there until he's done loading?",
+        ja: '積み終わるまで、図面の袋はそこに置いておく。これでいい？',
+        en: "He leaves the bag there until he's done loading. Is that OK?",
       },
       answer: false,
       why: {
-        ja: '積みこみに気を取られると、置いた物を忘れやすいよ。図面の袋は肩にかけておくか、先に車に入れておこう。',
-        en: "When you're busy loading, it's easy to forget what you put down. Keep the bag of drawings on your shoulder, or put it in the van first.",
+        ja: '道路わきに置いた袋は、通る人ならだれでも持っていけるんだ。図面の袋は肩にかけておくか、先に車に入れておこう。',
+        en: 'A bag left by the road can be picked up by anyone walking past. Keep the bag of drawings on your shoulder, or put it in the van first.',
       },
       wrongWhy: {
         ja: 'すぐ取るつもりでも、忘れて出発してしまうことがあるんだ。実際に、図面を道路わきに置いたまま行ってしまった話もあるよ。',
-        en: 'You may mean to grab them in a second, but people do forget and drive off. A crew once really left drawings by the road like this.',
+        en: 'You may mean to grab the bag in a second, but people do forget and drive off. It has really happened: a crew drove away and left drawings by the road.',
       },
       tip: { ja: '持ち出した図面は、手から離さない', en: 'Once drawings leave the site, keep them on you' },
       real: 'yokosuka-roadside',
@@ -242,6 +244,7 @@ export const LESSON: Lesson = {
       topic: 'outside',
       kind: 'mc',
       who: 'YOU',
+      place: { ja: '自宅', en: 'Home' },
       pic: 'pic.phone_left_on_train_seat',
       situation: {
         ja: '土曜の朝。会社のスマホが見当たらない。帰りの電車に忘れたかもしれない。',
@@ -258,12 +261,12 @@ export const LESSON: Lesson = {
       ],
       correct: 1,
       why: {
-        ja: '早く分かれば、会社がスマホを使えないようにしたり、パスワードを変えたりできるよ。あとで見つかってもいいから、まず知らせてね。',
+        ja: '早くわかれば、会社がスマホを使えないようにしたり、パスワードを変えたりできるよ。あとで見つかってもいいから、まず知らせてね。',
         en: 'The sooner we know, the sooner the company can lock the phone and change passwords. Tell me first, even if it turns up later.',
       },
       wrongWhy: [
         {
-          ja: '探している間に、だれかが中を見てしまうかもしれないよ。探すのは、知らせてからでも大丈夫。',
+          ja: '探している間に、だれかが中を見てしまうかもしれないよ。探すのは、知らせたあとでいいんだ。',
           en: 'While you search, someone could be looking through it. You can still search after you tell us.',
         },
         null,
@@ -272,7 +275,7 @@ export const LESSON: Lesson = {
           en: "It's fine to call on a day off. If you wait until Monday, someone could be looking through it the whole time.",
         },
       ],
-      tip: { ja: 'なくしたら、休みの日でもすぐ知らせる', en: 'Lost something? Report it at once, even on a day off' },
+      tip: { ja: '仕事の物をなくしたら、休みの日でもすぐ知らせる', en: 'Lost something from work? Report it at once, even on a day off' },
     },
   ],
 }
