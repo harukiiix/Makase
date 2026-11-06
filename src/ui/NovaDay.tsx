@@ -568,11 +568,6 @@ function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine
             </p>
           )}
           <p className="text-sm text-ink2">{one.note}</p>
-          <section data-experiment className="rounded-lg border-2 border-hair bg-surface p-4">
-            <h2 className="text-base font-bold">{phrase(W.EXPERIMENT_HEAD)}</h2>
-            <p className="mt-1 text-base">{EXPERIMENT_NOTE}</p>
-            <p className="mt-1 text-sm text-ink2">{NOT_TESTED_NOTE}</p>
-          </section>
           <div className="grid grid-cols-2 gap-3">
             <button className="btn text-lg" onClick={onAgain}>
               {W.AGAIN}
@@ -581,6 +576,12 @@ function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine
               {W.HOME}
             </button>
           </div>
+          {/* 記録からわかったこと：必ず出すが、主役の1行より目立たないように、小さく下に */}
+          <section data-experiment className="rounded-md bg-surface2 px-3 py-2.5 text-sm leading-relaxed">
+            <h2 className="font-bold">{phrase(W.EXPERIMENT_HEAD)}</h2>
+            <p className="mt-0.5">{EXPERIMENT_NOTE}</p>
+            <p className="mt-0.5 text-ink2">{NOT_TESTED_NOTE}</p>
+          </section>
         </div>
       </main>
     </>
