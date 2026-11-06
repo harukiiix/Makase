@@ -6,7 +6,7 @@
 //   答えると：スマホでは下から説明が出て、問いと印のついた答えはその上に見えたまま。PCでは答えの下に
 //   まちがえた問題は、最後にもう一度（その時は答えの並びを入れかえる）
 // ============================================================
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { CASES } from '../game/cases'
 import { lessonOf } from '../game/course'
 import { answer, finished, isRight, next, shuffle, startSession, type Session, type SessionKind } from '../game/learn'
@@ -14,11 +14,12 @@ import type { Lang, Question, TopicId } from '../game/types'
 import { errorKind, getAI, tutorRules, type SampleFn } from '../lib/ai'
 import { FAST, sfx } from '../lib/platform'
 import { Art } from './Art'
-import { BackButton, LangToggle, Sheet, useMedia } from './Common'
+import { BackButton, LangToggle, Panel, Sheet, useMedia } from './Common'
 import { useT } from './i18n'
 import { FACE, S } from './strings'
 
 type Mark = 'idle' | 'right' | 'wrong' | 'dim'
+type Detail = 'more' | 'real' | 'ai'
 
 /** 文字列から決まった数（答えの並びの入れかえ用） */
 const hash = (s: string) => [...s].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
@@ -48,10 +49,17 @@ export function Quiz(p: {
     const r = p.resume
     // 説明を見ている途中で切れていたら、次の問題から
     if (r) return r.answer ? next(r) : r
-    return startSession(p.kind, p.questions.map((q) => q.id), p.lesson)
+    return startSession(
+      p.kind,
+      p.questions.map((q) => q.id),
+      p.lesson,
+    )
   })
   const [quit, setQuit] = useState(false)
-  const [chat, setChat] = useState(false)
+  /** 開いている読む板（正解のわけ・実際にあった話・AIの宮下さん） */
+  const [detail, setDetail] = useState<Detail | null>(null)
+  const chat = detail !== null
+  const closeDetail = useCallback(() => setDetail(null), [])
   const [fb, setFb] = useState(false)
   const [combo, setCombo] = useState(0)
   const [gain, setGain] = useState(0)
@@ -170,7 +178,7 @@ export function Quiz(p: {
     shownAt.current = performance.now()
     sfx.ui()
     setFb(false)
-    setChat(false)
+    setDetail(null)
     const n = next(s)
     setS(n)
     if (!finished(n)) p.onSave?.(n)
@@ -256,24 +264,26 @@ export function Quiz(p: {
           {land && s.answer && fb ? (
             <div className="sticky top-0 grid min-h-0 min-w-0 max-h-[calc(100dvh-5.5rem)] grid-rows-[minmax(0,1fr)_auto] gap-2">
               <div className="min-h-0 overflow-y-auto rounded-xl border-2 border-line bg-surface">
-                <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} order={order} ai={ai} onAsk={() => setChat(true)} sheet />
+                <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} order={order} ai={ai} onOpen={setDetail} sheet />
               </div>
               {nextBtn}
             </div>
-          ) : showStage && (
-            <div key={occ} className="flex items-end justify-center gap-3 short:sticky short:top-0 short:flex-col short:items-center lg:sticky lg:top-0 lg:flex-col lg:items-center lg:gap-5">
-              {!land && (
-                <div className="overflow-hidden rounded-xl border-2 border-line bg-surface2">
-                  <Art id={FACE[q.who] ?? FACE.BOSS} scale={pc ? 5 : small ? 2 : 3} />
-                </div>
-              )}
-              {q.pic && (
-                <div className="overflow-hidden rounded-xl border-2 border-line bg-surface">
-                  <Art id={q.pic} scale={pc ? 6 : land || small ? 2 : 3} />
-                </div>
-              )}
-              {land && board}
-            </div>
+          ) : (
+            showStage && (
+              <div key={occ} className="flex items-end justify-center gap-3 short:sticky short:top-0 short:flex-col short:items-center lg:sticky lg:top-0 lg:flex-col lg:items-center lg:gap-5">
+                {!land && (
+                  <div className="overflow-hidden rounded-xl border-2 border-line bg-surface2">
+                    <Art id={FACE[q.who] ?? FACE.BOSS} scale={pc ? 5 : small ? 2 : 3} />
+                  </div>
+                )}
+                {q.pic && (
+                  <div className="overflow-hidden rounded-xl border-2 border-line bg-surface">
+                    <Art id={q.pic} scale={pc ? 6 : land || small ? 2 : 3} />
+                  </div>
+                )}
+                {land && board}
+              </div>
+            )
           )}
 
           <div className={`grid content-start ${packed ? 'gap-2' : 'gap-3 sm:gap-4'}`}>
@@ -330,7 +340,7 @@ export function Quiz(p: {
             </div>
 
             {/* PC：答えの下に説明 */}
-            {s.answer && fb && pc && <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} order={order} ai={ai} onAsk={() => setChat(true)} />}
+            {s.answer && fb && pc && <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} order={order} ai={ai} onOpen={setDetail} />}
           </div>
         </div>
       </main>
@@ -346,7 +356,7 @@ export function Quiz(p: {
         <div ref={sheetRef} className="rise fixed inset-x-0 bottom-0 z-30 flex max-h-[60dvh] flex-col rounded-t-2xl border-t-2 border-line bg-surface shadow-[0_-6px_0_0_rgb(0_0_0/0.08)]">
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="mx-auto max-w-xl short:max-w-4xl">
-              <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} order={order} ai={ai} onAsk={() => setChat(true)} sheet />
+              <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} order={order} ai={ai} onOpen={setDetail} sheet />
             </div>
           </div>
           <div className="border-t-2 border-hair px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
@@ -355,7 +365,9 @@ export function Quiz(p: {
         </div>
       )}
 
-      {s.answer && chat && ai && <AiChat q={q} pick={picked!} lang={p.lang} ai={ai} onAsked={p.onAsked} onClose={() => setChat(false)} />}
+      {s.answer && detail === 'ai' && ai && <AiChat q={q} pick={picked!} lang={p.lang} ai={ai} onAsked={p.onAsked} onClose={closeDetail} />}
+      {s.answer && detail === 'more' && <MorePanel q={q} order={order} onClose={closeDetail} />}
+      {s.answer && detail === 'real' && q.real && CASES[q.real] && <RealPanel rc={CASES[q.real]} onClose={closeDetail} />}
       {quit && (
         <Sheet label={t.attr(S.quitSure)} onClose={() => setQuit(false)}>
           <div className="grid gap-4 p-5">
@@ -390,14 +402,7 @@ function MarkIcon({ ok, className = 'h-4 w-4' }: { ok: boolean; className?: stri
 /** 答えのボタン：答える前は押せる形、答えたあとは ✓ と ✕ の印 */
 function Choice({ i, mark, disabled, onPick, correct, label, compact, hideDim, children }: { i: number; mark: Mark; disabled: boolean; onPick: (i: number) => void; correct: boolean; label?: string; compact?: boolean; hideDim?: boolean; children: React.ReactNode }) {
   const t = useT()
-  const look =
-    mark === 'right'
-      ? 'border-ok bg-okBg shadow-[0_0_0_2px_var(--color-ok)]'
-      : mark === 'wrong'
-        ? 'border-ng bg-ngBg shadow-[0_0_0_2px_var(--color-ng)]'
-        : mark === 'dim'
-          ? `border-hair bg-surface opacity-55 ${hideDim ? 'hidden' : ''}`
-          : 'border-edge bg-surface shadow-[0_4px_0_0_var(--color-edge)] hover:bg-surface2 active:translate-y-[3px] active:shadow-[0_1px_0_0_var(--color-edge)]'
+  const look = mark === 'right' ? 'border-ok bg-okBg shadow-[0_0_0_2px_var(--color-ok)]' : mark === 'wrong' ? 'border-ng bg-ngBg shadow-[0_0_0_2px_var(--color-ng)]' : mark === 'dim' ? `border-hair bg-surface opacity-55 ${hideDim ? 'hidden' : ''}` : 'border-edge bg-surface shadow-[0_4px_0_0_var(--color-edge)] hover:bg-surface2 active:translate-y-[3px] active:shadow-[0_1px_0_0_var(--color-edge)]'
   return (
     <button data-answer={i} data-correct={FAST ? String(correct) : undefined} disabled={disabled} onClick={() => onPick(i)} aria-label={label} className={`relative flex ${compact ? 'min-h-12' : 'min-h-14'} w-full items-center justify-center rounded-lg border-2 text-ink transition-[transform,box-shadow,background-color] duration-75 disabled:cursor-default ${look}`}>
       {children}
@@ -427,27 +432,12 @@ function useAI(): SampleFn | null | undefined {
 
 // ------------------------------------------------------------
 // 答えたあと：結果、選んだ答えへの言葉、覚えること（青い「守ること」の印）
-function Feedback({ ref, q, pick, ok, gained, combo, order, ai, onAsk, sheet }: { ref: React.Ref<HTMLElement>; q: Question; pick: number; ok: boolean; gained: number; combo: number; order: number[]; ai: SampleFn | null | undefined; onAsk: () => void; sheet?: boolean }) {
+function Feedback({ ref, q, pick, ok, gained, combo, order, ai, onOpen, sheet }: { ref: React.Ref<HTMLElement>; q: Question; pick: number; ok: boolean; gained: number; combo: number; order: number[]; ai: SampleFn | null | undefined; onOpen: (d: Detail) => void; sheet?: boolean }) {
   const t = useT()
-  const [more, setMore] = useState(false)
-  const [real, setReal] = useState(false)
-  const moreRef = useRef<HTMLDivElement>(null)
-  const realRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (more) moreRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-  }, [more])
-  useEffect(() => {
-    if (real) realRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-  }, [real])
   // まちがえた時は、その答えを選んだ人への言葉を先に。正解のわけは、押すと出る
   const wrongWhy = !ok ? (q.kind === 'tf' ? q.wrongWhy : q.wrongWhy[pick]) : null
   const answerText = q.kind === 'tf' ? (q.answer ? `○ ${t(S.yesWord)}` : `✕ ${t(S.noWord)}`) : `${order.indexOf(q.correct) + 1} ${t(q.choices[q.correct])}`
   const rc = q.real ? CASES[q.real] : undefined
-  const arrow = (open: boolean) => (
-    <span aria-hidden className={`inline-block transition-transform ${open ? 'rotate-180' : ''}`}>
-      ▾
-    </span>
-  )
   return (
     <section ref={ref} className={`${sheet ? '' : 'rise panel overflow-hidden'} scroll-mt-3`} role="status" aria-live="polite">
       <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 ${sheet ? 'rounded-t-2xl' : 'border-b-2 border-line'} ${ok ? 'bg-okBg' : 'bg-ngBg'}`}>
@@ -479,44 +469,69 @@ function Feedback({ ref, q, pick, ok, gained, combo, order, ai, onAsk, sheet }: 
             <div className="phrase text-lg font-bold leading-snug">{t(q.tip)}</div>
           </div>
         </div>
+        {/* もっと知りたい時のボタン。押すと、画面の上のほうまで大きな板が開く（説明の板はのびない） */}
         {(!ok || rc || ai) && (
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2">
             {!ok && (
-              <button className="chip" aria-expanded={more} onClick={() => (sfx.ui(), setMore((v) => !v))}>
-                {t(S.more)} {arrow(more)}
+              <button data-more className="btn min-h-12 px-3 text-base" onClick={() => (sfx.ui(), onOpen('more'))}>
+                {t(S.more)}
               </button>
             )}
             {rc && (
-              <button className="chip" aria-expanded={real} onClick={() => (sfx.ui(), setReal((v) => !v))}>
-                {t(S.realCase)} {arrow(real)}
+              <button data-real className="btn min-h-12 px-3 text-base" onClick={() => (sfx.ui(), onOpen('real'))}>
+                {t(S.realCase)}
               </button>
             )}
             {ai && (
-              <button data-ask-ai className="chip" onClick={() => (sfx.ui(), onAsk())}>
+              <button data-ask-ai className="btn min-h-12 px-3 text-base" onClick={() => (sfx.ui(), onOpen('ai'))}>
                 <Art id="icon.ai" scale={1.5} />
                 {t(S.askAI)}
               </button>
             )}
           </div>
         )}
-        {/* 開いた中身は、押したボタンの下に */}
-        {!ok && more && (
-          <div ref={moreRef} className="rise rounded-lg bg-surface2 px-3 py-2 text-base leading-relaxed">
-            {t(q.why)}
-          </div>
-        )}
-        {rc && real && (
-          <div ref={realRef} className="rise rounded-lg border-2 border-hair bg-surface2 p-3">
-            <div className="text-lg font-bold leading-snug">{t(rc.head)}</div>
-            <div className="text-sm text-ink2">{t(S.list2(t(rc.who), t(rc.when)))}</div>
-            <p className="mt-1 text-base leading-relaxed">{t(rc.body)}</p>
-            <a className="mt-1 inline-flex min-h-11 items-center text-sm text-rule underline" href={rc.url} target="_blank" rel="noreferrer">
-              {t(S.kv(t(S.source), t(rc.source)))}
-            </a>
-          </div>
-        )}
       </div>
     </section>
+  )
+}
+
+/** 正解のわけ（まちがえた時）：正しい答えと、そのわけ */
+function MorePanel({ q, order, onClose }: { q: Question; order: number[]; onClose: () => void }) {
+  const t = useT()
+  const answerText = q.kind === 'tf' ? (q.answer ? `○ ${t(S.yesWord)}` : `✕ ${t(S.noWord)}`) : `${order.indexOf(q.correct) + 1} ${t(q.choices[q.correct])}`
+  return (
+    <Panel title={t.attr(S.more)} onClose={onClose} closeLabel={t.attr(S.close)} footer={<BackToAnswer onClick={onClose} />}>
+      <div className="grid gap-3">
+        <p className="phrase rounded-lg border-2 border-ok bg-okBg px-3 py-2 text-lg font-bold">{t(S.answerIs(answerText))}</p>
+        <p className="text-lg leading-relaxed">{t(q.why)}</p>
+      </div>
+    </Panel>
+  )
+}
+
+/** 実際にあった話：見出し、どこで・いつ、中身、出典 */
+function RealPanel({ rc, onClose }: { rc: (typeof CASES)[string]; onClose: () => void }) {
+  const t = useT()
+  return (
+    <Panel title={t.attr(S.realCase)} onClose={onClose} closeLabel={t.attr(S.close)} footer={<BackToAnswer onClick={onClose} />}>
+      <div className="grid gap-2">
+        <p className="phrase text-xl font-bold leading-snug">{t(rc.head)}</p>
+        <p className="text-base text-ink2">{t(S.list2(t(rc.who), t(rc.when)))}</p>
+        <p className="text-lg leading-relaxed">{t(rc.body)}</p>
+        <a className="inline-flex min-h-11 items-center text-base text-rule underline" href={rc.url} target="_blank" rel="noreferrer">
+          {t(S.kv(t(S.source), t(rc.source)))}
+        </a>
+      </div>
+    </Panel>
+  )
+}
+
+function BackToAnswer({ onClick }: { onClick: () => void }) {
+  const t = useT()
+  return (
+    <button data-back-answer className="btn min-h-12 w-full text-lg" onClick={() => (sfx.ui(), onClick())}>
+      {t(S.backToAnswer)}
+    </button>
   )
 }
 
@@ -576,55 +591,20 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
   // AIの答えには文節の目印を入れる。自分で書いた文は目印がないので、どこで折り返してもよい
   const bubble = 'max-w-[88%] whitespace-pre-wrap rounded-xl px-3 py-2 text-lg leading-relaxed [line-break:strict] [overflow-wrap:anywhere]'
   return (
-    <Sheet label={t.attr(S.aiTitle)} onClose={onClose}>
-      <div className="flex items-center justify-between gap-3 border-b-2 border-hair px-5 py-3">
-        <div className="flex items-center gap-2">
-          <span className="overflow-hidden rounded-lg border-2 border-line bg-surface2">
-            <Art id="face.boss" scale={1.5} />
-          </span>
-          <span className="text-xl font-bold">{t(S.aiTitle)}</span>
-        </div>
-        <button className="btn min-h-11 px-3 text-base" onClick={() => (sfx.ui(), onClose())}>
-          {t(S.close)}
-        </button>
-      </div>
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 px-5 py-4">
-        <p className="text-sm text-ink2">{t(S.aiNote)}</p>
-        {turns.map((m, i) => (
-          <div key={i} className={`${bubble} ${m.role === 'user' ? 'justify-self-end bg-ink text-surface [word-break:normal]' : 'justify-self-start border-2 border-hair bg-surface2'}`}>
-            {m.role === 'user' ? m.content : t(m.content)}
-          </div>
-        ))}
-        {busy && (
-          <div className={`${bubble} justify-self-start border-2 border-hair bg-surface2`} aria-live="polite">
-            {live ? t(live) : <span className="blink">{t(S.aiThinking)}</span>}
-          </div>
-        )}
-        {err && <p className="rounded-lg border-2 border-ng bg-ngBg px-3 py-2 text-base">{err}</p>}
-        {!off && turns.length === 0 && !busy && (
-          <div className="flex flex-wrap gap-2">
-            {/* 自分でわけを言ってみる（自己説明）。送るのは自分の言葉だけ */}
-            <button
-              data-ai-explain
-              aria-pressed={explain}
-              className="chip"
-              onClick={() => {
-                sfx.ui()
-                setExplain(true)
-                input.current?.focus()
-              }}
-            >
-              ✎ {t(S.aiExplain)}
-            </button>
-            {S.aiChips.map((c, i) => (
-              <button key={i} data-ai-chip={i} className="chip font-normal" onClick={() => void ask(t.attr(c))}>
-                {t(c)}
-              </button>
-            ))}
-          </div>
-        )}
-        {!off && explain && turns.length === 0 && !busy && <p className="rounded-lg bg-ruleBg px-3 py-2 text-base">{t(S.aiExplainHow)}</p>}
-        {!off && (
+    <Panel
+      title={t.attr(S.aiTitle)}
+      onClose={onClose}
+      tall
+      closeLabel={t.attr(S.close)}
+      icon={
+        <span className="shrink-0 overflow-hidden rounded-lg border-2 border-line bg-surface2">
+          <Art id="face.boss" scale={1.5} />
+        </span>
+      }
+      footer={
+        off ? (
+          <BackToAnswer onClick={onClose} />
+        ) : (
           <form
             className="flex gap-2"
             onSubmit={(e) => {
@@ -643,9 +623,47 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
               </button>
             )}
           </form>
+        )
+      }
+    >
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
+        <p className="text-sm text-ink2">{t(S.aiNote)}</p>
+        {turns.map((m, i) => (
+          <div key={i} className={`${bubble} ${m.role === 'user' ? 'justify-self-end bg-ink text-surface [word-break:normal]' : 'justify-self-start border-2 border-hair bg-surface2'}`}>
+            {m.role === 'user' ? m.content : t(m.content)}
+          </div>
+        ))}
+        {busy && (
+          <div className={`${bubble} justify-self-start border-2 border-hair bg-surface2`} aria-live="polite">
+            {live ? t(live) : <span className="blink">{t(S.aiThinking)}</span>}
+          </div>
         )}
+        {err && <p className="rounded-lg border-2 border-ng bg-ngBg px-3 py-2 text-base">{err}</p>}
+        {!off && turns.length === 0 && !busy && (
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-2">
+            {/* 自分でわけを言ってみる（自己説明）。送るのは自分の言葉だけ */}
+            <button
+              data-ai-explain
+              aria-pressed={explain}
+              className="btn min-h-12 px-3 text-base"
+              onClick={() => {
+                sfx.ui()
+                setExplain(true)
+                input.current?.focus()
+              }}
+            >
+              ✎ {t(S.aiExplain)}
+            </button>
+            {S.aiChips.map((c, i) => (
+              <button key={i} data-ai-chip={i} className="btn min-h-12 px-3 text-base font-normal" onClick={() => void ask(t.attr(c))}>
+                {t(c)}
+              </button>
+            ))}
+          </div>
+        )}
+        {!off && explain && turns.length === 0 && !busy && <p className="rounded-lg bg-ruleBg px-3 py-2 text-base">{t(S.aiExplainHow)}</p>}
         <div ref={end} />
       </div>
-    </Sheet>
+    </Panel>
   )
 }

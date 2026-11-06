@@ -1,5 +1,5 @@
 // いろいろな画面で使う部品：ことばの切り替え、丸いもどるボタン、画面の条件
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Lang } from '../game/types'
 import { sfx } from '../lib/platform'
 import { useT } from './i18n'
@@ -52,6 +52,41 @@ export function Sheet({ children, onClose, label }: { children: React.ReactNode;
     <div className="fixed inset-0 z-40 flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal aria-label={label}>
       <div className="absolute inset-0 bg-[#0b1017]/55" onClick={onClose} aria-hidden />
       <div className="rise relative max-h-[88dvh] w-full max-w-2xl overflow-y-auto overflow-x-hidden rounded-t-2xl border-2 border-line bg-surface text-ink sm:rounded-2xl">{children}</div>
+    </div>
+  )
+}
+
+/**
+ * 読むための板（実際にあった話・正解のわけ・AIの宮下さん）。
+ * スマホでは画面の上のほうまで大きく開き、上に題と「閉じる」、下に「答えにもどる」か入力欄。PCでは画面のまん中に大きく。Esc でも閉じる
+ */
+export function Panel({ title, icon, onClose, children, footer, closeLabel, tall }: { title: string; icon?: React.ReactNode; onClose: () => void; children: React.ReactNode; footer?: React.ReactNode; closeLabel: string; /** 会話のように、あとから中身が増える板 */ tall?: boolean }) {
+  const closeRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    closeRef.current?.focus()
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [onClose])
+  return (
+    <div className="fixed inset-0 z-40 flex items-end justify-center lg:items-center lg:p-8" role="dialog" aria-modal aria-label={title}>
+      <div className="absolute inset-0 bg-[#0b1017]/55" onClick={onClose} aria-hidden />
+      <div className={`rise relative flex ${tall ? 'h-[88dvh]' : 'max-h-[88dvh] min-h-[55dvh]'} w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl border-2 border-line bg-surface text-ink lg:h-auto lg:min-h-0 lg:max-h-[82vh] lg:rounded-2xl`}>
+        <div className="flex items-center gap-3 border-b-2 border-hair px-5 py-3">
+          {icon}
+          <h2 className="min-w-0 flex-1 text-xl font-bold leading-snug">{title}</h2>
+          <button ref={closeRef} data-panel-close className="btn min-h-12 shrink-0 px-4 text-base" onClick={() => (sfx.ui(), onClose())}>
+            {closeLabel}
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-5 py-4">{children}</div>
+        {footer && <div className="border-t-2 border-hair px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">{footer}</div>}
+      </div>
     </div>
   )
 }

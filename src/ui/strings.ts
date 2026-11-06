@@ -111,6 +111,7 @@ export const S = {
   aiWhere: L('AIの宮下さんとの練習は、claude.ai で開いたときに使えます。', 'Practice with AI Miyashita works when this page is open on claude.ai.'),
   aiMade: L('AIが作った問題です。まちがいがあるかもしれません。', 'These questions were written by AI and may contain mistakes.'),
   close: L('閉じる', 'Close'),
+  backToAnswer: L('答えにもどる', 'Back to the answer'),
   cancel: L('やめる', 'Cancel'),
 
   // ---- 終わり
