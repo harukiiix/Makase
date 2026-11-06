@@ -109,9 +109,9 @@ body {
   .font-pixel { font-family: var(--font-pixel); font-weight: 400; letter-spacing: 0.02em; }
   /* 数字（ポイント・何問中何問）：英語のドット文字の 9 は読みにくいので、日本語のドット文字の数字を使う */
   .font-num { font-family: "DotGothic16", var(--font-sans); font-weight: 400; letter-spacing: 0.02em; }
-  /* 日本語の本文は、ふつうの日本語の折り返し（行頭に「。」などを置かない）。
-     見出し・ボタン・短い札は、文節の間（t() が入れる目印）でだけ折り返し、行の長さをそろえる */
-  html:lang(ja) body { word-break: normal; line-break: strict; overflow-wrap: anywhere; }
+  /* 日本語は、文節の間（t() が入れる目印）でだけ折り返す（「現場監／督」のように言葉の途中で切らない）。
+     1行に入りきらない言葉だけは途中で折る。見出し・ボタン・短い札は、行の長さもそろえる */
+  html:lang(ja) body { word-break: keep-all; line-break: strict; overflow-wrap: anywhere; }
   html:lang(ja) :is(h1, h2, h3, button, .chip, label, figcaption, .phrase) { word-break: keep-all; overflow-wrap: break-word; text-wrap: balance; }
   p, li { text-wrap: pretty; }
 }

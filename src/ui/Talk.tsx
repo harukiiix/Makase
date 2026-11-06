@@ -171,6 +171,11 @@ export function Talk({
           <p className={`text-lg leading-relaxed sm:text-xl sm:leading-relaxed ${b.who === 'SYS' ? 'text-ink2' : ''}`} aria-live="polite">
             {text.slice(0, n)}
             {!full && <span className="blink">▌</span>}
+            {!full && (
+              <span className="invisible" aria-hidden>
+                {text.slice(n)}
+              </span>
+            )}
           </p>
           <div className="mt-1 flex h-5 justify-end text-sm text-ink2">
             {full && !(last && choices) && (

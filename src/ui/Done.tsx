@@ -15,7 +15,7 @@ import { RANK_TINT } from './Home'
 import { useT } from './i18n'
 import { BADGE_TEXT, RANK_NAME, S } from './strings'
 
-export function Done({ s, gains, progress, extra, onHome, onNext, nextLabel, onEnding }: { s: Session; gains: Gains; progress: Progress; extra?: Question[]; onHome: () => void; onNext?: () => void; nextLabel?: string; onEnding?: () => void }) {
+export function Done({ s, gains, progress, extra, moreDue = 0, onMoreReview, onHome, onNext, nextLabel, onEnding }: { s: Session; gains: Gains; progress: Progress; extra?: Question[]; moreDue?: number; onMoreReview?: () => void; onHome: () => void; onNext?: () => void; nextLabel?: string; onEnding?: () => void }) {
   const t = useT()
   const [shown, setShown] = useState(0)
   // ポイントを数え上げる
@@ -53,7 +53,7 @@ export function Done({ s, gains, progress, extra, onHome, onNext, nextLabel, onE
     <div className="min-h-dvh scroll-pb-28 px-4 pb-32 pt-6 sm:px-6">
       <div className="mx-auto grid max-w-xl gap-4 lg:max-w-4xl lg:grid-cols-2 lg:gap-6">
         {/* 見出し（建物は、階が増えた時と完成した時だけ。スマホでは横に小さく） */}
-        <section className="panel flex items-center gap-4 p-4 lg:row-span-4 lg:grid lg:content-center lg:justify-items-center lg:p-6 lg:text-center">
+        <section className={`panel flex items-center gap-4 p-4 lg:p-6 ${showBuilding ? 'lg:row-span-4 lg:grid lg:content-center lg:justify-items-center lg:text-center' : 'lg:col-span-2'}`}>
           {showBuilding && (
             <div className="shrink-0 overflow-hidden rounded-xl border-2 border-line lg:order-2">
               <span className="lg:hidden">
@@ -68,6 +68,7 @@ export function Done({ s, gains, progress, extra, onHome, onNext, nextLabel, onE
             <h1 className="text-2xl lg:text-4xl">{t(title)}</h1>
             {lesson && <p className="text-base text-ink2">{t(S.dayPlace(t(lesson.dayName), t(lesson.title)))}</p>}
             {failed && <p className="text-base text-ink2">{t(S.finalFailWhy)}</p>}
+            {moreDue > 0 && <p className="text-base font-bold">{t(S.reviewMore(moreDue))}</p>}
             {gains.newFloor && <p className="text-base font-bold">{t(S.newFloor)}</p>}
             {finished && <p className="text-base font-bold">{t(S.buildingDone)}</p>}
             {gains.rankUp && (
@@ -104,7 +105,10 @@ export function Done({ s, gains, progress, extra, onHome, onNext, nextLabel, onE
             <div className="text-sm text-ink2">{t(S.firstRightLabel)}</div>
             <div className="font-num text-4xl leading-none">
               {right}
-              <span className="text-xl text-ink2">／{ids.length}</span>
+              <span className="text-xl text-ink2">
+                {t.lang === 'ja' ? '／' : '/'}
+                {ids.length}
+              </span>
             </div>
           </div>
           {bonuses.length > 0 && (
@@ -172,6 +176,15 @@ export function Done({ s, gains, progress, extra, onHome, onNext, nextLabel, onE
             <button data-ending className="btn-main w-full text-xl lg:w-[22rem]" onClick={() => (sfx.ui(), onEnding())}>
               {t(S.toEnding)}
             </button>
+          ) : moreDue > 0 && onMoreReview ? (
+            <>
+              <button data-home className="btn shrink-0 px-5 text-lg" onClick={() => (sfx.ui(), onHome())}>
+                {t(S.home)}
+              </button>
+              <button data-more-review className="btn-main min-w-0 flex-1 text-lg lg:w-[22rem] lg:flex-none" onClick={() => (sfx.ui(), onMoreReview())}>
+                {t(S.reviewAgain)}
+              </button>
+            </>
           ) : onNext && nextLabel ? (
             <>
               <button data-home className="btn shrink-0 px-5 text-lg" onClick={() => (sfx.ui(), onHome())}>

@@ -67,7 +67,7 @@ export const LESSON: Lesson = {
           en: "Visitors are not the only ones who come in. Workers and delivery people do too. You can't know ahead of time who will see it.",
         },
       ],
-      tip: { ja: 'パスワードは、紙に書いて貼らない', en: 'Never write a password on a note and stick it up' },
+      tip: { ja: 'パスワードは、紙に書いて貼らない', en: 'Never put a password on a sticky note' },
       real: 'nexco-usb',
     },
     // 2. 席を立つときの画面ロック（「すぐ戻るから」）
@@ -144,13 +144,13 @@ export const LESSON: Lesson = {
       },
       ask: { ja: 'この名簿、どうする？', en: 'What do you do with the list?' },
       choices: [
-        { ja: '棚に入れて、鍵をかける', en: 'Put it in the cabinet and lock it' },
+        { ja: '鍵のかかる書庫にしまう', en: 'Put it away in the locked cabinet' },
         { ja: '表紙を下にして、机に置いておく', en: 'Leave it on the desk, face down' },
         { ja: '棚の上の、目立たない所に置く', en: 'Put it up on a shelf, out of sight' },
       ],
       correct: 0,
       why: {
-        ja: '名簿には、住所や生年月日、健康診断のことまで書いてあるんだ。使い終わったら、棚に入れて鍵をかけよう。',
+        ja: '名簿には、住所や生年月日、健康診断のことまで書いてあるんだ。使い終わったら、鍵のかかる書庫にしまおう。',
         en: 'The list has addresses, birth dates, even health check details. When you are done with it, put it in the cabinet and lock it.',
       },
       wrongWhy: [
@@ -164,7 +164,7 @@ export const LESSON: Lesson = {
           en: 'Even somewhere out of the way, anyone who looks will find it fast. A lock works better than a hiding place.',
         },
       ],
-      tip: { ja: '名簿は、棚に入れて鍵をかける', en: 'Keep the worker list locked in the cabinet' },
+      tip: { ja: '名簿は、鍵のかかる書庫にしまう', en: 'Keep the worker list in the locked cabinet' },
     },
     // 5. コピー機に残った図面（「あとで取りに来るから」）
     {
@@ -211,7 +211,7 @@ export const LESSON: Lesson = {
       answer: true,
       why: {
         ja: '許可票は、外から見える所に出すことが、法律で決まっているんだ。工事のお知らせや、労災保険関係成立票も、外に出しておく物だよ。',
-        en: "The law says the permit sign must be posted where people outside can see it. The notice for neighbors and the workers' accident insurance sign belong outside too.",
+        en: "Japanese law says the permit sign must be posted where people outside can see it. The notice to neighbors and the sign showing the site's workers' accident insurance belong outside too.",
       },
       wrongWhy: {
         ja: '名前が書いてあるから、隠したくなるよね。でもこれは、だれが工事をしているか、外の人に知らせるための物なんだ。',

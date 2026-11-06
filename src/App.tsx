@@ -58,6 +58,8 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.lang = lang
+    // タブの題名も、ことばに合わせる
+    document.title = S.title[lang]
   }, [lang])
   useEffect(() => {
     setAudio(settings.sound)
@@ -86,7 +88,8 @@ export default function App() {
     // 2回目からは並びを変える（答えの場所を覚えてしまわないように）
     const qs = progress.lessons[id]?.done ? shuffle(l.questions, dayNumber() + progress.answered) : l.questions
     const title = { ja: S.dayPlace(l.dayName.ja, l.place.ja).ja, en: S.dayPlace(l.dayName.en, l.place.en).en }
-    const go = () => quiz('lesson', title, qs, id, false, !!progress.lessons[id]?.done)
+    // 問題の画面の上には曜日だけ（場所は黒板の「場所」欄に出る）
+    const go = () => quiz('lesson', l.dayName, qs, id, false, !!progress.lessons[id]?.done)
     const intro = () => (l.intro.length ? setScreen({ k: 'talk', beats: l.intro, header: title, art: l.icon, next: go }) : go())
     if (!progress.started && PROLOGUE.length) {
       setScreen({
@@ -127,7 +130,7 @@ export default function App() {
       const raw = await ai.json(practicePrompt({ id: l.id, title: l.title, motto: l.motto }, l.questions), { modelTier: 'default', cache: false })
       const qs = toQuestions(raw, l.id, Date.now())
       if (!qs.length) return setScreen({ k: 'home', note: S.aiFailed })
-      quiz('ai', { ja: `AIの練習：${l.title.ja}`, en: `AI practice: ${l.title.en}` }, qs, undefined, true)
+      quiz('ai', S.aiPracticeShort, qs, undefined, true)
     } catch (e) {
       const k = errorKind(e)
       setScreen({ k: 'home', note: k === 'off' ? S.aiNotAllowed : k === 'busy' ? S.aiBusy : S.aiFailed })
@@ -161,7 +164,15 @@ export default function App() {
               progress={progress}
               lang={lang}
               setLang={setLang}
-              resume={resume ? { title: tr(resume.title, lang), left: resume.session.queue.length - (resume.session.answer?.ok ? 1 : 0) } : null}
+              resume={
+                resume
+                  ? {
+                      // レッスンなら「月曜日・人に見える所」、復習やテストならその名前
+                      title: resume.lesson ? tr(S.dayPlace(tr(lessonOf(resume.lesson).dayName, lang), tr(lessonOf(resume.lesson).title, lang)), lang) : tr(resume.title, lang),
+                      left: resume.session.queue.length - (resume.session.answer?.ok ? 1 : 0),
+                    }
+                  : null
+              }
               onResume={continueResume}
               onDropResume={() => setResume(null)}
               onLesson={startLesson}
@@ -219,6 +230,9 @@ export default function App() {
             gains={sc.gains}
             progress={progress}
             extra={sc.s.kind === 'ai' ? sc.questions : undefined}
+            // 復習が10問より多くたまっていた時は、そのまま続けられるように
+            moreDue={sc.s.kind === 'review' ? dueIds(progress.cards, dayNumber(), topicOf).length : 0}
+            onMoreReview={startReview}
             onHome={() => setScreen({ k: 'home' })}
             onNext={canNext ? () => startLesson(nextL!.id) : undefined}
             nextLabel={canNext ? tr(S.nextUp(tr(nextL!.dayName, lang)), lang) : undefined}

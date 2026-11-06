@@ -14,7 +14,7 @@ export interface Principle {
   name: L10n
   what: L10n
   here: L10n
-  /** AIが使える時だけ足す一文（claude.ai で開いた時） */
+  /** AIが使えるときだけ足す一文（claude.ai で開いたとき） */
   hereAI?: L10n
   /** AIが使える時だけ出す項目 */
   needsAI?: boolean
@@ -48,7 +48,7 @@ export const PRINCIPLES: Principle[] = [
       'Learning why an answer is right, not just what it is, helps with questions you have not seen before.',
     ),
     here: L(
-      '答えるとすぐに、宮下さんがわけを話します。まちがえた時は、選んだ答えのどこがちがうかを教えてくれます。',
+      '答えるとすぐに、宮下さんがわけを話します。まちがえたときは、選んだ答えのどこがちがうかを教えてくれます。',
       'Right after you answer, Miyashita tells you why. If you missed it, he explains where the answer you picked went wrong.',
     ),
     refs: [
@@ -97,7 +97,7 @@ export const PRINCIPLES: Principle[] = [
     id: 'interleaving',
     name: L('話題をまぜて解く', 'Mix the topics'),
     what: L(
-      '似ているけれどちがう種類の問題をまぜて練習すると、あとでよく解けることが多いです。',
+      '似ているけれどちがう種類の問題をまぜて練習すると、あとで解ける力がつきやすくなります。',
       'Practicing similar but different kinds of problems mixed together often helps you do better later on.',
     ),
     here: L('復習とまとめテストは、ちがう話題の問題をまぜて出します。', 'Reviews and the final test mix questions from different topics.'),
@@ -140,8 +140,8 @@ export const PRINCIPLES: Principle[] = [
       'Explaining to yourself why something is so, in your own words, helps you understand it more deeply.',
     ),
     here: L(
-      '答えたあと「AIに聞く」を押して、「〜だからだと思う」と書いてみてください。AIの宮下さんが、合っているか見てくれます。',
-      `After you answer, press "Ask AI" and write why you think so ("I think it's because..."). AI Miyashita will tell you if you have it right.`,
+      '答えたあと「AIに聞く」を押し、「自分の考えを書いてみる」を選んで、「〜だからだと思う」と書いてみてください。AIの宮下さんが、合っているか見てくれます。',
+      `After you answer, press "Ask AI", then "Explain why in my own words", and finish the sentence "I think it's because...". AI Miyashita will tell you if you have it right.`,
     ),
     refs: [
       {
@@ -157,9 +157,9 @@ export const PRINCIPLES: Principle[] = [
   {
     id: 'motivation',
     name: L('つづけたくなるしかけ', 'Things that keep you going'),
-    what: L('「できた」と感じられると、やる気が出やすくなります。ゲームのしかけも、学びを少し助けます。', 'Feeling that you can do it helps keep you motivated. Game features also help learning a little.'),
+    what: L('「できた」と感じられると、やる気が出やすくなります。ゲームのしかけも、学びを少し助けます。', 'Feeling that you can do it keeps you motivated. Game elements like points and ranks can also give learning a small boost.'),
     here: L(
-      '正解するとポイントがたまり、階級が上がります。つづけた日数や、レッスンごとに1階分のびる建物でも、進み具合が見えます。',
+      '正解するとポイントがたまり、階級が上がります。つづけた日数や、レッスンを終えるごとに1階ずつ高くなる建物でも、進み具合が見えます。',
       'Right answers earn points and raise your rank. Your streak and the building, which grows one floor for each lesson you finish, also show your progress.',
     ),
     refs: [
