@@ -124,7 +124,7 @@ export function Quiz(p: {
 
   // スマホ：説明の板の高さだけ下をあけ、印のついた答えが板のすぐ上に見えるようにする
   useLayoutEffect(() => {
-    if (!fb || pc) {
+    if (!fb || pc || land) {
       setSheetH(0)
       return
     }
@@ -133,15 +133,15 @@ export function Quiz(p: {
     const ro = new ResizeObserver(() => setSheetH(el.getBoundingClientRect().height))
     ro.observe(el)
     return () => ro.disconnect()
-  }, [fb, pc])
+  }, [fb, pc, land])
   useEffect(() => {
     if (!fb) return
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('reduce-motion')
     const behavior: ScrollBehavior = reduce ? 'auto' : 'smooth'
     const main = mainRef.current
     // scrollIntoView は、新しいブラウザでは Promise を返すので、そのまま return しない
-    if (pc) {
-      fbRef.current?.scrollIntoView({ block: 'nearest', behavior })
+    if (pc || land) {
+      if (pc) fbRef.current?.scrollIntoView({ block: 'nearest', behavior })
       return
     }
     const box = answersRef.current
@@ -251,9 +251,16 @@ export function Quiz(p: {
       </header>
 
       <main ref={mainRef} className="min-h-0 flex-1 overflow-y-auto" style={sheetH ? { paddingBottom: sheetH } : undefined}>
-        <div className={`${wrap} grid gap-3 pb-6 pt-3 sm:gap-4 short:grid-cols-[minmax(0,0.55fr)_minmax(0,1.45fr)] short:items-start short:gap-x-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-x-12 lg:pt-10`}>
+        <div className={`${wrap} grid gap-3 pb-6 pt-3 sm:gap-4 ${land && s.answer && fb ? 'short:grid-cols-2' : 'short:grid-cols-[minmax(0,0.55fr)_minmax(0,1.45fr)]'} short:items-start short:gap-x-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-x-12 lg:pt-10`}>
           {/* その場にいる人と、場面の絵（PCでは左に大きく） */}
-          {showStage && (
+          {land && s.answer && fb ? (
+            <div className="sticky top-0 grid min-h-0 min-w-0 max-h-[calc(100dvh-5.5rem)] grid-rows-[minmax(0,1fr)_auto] gap-2">
+              <div className="min-h-0 overflow-y-auto rounded-xl border-2 border-line bg-surface">
+                <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} order={order} ai={ai} onAsk={() => setChat(true)} sheet />
+              </div>
+              {nextBtn}
+            </div>
+          ) : showStage && (
             <div key={occ} className="flex items-end justify-center gap-3 short:sticky short:top-0 short:flex-col short:items-center lg:sticky lg:top-0 lg:flex-col lg:items-center lg:gap-5">
               {!land && (
                 <div className="overflow-hidden rounded-xl border-2 border-line bg-surface2">
@@ -310,7 +317,7 @@ export function Quiz(p: {
                 </div>
               ) : (
                 order.map((orig, d) => (
-                  <Choice key={orig} i={orig} mark={mark(orig)} disabled={!!s.answer} onPick={pick} correct={orig === q.correct} compact={packed || land} hideDim={fb && !pc}>
+                  <Choice key={orig} i={orig} mark={mark(orig)} disabled={!!s.answer} onPick={pick} correct={orig === q.correct} compact={packed || land} hideDim={fb && !pc && !land}>
                     <span className={`flex w-full items-center gap-3 px-3 text-left ${packed || land ? 'py-1.5' : 'py-2.5'}`}>
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink text-lg font-bold text-surface" aria-hidden>
                         {d + 1}
@@ -335,7 +342,7 @@ export function Quiz(p: {
         </footer>
       )}
       {/* スマホ：説明と次へを、下から出る板に（問いと答えは上に見えたまま） */}
-      {s.answer && fb && !pc && (
+      {s.answer && fb && !pc && !land && (
         <div ref={sheetRef} className="rise fixed inset-x-0 bottom-0 z-30 flex max-h-[60dvh] flex-col rounded-t-2xl border-t-2 border-line bg-surface shadow-[0_-6px_0_0_rgb(0_0_0/0.08)]">
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="mx-auto max-w-xl short:max-w-4xl">
@@ -462,8 +469,8 @@ function Feedback({ ref, q, pick, ok, gained, combo, order, ai, onAsk, sheet }: 
       <div className="grid gap-3 px-4 py-3">
         {!ok && <p className="phrase text-base font-bold">{t(S.answerIs(answerText))}</p>}
         <p className="text-lg leading-relaxed">{t(wrongWhy ?? q.why)}</p>
-        {/* 覚えること：青い丸は「こうする」の印（安全標識の指示の色） */}
-        <div className="flex items-start gap-3 rounded-lg border-2 border-rule bg-ruleBg px-3 py-2.5">
+        {/* 覚えること：青い丸は「こうする」の印（安全標識の指示の色）。スマホの板では、隠れないように先に */}
+        <div className={`flex items-start gap-3 rounded-lg border-2 border-rule bg-ruleBg px-3 py-2.5 ${sheet ? '-order-1' : ''}`}>
           <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rule text-lg font-bold text-surface" aria-hidden>
             !
           </span>
