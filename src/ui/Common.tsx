@@ -16,17 +16,17 @@ export function useMedia(query: string) {
   return m
 }
 
-/** 右上の English / 日本語 */
+/** 右上の English / 日本語（いま選んでいる方を、紺の地に白で） */
 export function LangToggle({ lang, onChange, className = '' }: { lang: Lang; onChange: (l: Lang) => void; className?: string }) {
   return (
-    <div className={`flex shrink-0 overflow-hidden rounded-lg bg-asphalt2 ${className}`} style={{ boxShadow: '0 0 0 2px #15171b' }} role="radiogroup" aria-label="Language / ことば">
+    <div className={`flex shrink-0 overflow-hidden rounded-lg border-2 border-line bg-surface ${className}`} role="radiogroup" aria-label="Language / ことば">
       {(
         [
           ['en', 'English'],
           ['ja', '日本語'],
         ] as const
       ).map(([id, name]) => (
-        <button key={id} role="radio" aria-checked={lang === id} lang={id} onClick={() => lang !== id && (sfx.ui(), onChange(id))} className={`min-h-11 px-3 text-sm font-bold sm:text-base ${lang === id ? 'bg-safety text-ink' : 'text-onDark2 hover:text-onDark'}`}>
+        <button key={id} role="radio" aria-checked={lang === id} lang={id} onClick={() => lang !== id && (sfx.ui(), onChange(id))} className={`min-h-10 px-2 text-sm font-bold sm:px-3 sm:text-base ${lang === id ? 'bg-ink text-surface' : 'text-ink2 hover:bg-surface2 hover:text-ink'}`}>
           {name}
         </button>
       ))}
@@ -38,21 +38,18 @@ export function LangToggle({ lang, onChange, className = '' }: { lang: Lang; onC
 export function BackButton({ onClick, label }: { onClick: () => void; label?: string }) {
   const t = useT()
   return (
-    <button data-back onClick={() => (sfx.ui(), onClick())} aria-label={label ?? t(S.back)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-asphalt2 text-xl text-onDark hover:bg-asphalt3" style={{ boxShadow: '0 0 0 2px #15171b' }}>
+    <button data-back onClick={() => (sfx.ui(), onClick())} aria-label={label ?? t(S.back)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-line bg-surface text-xl font-bold text-ink hover:bg-surface2">
       ←
     </button>
   )
 }
 
-/** 下から出る紙のパネル（説明・AI・確認） */
-export function Sheet({ children, onClose, label, tone = 'paper' }: { children: React.ReactNode; onClose?: () => void; label: string; tone?: 'paper' | 'right' | 'wrong' }) {
-  const edge = tone === 'right' ? 'var(--color-right)' : tone === 'wrong' ? 'var(--color-risk)' : '#1d1f24'
+/** 下から出るパネル（AI・確認など） */
+export function Sheet({ children, onClose, label }: { children: React.ReactNode; onClose?: () => void; label: string }) {
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center" role="dialog" aria-modal aria-label={label}>
-      <div className="absolute inset-0 bg-black/45" onClick={onClose} aria-hidden />
-      <div className="rise relative max-h-[88dvh] w-full max-w-2xl overflow-y-auto overflow-x-hidden rounded-t-2xl bg-paper text-ink" style={{ boxShadow: `0 -4px 0 0 ${edge}, 0 0 0 2px #1d1f24` }}>
-        {children}
-      </div>
+    <div className="fixed inset-0 z-40 flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal aria-label={label}>
+      <div className="absolute inset-0 bg-[#0b1017]/55" onClick={onClose} aria-hidden />
+      <div className="rise relative max-h-[88dvh] w-full max-w-2xl overflow-y-auto overflow-x-hidden rounded-t-2xl border-2 border-line bg-surface text-ink sm:rounded-2xl">{children}</div>
     </div>
   )
 }

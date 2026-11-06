@@ -316,7 +316,7 @@ export const SPRITES: Record<string, Sprite> = {
       'ddddddKsbbbbbbbbbbbbbbbbbbbbbbbbbbbbbKGGGGGGGGKd',
       'ddddddKsbbbbbbbbbbbbbbbbbbbbbbbbbbbbbKggggggggKd',
       'ddddddKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKd',
-      'ddddddKnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnKdddddddddd',
+      'ddddddKBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBKdddddddddd',
       'ddddddKBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBKdddddddddd',
       'ddddddKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKdddddddddd',
       'dddddddddDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDddd',

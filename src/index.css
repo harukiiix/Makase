@@ -7,98 +7,162 @@
 /* 横に広いが高さの足りない画面（ノートPCなど） */
 @custom-variant lgshort (@media (min-width: 1024px) and (max-height: 959px));
 
-/* ===== 見た目：現場の色。地面はアスファルト、読む所は紙の色、目立たせる所は安全の黄色 ===== */
+/* ============================================================
+   見た目の決まり
+   ・地はコンクリートの明るい灰色（外の明るい所でも読みやすい）。線と文字は作業着の紺
+   ・色は安全標識の意味だけに使う：黄＝押す所・注意、緑＝正しい、赤＝まちがい、青＝守ること
+   ・場面の文は「工事黒板」（現場写真に写る、緑の黒板）に書く。これがこのアプリの顔
+   ・押せる物にだけ、下に影（押すと沈む）。読むだけの物は、線だけ
+   ============================================================ */
 @theme {
-  --font-sans: "M PLUS 1p", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
-  --font-pixel: "DotGothic16", "M PLUS 1p", system-ui, sans-serif;
-  --color-asphalt: #25282e;
-  --color-asphalt2: #30343c;
-  --color-asphalt3: #3c414b;
-  --color-onDark: #f2efe6;
-  --color-onDark2: #b9b4a6;
-  --color-paper: #fbf6e9;
-  --color-paper2: #f1e8d2;
-  --color-paperLine: #d9ccab;
-  --color-ink: #1d1f24;
-  --color-ink2: #5d5749;
-  --color-safety: #ffcc1a;
-  --color-safety2: #e0aa0c;
-  --color-risk: #d83a3a;
-  --color-right: #2f9e5b;
-  --color-other: #d98a0b;
-  --color-hint: #3d7bd9;
-  --color-bonus: #7c55c9;
+  --font-sans: "BIZ UDPGothic", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif;
+  --font-pixel: "DotGothic16", "BIZ UDPGothic", system-ui, sans-serif;
+
+  --color-bg: #e6e7e2;
+  --color-surface: #ffffff;
+  --color-surface2: #f2f3ef;
+  --color-ink: #1c2b3f;
+  --color-ink2: #4a5a6e;
+  --color-line: #1c2b3f;
+  --color-hair: #c7cac2;
+
+  --color-board: #2d4a3b;
+  --color-board2: #24402f;
+  --color-chalk: #f3f6ef;
+  --color-chalk2: #b9c9bd;
+
+  --color-act: #ffc400;
+  --color-act2: #e0a800;
+  --color-actInk: #1c2b3f;
+  --color-actBg: #fff3c4;
+
+  --color-ok: #0e7a47;
+  --color-okBg: #dff2e7;
+  --color-ng: #c62828;
+  --color-ngBg: #fbe4e2;
+  --color-rule: #1f5fb8;
+  --color-ruleBg: #e4edf9;
 }
 
-:root { color-scheme: dark; }
+/* 端末が暗い表示の時（板の緑と、安全の色の意味はそのまま） */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #151c26;
+    --color-surface: #1f2834;
+    --color-surface2: #26313f;
+    --color-ink: #eef1f4;
+    --color-ink2: #a9b4c2;
+    --color-line: #0b1017;
+    --color-hair: #36424f;
+    --color-board: #2a4537;
+    --color-board2: #213a2d;
+    --color-actBg: #3a3214;
+    --color-ok: #4cc488;
+    --color-okBg: #173326;
+    --color-ng: #ff7a70;
+    --color-ngBg: #3a1d1d;
+    --color-rule: #7fb0ff;
+    --color-ruleBg: #1b2a44;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --color-bg: #151c26;
+  --color-surface: #1f2834;
+  --color-surface2: #26313f;
+  --color-ink: #eef1f4;
+  --color-ink2: #a9b4c2;
+  --color-line: #0b1017;
+  --color-hair: #36424f;
+  --color-board: #2a4537;
+  --color-board2: #213a2d;
+  --color-actBg: #3a3214;
+  --color-ok: #4cc488;
+  --color-okBg: #173326;
+  --color-ng: #ff7a70;
+  --color-ngBg: #3a1d1d;
+  --color-rule: #7fb0ff;
+  --color-ruleBg: #1b2a44;
+  color-scheme: dark;
+}
+
+:root { color-scheme: light; }
 html, body, #root { height: 100%; }
-/* 文字は大きめに（ふつうの本文で17px） */
+/* 本文はふつう17px */
 html { font-size: 106.25%; }
 body {
   margin: 0;
-  background: var(--color-asphalt);
-  color: var(--color-onDark);
+  background: var(--color-bg);
+  color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   line-height: 1.7;
   overflow-x: hidden;
 }
 @layer base {
-  button { font-family: inherit; }
-  h1, h2, h3, .font-pixel { font-family: var(--font-pixel); letter-spacing: 0.03em; }
+  button, input { font-family: inherit; color: inherit; }
+  h1, h2, h3 { line-height: 1.4; font-weight: 700; }
+  .font-pixel { font-family: var(--font-pixel); font-weight: 400; letter-spacing: 0.02em; }
   /* 日本語は文節の間（t() が入れる目印）でだけ折り返す。入りきらない時だけ途中で折る */
   html:lang(ja) body { word-break: keep-all; overflow-wrap: break-word; }
   p, li { text-wrap: pretty; }
 }
-/* 英語のドット文字は、英字用のドット文字を先に使う（I や l の幅がそろうように） */
-:root:lang(en) { --font-pixel: "Pixelify Sans", "DotGothic16", "M PLUS 1p", system-ui, sans-serif; }
+
+/* 英語の画面：英字は、読みやすさのために作られた書体で（日本語の書体の英字は横に広いため）。ドット文字も英字用を先に */
+:root:lang(en) {
+  --font-sans: "Atkinson Hyperlegible", "BIZ UDPGothic", system-ui, sans-serif;
+  --font-pixel: "Pixelify Sans", "DotGothic16", system-ui, sans-serif;
+}
 
 .pixelated { image-rendering: pixelated; }
 
-/* 安全の黄色と黒のしま（見出しの飾り） */
-.stripes { background: repeating-linear-gradient(-45deg, var(--color-safety) 0 10px, #1d1f24 10px 20px); }
-
 @layer components {
-  /* 読む所：紙のパネル */
-  .paper { background: var(--color-paper); color: var(--color-ink); box-shadow: 0 0 0 2px #1d1f24, 0 5px 0 0 rgba(0,0,0,.35); }
-  /* いちばん押してほしいボタン（黄色） */
-  .btn-main { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3.25rem; padding: .5rem 1.25rem; background: var(--color-safety); color: #1d1f24; font-weight: 700; box-shadow: 0 0 0 2px #1d1f24, 0 4px 0 0 #1d1f24; transition: transform 60ms, box-shadow 60ms; }
-  .btn-main:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 0 0 2px #1d1f24, 0 1px 0 0 #1d1f24; }
-  .btn-main:disabled { opacity: .45; cursor: not-allowed; }
-  /* ふつうのボタン（紙の上） */
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3rem; padding: .4rem 1rem; background: var(--color-paper); color: #1d1f24; box-shadow: 0 0 0 2px #1d1f24, 0 3px 0 0 #1d1f24; transition: transform 60ms, box-shadow 60ms; }
-  .btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 0 0 2px #1d1f24, 0 1px 0 0 #1d1f24; }
-  .btn:disabled { opacity: .45; cursor: not-allowed; }
-  /* 暗い所のボタン */
-  .btn-dark { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 2.75rem; padding: .35rem .8rem; background: var(--color-asphalt2); color: var(--color-onDark); box-shadow: 0 0 0 2px #15171b; }
-  .btn-dark:hover { background: var(--color-asphalt3); }
-  .btn-dark[aria-pressed="true"], .btn-dark[aria-expanded="true"] { background: var(--color-asphalt3); box-shadow: 0 0 0 2px var(--color-safety); }
-}
-button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--color-hint); outline-offset: 3px; }
+  /* 読む物：白い板（線だけ。押せないので影はつけない） */
+  .panel { background: var(--color-surface); color: var(--color-ink); border: 2px solid var(--color-line); border-radius: 12px; }
+  /* 工事黒板：場面の文を書く所 */
+  .board { background: var(--color-board); color: var(--color-chalk); border: 2px solid var(--color-line); border-radius: 12px; box-shadow: inset 0 0 0 4px var(--color-board2); }
+  /* 進み具合：注意の黄色と紺のしま（立入禁止のテープ） */
+  .tape { background: repeating-linear-gradient(-45deg, var(--color-act) 0 8px, #1c2b3f 8px 16px); }
 
-/* ===== 動き ===== */
+  /* ボタンは押せる物だけ：下に影、押すと沈む */
+  .btn, .btn-main { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3rem; padding: .5rem 1.1rem; border: 2px solid var(--color-line); border-radius: 8px; font-weight: 700; line-height: 1.35; box-shadow: 0 4px 0 0 var(--color-line); transition: transform 60ms, box-shadow 60ms, background-color 120ms; -webkit-tap-highlight-color: transparent; }
+  .btn:active:not(:disabled), .btn-main:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 0 var(--color-line); }
+  .btn:disabled, .btn-main:disabled { opacity: .45; cursor: not-allowed; }
+  /* いちばん押してほしいボタン（1画面に1つ） */
+  .btn-main { background: var(--color-act); color: var(--color-actInk); min-height: 3.5rem; font-size: 1.125rem; }
+  .btn-main:hover:not(:disabled) { background: #ffcf2e; }
+  /* ふつうのボタン */
+  .btn { background: var(--color-surface); color: var(--color-ink); }
+  .btn:hover:not(:disabled) { background: var(--color-surface2); }
+  .btn[aria-expanded="true"], .btn[aria-pressed="true"] { background: var(--color-surface2); }
+  /* 説明の中の小さなボタン：枠だけ（影なし）。開いている時は紺 */
+  .chip { display: inline-flex; align-items: center; gap: .4rem; min-height: 2.75rem; padding: .3rem .9rem; border: 2px solid var(--color-line); border-radius: 999px; background: var(--color-surface); color: var(--color-ink); font-size: 1rem; font-weight: 700; -webkit-tap-highlight-color: transparent; }
+  .chip:hover { background: var(--color-surface2); }
+  .chip[aria-expanded="true"], .chip[aria-pressed="true"] { background: var(--color-ink); color: var(--color-surface); }
+  /* 目立たせないボタン（線と影なし） */
+  .btn-quiet { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; padding: .35rem .75rem; border-radius: 8px; font-weight: 700; color: var(--color-ink); -webkit-tap-highlight-color: transparent; }
+  .btn-quiet:hover:not(:disabled) { background: color-mix(in srgb, var(--color-ink) 8%, transparent); }
+}
+button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible { outline: 3px solid var(--color-rule); outline-offset: 3px; }
+
+/* ===== 動き（答えた時と、建物がのびる時だけ） ===== */
 @keyframes pop { 0% { transform: scale(.6) } 70% { transform: scale(1.12) } 100% { transform: scale(1) } }
 .pop { animation: pop 180ms steps(4) both; }
 @keyframes rise { from { transform: translateY(8px); opacity: 0 } to { transform: none; opacity: 1 } }
 .rise { animation: rise 200ms steps(4) both; }
-@keyframes ring { 0% { transform: scale(1.8); opacity: 0 } 60% { transform: scale(.94); opacity: 1 } 100% { transform: scale(1); opacity: 1 } }
-.ring-in { animation: ring 240ms steps(5) both; }
-@keyframes pulse-ring { 0%,100% { opacity: 1 } 50% { opacity: .35 } }
-.pulse { animation: pulse-ring 900ms steps(3) infinite; }
 @keyframes blink { 50% { opacity: 0 } }
 .blink { animation: blink 1s steps(1) infinite; }
-@keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
-.bob { animation: bob 900ms steps(3) infinite; }
 @keyframes shake { 0%,100% { transform: none } 25% { transform: translateX(-4px) } 75% { transform: translateX(4px) } }
 .shake { animation: shake 160ms steps(4) 2; }
-@keyframes ripple { from { transform: translate(-50%,-50%) scale(.2); opacity: .9 } to { transform: translate(-50%,-50%) scale(1); opacity: 0 } }
-.ripple { animation: ripple 380ms steps(5) forwards; }
+/* 新しい階が、クレーンで上から降りてくる */
+@keyframes lower { 0% { transform: translateY(-40px); opacity: 0 } 15% { opacity: 1 } 80% { transform: translateY(2px) } 100% { transform: none } }
+.lower { animation: lower 1100ms steps(11) 300ms both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .pop, .rise, .ring-in, .pulse, .blink, .bob, .shake, .ripple { animation: none !important; }
+  .pop, .rise, .blink, .shake, .lower { animation: none !important; }
 }
-.reduce-motion .pop, .reduce-motion .rise, .reduce-motion .ring-in, .reduce-motion .pulse, .reduce-motion .blink, .reduce-motion .bob, .reduce-motion .shake, .reduce-motion .ripple { animation: none !important; }
+.reduce-motion .pop, .reduce-motion .rise, .reduce-motion .blink, .reduce-motion .shake, .reduce-motion .lower { animation: none !important; }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #8a8475; }
-* { scrollbar-color: #8a8475 transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-hair); }
+* { scrollbar-color: var(--color-hair) transparent; }

@@ -9,6 +9,20 @@ const BASE = 58 // 1階の床の高さ（y）
 const X0 = 16
 const X1 = 52
 
+/** i 階目（0から）の床と窓 */
+function floor(img: Img, i: number, done: boolean) {
+  const y = BASE - (i + 1) * FLOOR
+  rect(img, X0, y, X1 - X0, FLOOR, 'c')
+  rect(img, X0, y + FLOOR - 1, X1 - X0, 1, 'C')
+  rect(img, X0, y, 1, FLOOR, 'C')
+  rect(img, X1 - 1, y, 1, FLOOR, 'C')
+  for (let k = 0; k < 4; k++) {
+    const wx = X0 + 3 + k * 8
+    rect(img, wx, y + 2, 5, 4, done ? 't' : 'I')
+    rect(img, wx, y + 2, 5, 1, done ? 'S' : 'k')
+  }
+}
+
 function draw(floors: number, all: number, done: boolean): Img {
   const img = newImg(W, H, '#d4f0ff')
   // 空と雲
@@ -21,18 +35,7 @@ function draw(floors: number, all: number, done: boolean): Img {
   rect(img, 0, BASE + 6, W, H - BASE - 6, 'a')
   dither(img, 0, BASE + 5, W, 1, 'a', 'C')
   // 建物：できた階
-  for (let i = 0; i < floors; i++) {
-    const y = BASE - (i + 1) * FLOOR
-    rect(img, X0, y, X1 - X0, FLOOR, 'c')
-    rect(img, X0, y + FLOOR - 1, X1 - X0, 1, 'C')
-    rect(img, X0, y, 1, FLOOR, 'C')
-    rect(img, X1 - 1, y, 1, FLOOR, 'C')
-    for (let k = 0; k < 4; k++) {
-      const wx = X0 + 3 + k * 8
-      rect(img, wx, y + 2, 5, 4, done ? 't' : 'I')
-      rect(img, wx, y + 2, 5, 1, done ? 'S' : 'k')
-    }
-  }
+  for (let i = 0; i < floors; i++) floor(img, i, done)
   // まだの階：足場とネット
   for (let i = floors; i < all; i++) {
     const y = BASE - (i + 1) * FLOOR
@@ -74,7 +77,22 @@ function draw(floors: number, all: number, done: boolean): Img {
   return img
 }
 
-export function Building({ floors, all, done, scale = 3, className = '' }: { floors: number; all: number; done: boolean; scale?: number; className?: string }) {
-  const src = imgURL(`building:${floors}/${all}:${done}`, () => draw(floors, all, done))
-  return <img src={src} width={W * scale} height={H * scale} className={`pixelated ${className}`} alt="" aria-hidden draggable={false} />
+/**
+ * drop = true の時は、いちばん上の新しい階が、クレーンで上から降りてくる（終わった時の1回だけの動き）
+ */
+export function Building({ floors, all, done, scale = 3, drop = false, className = '' }: { floors: number; all: number; done: boolean; scale?: number; drop?: boolean; className?: string }) {
+  const base = drop && floors > 0 ? floors - 1 : floors
+  const src = imgURL(`building:${base}/${all}:${done}`, () => draw(base, all, done))
+  if (base === floors) return <img src={src} width={W * scale} height={H * scale} className={`pixelated ${className}`} alt="" aria-hidden draggable={false} />
+  const top = imgURL(`building-floor:${floors - 1}:${done}`, () => {
+    const img = newImg(W, H)
+    floor(img, floors - 1, done)
+    return img
+  })
+  return (
+    <span className={`relative inline-block ${className}`} style={{ width: W * scale, height: H * scale }} aria-hidden>
+      <img src={src} width={W * scale} height={H * scale} className="pixelated absolute inset-0" alt="" draggable={false} />
+      <img src={top} width={W * scale} height={H * scale} className="pixelated lower absolute inset-0" alt="" draggable={false} />
+    </span>
+  )
 }

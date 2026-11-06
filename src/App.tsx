@@ -9,13 +9,15 @@ import { Done } from './ui/Done'
 import { Home } from './ui/Home'
 import { LangContext, tr } from './ui/i18n'
 import { Quiz } from './ui/Quiz'
+import { Art } from './ui/Art'
+import { Building } from './ui/Building'
 import { HowtoSheet, Notebook, Science, SettingsSheet } from './ui/Screens'
 import { S } from './ui/strings'
 import { Talk } from './ui/Talk'
 
 type Screen =
   | { k: 'home'; note?: L10n }
-  | { k: 'talk'; beats: Line[]; header?: L10n; next: () => void }
+  | { k: 'talk'; beats: Line[]; header?: L10n; art?: string; floors?: number; next: () => void }
   | { k: 'quiz'; kind: SessionKind; lesson?: TopicId; title: L10n; questions: Question[]; aiMade?: boolean; nonce: number }
   | { k: 'done'; s: Session; gains: Gains; questions: Question[] }
   | { k: 'making' }
@@ -76,12 +78,13 @@ export default function App() {
     const qs = progress.lessons[id]?.done ? shuffle(l.questions, dayNumber() + progress.answered) : l.questions
     const title = { ja: S.dayPlace(l.dayName.ja, l.place.ja).ja, en: S.dayPlace(l.dayName.en, l.place.en).en }
     const go = () => quiz('lesson', title, qs, id)
-    const intro = () => (l.intro.length ? setScreen({ k: 'talk', beats: l.intro, header: title, next: go }) : go())
+    const intro = () => (l.intro.length ? setScreen({ k: 'talk', beats: l.intro, header: title, art: l.icon, next: go }) : go())
     if (!progress.started && PROLOGUE.length) {
       setScreen({
         k: 'talk',
         beats: PROLOGUE,
         header: S.title,
+        floors: 0,
         next: () => {
           setProgress((p) => ({ ...p, started: true }))
           setSheet('howto')
@@ -139,7 +142,7 @@ export default function App() {
           <>
             {screen.note && (
               <div className="mx-auto mt-3 max-w-xl px-4">
-                <p className="rounded-xl bg-asphalt2 px-3 py-2 text-center text-base text-onDark2" role="status">
+                <p className="rounded-lg border-2 border-line bg-surface px-3 py-2 text-center text-base" role="status">
                   {tr(screen.note, lang)}
                 </p>
               </div>
@@ -160,7 +163,17 @@ export default function App() {
           </>
         )
       case 'talk':
-        return <Talk key={JSON.stringify(screen.beats[0]?.t)} beats={screen.beats} header={tr(screen.header, lang)} speed={speed} onDone={screen.next} />
+        return (
+          <Talk
+            key={JSON.stringify(screen.beats[0]?.t)}
+            beats={screen.beats}
+            header={tr(screen.header, lang)}
+            speed={speed}
+            onDone={screen.next}
+            // 話す人の顔がない行（語り）で、まん中に出す絵：レッスンの場所か、建物
+            art={screen.floors !== undefined ? <Building floors={Math.min(screen.floors, LESSONS.length)} all={LESSONS.length} done={screen.floors > LESSONS.length} scale={3} /> : screen.art ? <Art id={screen.art} scale={4} /> : undefined}
+          />
+        )
       case 'quiz': {
         const sc = screen
         return <Quiz key={sc.nonce} kind={sc.kind} lesson={sc.lesson} title={tr(sc.title, lang)} questions={sc.questions} aiMade={sc.aiMade} lang={lang} setLang={setLang} onAsked={() => setProgress(countAsk)} onQuit={() => setScreen({ k: 'home' })} onDone={(s) => finishQuiz(s, sc.questions)} />
@@ -183,7 +196,7 @@ export default function App() {
               firstPass(sc.gains) && ENDING.length
                 ? () => {
                     setProgress((p) => ({ ...p, endingSeen: true }))
-                    setScreen({ k: 'talk', beats: ENDING, header: S.buildingDone, next: () => setScreen({ k: 'home' }) })
+                    setScreen({ k: 'talk', beats: ENDING, header: S.buildingDone, floors: LESSONS.length + 1, next: () => setScreen({ k: 'home' }) })
                   }
                 : undefined
             }
@@ -193,8 +206,15 @@ export default function App() {
       case 'making':
         return (
           <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
-            <div className="blink font-pixel text-2xl text-safety">…</div>
-            <p className="text-lg">{tr(S.aiMaking, lang)}</p>
+            <div className="overflow-hidden rounded-2xl border-2 border-line bg-surface2">
+              <Art id="face.boss" scale={4} />
+            </div>
+            <p className="max-w-sm text-lg">
+              {tr(S.aiMaking, lang)}
+              <span className="blink" aria-hidden>
+                …
+              </span>
+            </p>
             <button className="btn text-base" onClick={() => setScreen({ k: 'home' })}>
               {tr(S.cancel, lang)}
             </button>
