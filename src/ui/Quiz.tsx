@@ -263,7 +263,7 @@ export function Quiz(p: {
           {side ? (
             <div data-side-feedback className="sticky top-0 grid min-h-0 min-w-0 max-h-[calc(100dvh-5.5rem)] grid-rows-[minmax(0,1fr)_auto] gap-2 lg:max-h-[calc(100dvh-8rem)] lg:gap-3">
               <div className="rise min-h-0 overflow-y-auto rounded-xl border-2 border-line bg-surface">
-                <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} order={order} ai={ai} onOpen={setDetail} sheet />
+                <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} ai={ai} onOpen={setDetail} sheet />
               </div>
               {nextBtn}
             </div>
@@ -347,7 +347,7 @@ export function Quiz(p: {
         <div ref={sheetRef} className="rise fixed inset-x-0 bottom-0 z-30 flex max-h-[60dvh] flex-col rounded-t-2xl border-t-2 border-line bg-surface shadow-[0_-6px_0_0_rgb(0_0_0/0.08)]">
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="mx-auto max-w-xl short:max-w-4xl">
-              <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} order={order} ai={ai} onOpen={setDetail} sheet />
+              <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} ai={ai} onOpen={setDetail} sheet />
             </div>
           </div>
           <div className="border-t-2 border-hair px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
@@ -423,11 +423,10 @@ function useAI(): SampleFn | null | undefined {
 
 // ------------------------------------------------------------
 // 答えたあと：結果、選んだ答えへの言葉、覚えること（青い「守ること」の印）
-function Feedback({ ref, q, pick, ok, gained, combo, order, ai, onOpen, sheet }: { ref: React.Ref<HTMLElement>; q: Question; pick: number; ok: boolean; gained: number; combo: number; order: number[]; ai: SampleFn | null | undefined; onOpen: (d: Detail) => void; sheet?: boolean }) {
+function Feedback({ ref, q, pick, ok, gained, combo, ai, onOpen, sheet }: { ref: React.Ref<HTMLElement>; q: Question; pick: number; ok: boolean; gained: number; combo: number; ai: SampleFn | null | undefined; onOpen: (d: Detail) => void; sheet?: boolean }) {
   const t = useT()
   // まちがえた時は、その答えを選んだ人への言葉を先に。正解のわけは、押すと出る
   const wrongWhy = !ok ? (q.kind === 'tf' ? q.wrongWhy : q.wrongWhy[pick]) : null
-  const answerText = q.kind === 'tf' ? (q.answer ? `○ ${t(S.yesWord)}` : `✕ ${t(S.noWord)}`) : `${order.indexOf(q.correct) + 1} ${t(q.choices[q.correct])}`
   const rc = q.real ? CASES[q.real] : undefined
   return (
     <section ref={ref} className={`${sheet ? '' : 'rise panel overflow-hidden'} scroll-mt-3`} role="status" aria-live="polite">
@@ -448,7 +447,6 @@ function Feedback({ ref, q, pick, ok, gained, combo, order, ai, onOpen, sheet }:
         )}
       </div>
       <div className="grid gap-3 px-4 py-3">
-        {!ok && <p className="phrase text-base font-bold">{t(S.answerIs(answerText))}</p>}
         <p className="text-lg leading-relaxed">{t(wrongWhy ?? q.why)}</p>
         {/* 覚えること：青い丸は「こうする」の印（安全標識の指示の色）。スマホの板では、隠れないように先に */}
         <div className={`flex items-start gap-3 rounded-lg border-2 border-rule bg-ruleBg px-3 py-2.5 ${sheet ? '-order-1' : ''}`}>
