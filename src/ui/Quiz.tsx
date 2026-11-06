@@ -297,7 +297,7 @@ export function Quiz(p: {
                 </div>
               ) : (
                 order.map((orig, d) => (
-                  <Choice key={orig} i={orig} mark={mark(orig)} disabled={!!s.answer} onPick={pick} correct={orig === q.correct} compact={packed || land}>
+                  <Choice key={orig} i={orig} mark={mark(orig)} disabled={!!s.answer} onPick={pick} correct={orig === q.correct} compact={packed || land} hideDim={fb && !pc}>
                     <span className={`flex w-full items-center gap-3 px-3 text-left ${packed || land ? 'py-1.5' : 'py-2.5'}`}>
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink text-lg font-bold text-surface" aria-hidden>
                         {d + 1}
@@ -323,7 +323,7 @@ export function Quiz(p: {
       )}
       {/* スマホ：説明と次へを、下から出る板に（問いと答えは上に見えたまま） */}
       {s.answer && fb && !pc && (
-        <div ref={sheetRef} className="rise fixed inset-x-0 bottom-0 z-30 flex max-h-[64dvh] flex-col rounded-t-2xl border-t-2 border-line bg-surface shadow-[0_-6px_0_0_rgb(0_0_0/0.08)]">
+        <div ref={sheetRef} className="rise fixed inset-x-0 bottom-0 z-30 flex max-h-[60dvh] flex-col rounded-t-2xl border-t-2 border-line bg-surface shadow-[0_-6px_0_0_rgb(0_0_0/0.08)]">
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="mx-auto max-w-xl short:max-w-4xl">
               <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} order={order} ai={ai} onAsk={() => setChat(true)} sheet />
@@ -368,7 +368,7 @@ function MarkIcon({ ok, className = 'h-4 w-4' }: { ok: boolean; className?: stri
 }
 
 /** 答えのボタン：答える前は押せる形、答えたあとは ✓ と ✕ の印 */
-function Choice({ i, mark, disabled, onPick, correct, label, compact, children }: { i: number; mark: Mark; disabled: boolean; onPick: (i: number) => void; correct: boolean; label?: string; compact?: boolean; children: React.ReactNode }) {
+function Choice({ i, mark, disabled, onPick, correct, label, compact, hideDim, children }: { i: number; mark: Mark; disabled: boolean; onPick: (i: number) => void; correct: boolean; label?: string; compact?: boolean; hideDim?: boolean; children: React.ReactNode }) {
   const t = useT()
   const look =
     mark === 'right'
@@ -376,7 +376,7 @@ function Choice({ i, mark, disabled, onPick, correct, label, compact, children }
       : mark === 'wrong'
         ? 'border-ng bg-ngBg shadow-[0_0_0_2px_var(--color-ng)]'
         : mark === 'dim'
-          ? 'border-hair bg-surface opacity-55'
+          ? `border-hair bg-surface opacity-55 ${hideDim ? 'hidden' : ''}`
           : 'border-edge bg-surface shadow-[0_4px_0_0_var(--color-edge)] hover:bg-surface2 active:translate-y-[3px] active:shadow-[0_1px_0_0_var(--color-edge)]'
   return (
     <button data-answer={i} data-correct={FAST ? String(correct) : undefined} disabled={disabled} onClick={() => onPick(i)} aria-label={label} className={`relative flex ${compact ? 'min-h-12' : 'min-h-14'} w-full items-center justify-center rounded-lg border-2 text-ink transition-[transform,box-shadow,background-color] duration-75 disabled:cursor-default ${look}`}>
