@@ -6,7 +6,7 @@
 //   ・復習は話題をまぜて出す
 //   ・続ける力：ポイント、階級、続けた日数、バッジ
 // ============================================================
-import type { Question, TopicId } from './types'
+import type { L10n, Question, TopicId } from './types'
 
 // ---------------- 日付 ----------------
 /** その人の暮らしている時間での「何日目」（日付が変わったら1増える） */
@@ -85,6 +85,12 @@ export function startSession(kind: SessionKind, ids: string[], lesson?: TopicId)
 /** ○ = 0、✕ = 1。3択は 0〜2 */
 export function isRight(q: Question, pick: number): boolean {
   return q.kind === 'tf' ? (pick === 0) === q.answer : pick === q.correct
+}
+
+/** 答えたあとに出す「わけ」：正解なら正解のわけ、まちがえたら、その答えを選んだ人へのわけ（どの答えでも空にしない） */
+export function whyFor(q: Question, pick: number): L10n {
+  if (isRight(q, pick)) return q.why
+  return (q.kind === 'tf' ? q.wrongWhy : q.wrongWhy[pick]) ?? q.why
 }
 
 export const XP = { first: 10, again: 5, combo: 2, lesson: 20, perfect: 20, review: 10, final: 50 }

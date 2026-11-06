@@ -6,6 +6,7 @@ import { spriteSize } from '../art/raster'
 import { FACE, S, SPEAKER } from '../ui/strings'
 import { CASES } from './cases'
 import { ALL_QUESTIONS, LESSONS } from './course'
+import { whyFor } from './learn'
 import { ENDING, PROLOGUE } from './story'
 import type { L10n, Line, Question } from './types'
 import { COMPANY, dayLog, noonSteps, type MorningPicks } from '../makase/day'
@@ -212,5 +213,31 @@ describe('NOVA の日（最後の日）', () => {
     expect(NOVA_WORDS.INTRO[0].who).toBe('BOSS')
     expect(NOVA_WORDS.INTRO.map((l) => l.text).join('')).toContain('AIの事務員')
     expect(SPEAKER.NOVA && FACE.NOVA && SPRITES[FACE.NOVA]).toBeTruthy()
+  })
+})
+
+describe('答えたあとの「わけ」', () => {
+  // どの問題の、どの答えを選んでも、答えたあとに出す「わけ」が空にならない（日本語と英語）
+  it('every answer of every question shows a reason (わけ) in both languages', () => {
+    const empty: string[] = []
+    for (const q of ALL_QUESTIONS) {
+      const picks = q.kind === 'tf' ? [0, 1] : [0, 1, 2]
+      for (const pick of picks) {
+        const w = whyFor(q, pick)
+        if (!w?.ja?.trim() || !w?.en?.trim()) empty.push(`${q.id} pick ${pick}`)
+      }
+      // まちがえた時に「正解のわけ」の板で出す、正解のわけも空にしない
+      if (!q.why.ja.trim() || !q.why.en.trim()) empty.push(`${q.id} why`)
+    }
+    expect(empty).toEqual([])
+  })
+  it('a wrong answer shows the reason written for that answer, not the right answer reason', () => {
+    for (const q of ALL_QUESTIONS) {
+      const picks = q.kind === 'tf' ? [0, 1] : [0, 1, 2]
+      for (const pick of picks) {
+        const right = q.kind === 'tf' ? (pick === 0) === q.answer : pick === q.correct
+        expect(whyFor(q, pick), `${q.id} pick ${pick}`).toEqual(right ? q.why : q.kind === 'tf' ? q.wrongWhy : q.wrongWhy[pick])
+      }
+    }
   })
 })

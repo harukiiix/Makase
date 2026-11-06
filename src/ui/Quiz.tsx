@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { CASES } from '../game/cases'
 import { lessonOf } from '../game/course'
-import { answer, finished, isRight, next, shuffle, startSession, type Session, type SessionKind } from '../game/learn'
+import { answer, finished, isRight, next, shuffle, startSession, whyFor, type Session, type SessionKind } from '../game/learn'
 import type { Lang, Question, TopicId } from '../game/types'
 import { errorKind, getAI, tutorRules, type SampleFn } from '../lib/ai'
 import { FAST, sfx } from '../lib/platform'
@@ -66,6 +66,8 @@ export function Quiz(p: {
   /** 画面に入れるための詰め方（-1：空きがあれば大きく、0：ふつう、1：人と絵を小さく、2：絵を黒板の中に、3：文字も少し小さく）。スマホでは -1 から試し、はみ出したら1段ずつ詰める */
   const [dense, setDense] = useState(-1)
   const [sheetH, setSheetH] = useState(0)
+  /** スマホの説明の板の高さの上限：印のついた答えの下に残る高さ（答えを隠さず、わけをできるだけ全部見せる） */
+  const [sheetMax, setSheetMax] = useState<number | null>(null)
   const doneRef = useRef(false)
   /** 問題が出た時刻（指で「次へ」を2回押した時に、次の問題の答えまで押してしまわないように） */
   const shownAt = useRef(0)
@@ -130,6 +132,19 @@ export function Quiz(p: {
     return () => window.removeEventListener('resize', on)
   }, [])
 
+  // スマホ：説明の板の上限を、印のついた答え（選んだ物と正しい物）の下に残る高さにする
+  useLayoutEffect(() => {
+    if (!fb || pc || land) {
+      setSheetMax(null)
+      return
+    }
+    const main = mainRef.current
+    const marks = [...(answersRef.current?.querySelectorAll('[data-mark="right"],[data-mark="wrong"]') ?? [])]
+    if (!main || !marks.length) return
+    const h = Math.max(...marks.map((m) => m.getBoundingClientRect().bottom)) - Math.min(...marks.map((m) => m.getBoundingClientRect().top))
+    const room = main.clientHeight - h - 36
+    setSheetMax(Math.max(Math.round(room), Math.round(window.innerHeight * 0.45)))
+  }, [fb, pc, land, occ])
   // スマホ：説明の板の高さだけ下をあけ、印のついた答えが板のすぐ上に見えるようにする
   useLayoutEffect(() => {
     if (!fb || pc || land) {
@@ -214,10 +229,12 @@ export function Quiz(p: {
   const side = (pc || land) && !!s.answer && fb
   const small = dense >= 1 && !pc
   /** スマホで、答えの下に空きがある時は、人と絵と答えを1段大きく */
-  const roomy = dense < 0 && !pc && !land
+  const roomy = dense < 0 && !pc && !land && !s.answer
   const tiny = dense >= 3 && !pc
   /** いちばん詰めた時（小さいスマホ）：場所の欄を出さず、すき間と答えの高さを少し小さく */
   const packed = dense >= 4 && !pc
+  /** スマホで答えたあと：答えのボタンを詰めて、説明の板に場所を回す */
+  const tight = packed || land || (fb && !pc)
   const board = (
     <div className={`board px-4 sm:px-5 ${packed ? 'py-2' : 'py-2.5 sm:py-4'}`}>
       {!showStage && q.pic && (
@@ -312,13 +329,13 @@ export function Quiz(p: {
             </div>
 
             {/* 答え */}
-            <div ref={answersRef} className={`grid scroll-mt-3 ${packed ? 'gap-2' : 'gap-3'}`}>
+            <div ref={answersRef} className={`grid scroll-mt-3 ${packed || tight ? 'gap-2' : 'gap-3'}`}>
               {q.kind === 'tf' ? (
                 <div className="grid grid-cols-2 gap-3">
                   {[0, 1].map((i) => (
-                    <Choice key={i} i={i} mark={mark(i)} disabled={!!s.answer} onPick={pick} correct={isRight(q, i)} compact={packed || land} label={t.attr(i === 0 ? `○ ${t(S.yesWord)}` : `✕ ${t(S.noWord)}`)}>
-                      <span className={`grid justify-items-center ${packed || land ? 'py-1' : small ? 'py-1.5' : roomy ? 'py-4' : 'py-3'} lg:py-5`}>
-                        <span className={`${packed || land ? 'text-4xl' : small ? 'text-5xl' : 'text-6xl'} leading-none text-ink lg:text-7xl`} aria-hidden>
+                    <Choice key={i} i={i} mark={mark(i)} disabled={!!s.answer} onPick={pick} correct={isRight(q, i)} compact={tight} label={t.attr(i === 0 ? `○ ${t(S.yesWord)}` : `✕ ${t(S.noWord)}`)}>
+                      <span className={`grid justify-items-center ${tight ? 'py-1' : small ? 'py-1.5' : roomy ? 'py-4' : 'py-3'} lg:py-5`}>
+                        <span className={`${tight ? 'text-4xl' : small ? 'text-5xl' : 'text-6xl'} leading-none text-ink lg:text-7xl`} aria-hidden>
                           {i === 0 ? '○' : '✕'}
                         </span>
                         <span className="mt-1.5 text-base font-bold">{t(i === 0 ? S.yesWord : S.noWord)}</span>
@@ -328,8 +345,8 @@ export function Quiz(p: {
                 </div>
               ) : (
                 order.map((orig, d) => (
-                  <Choice key={orig} i={orig} mark={mark(orig)} disabled={!!s.answer} onPick={pick} correct={orig === q.correct} compact={packed || land} hideDim={fb && !pc && !land}>
-                    <span className={`flex w-full items-center gap-3 px-3 text-left ${packed || land ? 'py-1.5' : roomy ? 'py-3.5' : 'py-2.5'}`}>
+                  <Choice key={orig} i={orig} mark={mark(orig)} disabled={!!s.answer} onPick={pick} correct={orig === q.correct} compact={tight} hideDim={fb && !pc && !land}>
+                    <span className={`flex w-full items-center gap-3 px-3 text-left ${tight ? 'py-1.5' : roomy ? 'py-3.5' : 'py-2.5'}`}>
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink text-lg font-bold text-surface" aria-hidden>
                         {d + 1}
                       </span>
@@ -346,14 +363,18 @@ export function Quiz(p: {
 
       {/* スマホ：説明と次へを、下から出る板に（問いと答えは上に見えたまま） */}
       {s.answer && fb && !pc && !land && (
-        <div ref={sheetRef} className="rise fixed inset-x-0 bottom-0 z-30 flex max-h-[60dvh] flex-col rounded-t-2xl border-t-2 border-line bg-surface shadow-[0_-6px_0_0_rgb(0_0_0/0.08)]">
+        <div ref={sheetRef} style={sheetMax ? { maxHeight: sheetMax } : undefined} className="rise fixed inset-x-0 bottom-0 z-30 flex max-h-[68dvh] flex-col rounded-t-2xl border-t-2 border-line bg-surface shadow-[0_-6px_0_0_rgb(0_0_0/0.08)]">
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="mx-auto max-w-xl short:max-w-4xl">
-              <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} ai={ai} onOpen={setDetail} sheet />
+              <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} ai={ai} onOpen={setDetail} sheet noActions />
             </div>
           </div>
-          <div className="border-t-2 border-hair px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-            <div className="mx-auto max-w-xl short:max-w-4xl">{nextBtn}</div>
+          {/* ボタンは、板の中で隠れないように、次へのすぐ上にいつも出す */}
+          <div className="grid gap-2 border-t-2 border-hair px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+            <div className="mx-auto w-full max-w-xl short:max-w-4xl">
+              <FeedbackActions q={q} ok={ok} ai={ai} onOpen={setDetail} compact />
+            </div>
+            <div className="mx-auto w-full max-w-xl short:max-w-4xl">{nextBtn}</div>
           </div>
         </div>
       )}
@@ -397,7 +418,7 @@ function Choice({ i, mark, disabled, onPick, correct, label, compact, hideDim, c
   const t = useT()
   const look = mark === 'right' ? 'border-ok bg-okBg shadow-[0_0_0_2px_var(--color-ok)]' : mark === 'wrong' ? 'border-ng bg-ngBg shadow-[0_0_0_2px_var(--color-ng)]' : mark === 'dim' ? `border-hair bg-surface opacity-55 ${hideDim ? 'hidden' : ''}` : 'border-edge bg-surface shadow-[0_4px_0_0_var(--color-edge)] hover:bg-surface2 active:translate-y-[3px] active:shadow-[0_1px_0_0_var(--color-edge)]'
   return (
-    <button data-answer={i} data-correct={FAST ? String(correct) : undefined} disabled={disabled} onClick={() => onPick(i)} aria-label={label} className={`relative flex ${compact ? 'min-h-12' : 'min-h-14'} w-full items-center justify-center rounded-lg border-2 text-ink transition-[transform,box-shadow,background-color] duration-75 disabled:cursor-default ${look}`}>
+    <button data-answer={i} data-mark={mark} data-correct={FAST ? String(correct) : undefined} disabled={disabled} onClick={() => onPick(i)} aria-label={label} className={`relative flex ${compact ? 'min-h-12' : 'min-h-14'} w-full items-center justify-center rounded-lg border-2 text-ink transition-[transform,box-shadow,background-color] duration-75 disabled:cursor-default ${look}`}>
       {children}
       {(mark === 'right' || mark === 'wrong') && (
         <span className={`pop absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full border-2 border-line text-surface ${mark === 'right' ? 'bg-ok' : 'bg-ng'}`}>
@@ -425,14 +446,12 @@ function useAI(): SampleFn | null | undefined {
 
 // ------------------------------------------------------------
 // 答えたあと：結果、選んだ答えへの言葉、覚えること（青い「守ること」の印）
-function Feedback({ ref, q, pick, ok, gained, combo, ai, onOpen, sheet }: { ref: React.Ref<HTMLElement>; q: Question; pick: number; ok: boolean; gained: number; combo: number; ai: SampleFn | null | undefined; onOpen: (d: Detail) => void; sheet?: boolean }) {
+function Feedback({ ref, q, pick, ok, gained, combo, ai, onOpen, sheet, noActions }: { ref: React.Ref<HTMLElement>; q: Question; pick: number; ok: boolean; gained: number; combo: number; ai: SampleFn | null | undefined; onOpen: (d: Detail) => void; sheet?: boolean; /** ボタン（正解のわけ・実際にあった話・AI）を、板の外（次へのすぐ上）に出す時 */ noActions?: boolean }) {
   const t = useT()
-  // まちがえた時は、その答えを選んだ人への言葉を先に。正解のわけは、押すと出る
-  const wrongWhy = !ok ? (q.kind === 'tf' ? q.wrongWhy : q.wrongWhy[pick]) : null
-  const rc = q.real ? CASES[q.real] : undefined
+  // まちがえた時は、その答えを選んだ人への言葉を先に。正解のわけは、押すと出る（決め方は learn.ts の whyFor、テストあり）
   return (
     <section ref={ref} className={`${sheet ? '' : 'rise panel overflow-hidden'} scroll-mt-3`} role="status" aria-live="polite">
-      <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 ${sheet ? 'rounded-t-2xl' : 'border-b-2 border-line'} ${ok ? 'bg-okBg' : 'bg-ngBg'}`}>
+      <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-4 ${sheet ? 'rounded-t-2xl py-1.5' : 'border-b-2 border-line py-2'} ${ok ? 'bg-okBg' : 'bg-ngBg'}`}>
         <span className="overflow-hidden rounded-lg border-2 border-line bg-surface2" aria-hidden>
           <Art id={ok ? 'face.boss_happy' : 'face.boss_worry'} scale={1.5} />
         </span>
@@ -448,8 +467,8 @@ function Feedback({ ref, q, pick, ok, gained, combo, ai, onOpen, sheet }: { ref:
           </span>
         )}
       </div>
-      <div className="grid gap-3 px-4 py-3">
-        <p className="text-lg leading-relaxed">{t(wrongWhy ?? q.why)}</p>
+      <div className={`grid px-4 ${sheet ? 'gap-2.5 pb-2 pt-2.5' : 'gap-3 py-3'}`}>
+        <p data-why className={`${sheet ? 'text-base sm:text-lg' : 'text-lg'} leading-relaxed`}>{t(whyFor(q, pick))}</p>
         {/* 覚えること：青い丸は「こうする」の印（安全標識の指示の色）。スマホの板では、隠れないように先に */}
         <div className={`flex items-start gap-3 rounded-lg border-2 border-rule bg-ruleBg px-3 py-2.5 ${sheet ? '-order-1' : ''}`}>
           <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rule text-lg font-bold text-surface" aria-hidden>
@@ -460,29 +479,39 @@ function Feedback({ ref, q, pick, ok, gained, combo, ai, onOpen, sheet }: { ref:
             <div className="phrase text-lg font-bold leading-snug">{t(q.tip)}</div>
           </div>
         </div>
-        {/* もっと知りたい時のボタン。押すと、画面の上のほうまで大きな板が開く（説明の板はのびない） */}
-        {(!ok || rc || ai) && (
+        {!noActions && <FeedbackActions q={q} ok={ok} ai={ai} onOpen={onOpen} />}
+      </div>
+    </section>
+  )
+}
+
+/** もっと知りたい時のボタン（正解のわけ・実際にあった話・AIに聞く）。押すと、画面の上のほうまで大きな板が開く */
+function FeedbackActions({ q, ok, ai, onOpen, compact }: { q: Question; ok: boolean; ai: SampleFn | null | undefined; onOpen: (d: Detail) => void; compact?: boolean }) {
+  const t = useT()
+  const rc = q.real ? CASES[q.real] : undefined
+  return (
+    <>
+      {(!ok || rc || ai) && (
           <div className="grid grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2">
             {!ok && (
-              <button data-more className="btn min-h-12 px-3 text-base" onClick={() => (sfx.ui(), onOpen('more'))}>
+              <button data-more className={`btn px-3 ${compact ? 'min-h-11 py-1 text-sm' : 'min-h-12 text-base'}`} onClick={() => (sfx.ui(), onOpen('more'))}>
                 {t(S.more)}
               </button>
             )}
             {rc && (
-              <button data-real className="btn min-h-12 px-3 text-base" onClick={() => (sfx.ui(), onOpen('real'))}>
+              <button data-real className={`btn px-3 ${compact ? 'min-h-11 py-1 text-sm' : 'min-h-12 text-base'}`} onClick={() => (sfx.ui(), onOpen('real'))}>
                 {t(S.realCase)}
               </button>
             )}
             {ai && (
-              <button data-ask-ai className="btn min-h-12 px-3 text-base" onClick={() => (sfx.ui(), onOpen('ai'))}>
+              <button data-ask-ai className={`btn px-3 ${compact ? 'min-h-11 py-1 text-sm' : 'min-h-12 text-base'}`} onClick={() => (sfx.ui(), onOpen('ai'))}>
                 <Art id="icon.ai" scale={1.5} />
                 {t(S.askAI)}
               </button>
             )}
           </div>
         )}
-      </div>
-    </section>
+    </>
   )
 }
 
