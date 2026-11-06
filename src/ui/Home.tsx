@@ -96,6 +96,11 @@ export function Home(p: {
           <h1 className="truncate font-pixel text-xl leading-none sm:text-2xl">{t(S.title)}</h1>
         </div>
         <LangButton lang={p.lang} onChange={p.setLang} />
+        {/* あそびかたは右上に（いつでも開ける所） */}
+        <button className="btn-quiet min-h-11 shrink-0 gap-1.5 border-2 border-hair px-2.5 text-sm text-ink2 hover:text-ink" data-howto onClick={go(p.onHowto)}>
+          <Art id="icon.howto" scale={1.5} />
+          {t(S.howto)}
+        </button>
         <button className="btn-quiet h-11 w-11 shrink-0 p-0" data-settings aria-label={t.attr(S.settings)} onClick={go(p.onSettings)}>
           <Art id="icon.gear" scale={2} />
         </button>
@@ -207,20 +212,18 @@ export function Home(p: {
             </button>
           )}
 
-          <nav className="grid grid-cols-2 gap-2" aria-label={t.attr(S.others)}>
-            <button className="btn justify-start gap-3 px-3 text-base" data-notebook onClick={go(p.onNotebook)}>
-              <Art id="icon.book" scale={2} />
-              {t(S.notebook)}
-            </button>
-            <button className="btn justify-start gap-3 px-3 text-base" data-howto onClick={go(p.onHowto)}>
-              <Art id="icon.howto" scale={2} />
-              {t(S.howto)}
-            </button>
-          </nav>
         </div>
 
-        {/* ---- 右（スマホでは下）：自分のようす、建物 */}
+        {/* ---- 右（スマホでは下）：見回りノート、自分のようす、建物 */}
         <div className="grid content-start gap-4">
+          {/* 見回りノート：覚えたこと・まちがえた問題（自分の記録のそばに） */}
+          <button className="btn w-full justify-start gap-3 p-3 text-left" data-notebook onClick={go(p.onNotebook)}>
+            <Art id="icon.book" scale={2.5} />
+            <span className="min-w-0">
+              <span className="block text-lg leading-snug">{t(S.notebook)}</span>
+              <span className="block text-sm font-normal text-ink2">{t(S.notebookWhy)}</span>
+            </span>
+          </button>
           <section className="panel grid gap-3 p-4" aria-label={t.attr(S.rank)}>
             <div className="flex items-center gap-3">
               <span className="shrink-0 rounded-lg border-2 border-line bg-surface2 p-1">

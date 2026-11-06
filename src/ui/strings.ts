@@ -54,6 +54,7 @@ export const S = {
   aiPracticeWhy: (topic: string) => L(`いちばん苦手な「${topic}」の新しい問題を、AIが3問作ります`, `AI writes 3 new questions on your weakest topic: ${topic}`),
   others: L('そのほか', 'More'),
   notebook: L('見回りノート', 'Notebook'),
+  notebookWhy: L('覚えたことと、まちがえた問題を見る', 'What you learned and what you missed'),
   science: L('この学び方について', 'About how you learn here'),
   settings: L('設定', 'Settings'),
   howto: L('あそびかた', 'How to play'),
