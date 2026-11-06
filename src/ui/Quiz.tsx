@@ -148,10 +148,8 @@ export function Quiz(p: {
     const behavior: ScrollBehavior = reduce ? 'auto' : 'smooth'
     const main = mainRef.current
     // scrollIntoView は、新しいブラウザでは Promise を返すので、そのまま return しない
-    if (pc || land) {
-      if (pc) fbRef.current?.scrollIntoView({ block: 'nearest', behavior })
-      return
-    }
+    // PC と横向きのスマホは、説明が左の列に出るので、動かさない
+    if (pc || land) return
     const box = answersRef.current
     if (!main || !box || !sheetH) return
     // 答えのいちばん下が、説明の板の上の端に来るように
@@ -212,6 +210,8 @@ export function Quiz(p: {
   const place = q.place ?? lessonOf(q.topic)?.place
   const lastOne = s.queue.length === 1 && ok
   const showStage = pc || land || dense < 2
+  /** 答えたあと、説明を左の列に出すか（PC と横向きのスマホ）。右の問いと答えは動かさない */
+  const side = (pc || land) && !!s.answer && fb
   const small = dense >= 1 && !pc
   const tiny = dense >= 3 && !pc
   /** いちばん詰めた時（小さいスマホ）：場所の欄を出さず、すき間と答えの高さを少し小さく */
@@ -234,7 +234,7 @@ export function Quiz(p: {
   )
   const wrap = 'mx-auto w-full max-w-xl px-4 short:max-w-4xl lg:max-w-6xl lg:px-10'
   const nextBtn = (
-    <button data-next autoFocus className="btn-main w-full text-xl lg:w-[22rem]" onClick={go}>
+    <button data-next autoFocus className="btn-main w-full text-xl" onClick={go}>
       {t(lastOne ? S.finish : S.next)}
     </button>
   )
@@ -258,11 +258,11 @@ export function Quiz(p: {
       </header>
 
       <main ref={mainRef} className="min-h-0 flex-1 overflow-y-auto" style={sheetH ? { paddingBottom: sheetH } : undefined}>
-        <div className={`${wrap} grid gap-3 pb-6 pt-3 sm:gap-4 ${land && s.answer && fb ? 'short:grid-cols-2' : 'short:grid-cols-[minmax(0,0.55fr)_minmax(0,1.45fr)]'} short:items-start short:gap-x-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-x-12 lg:pt-10`}>
-          {/* その場にいる人と、場面の絵（PCでは左に大きく） */}
-          {land && s.answer && fb ? (
-            <div className="sticky top-0 grid min-h-0 min-w-0 max-h-[calc(100dvh-5.5rem)] grid-rows-[minmax(0,1fr)_auto] gap-2">
-              <div className="min-h-0 overflow-y-auto rounded-xl border-2 border-line bg-surface">
+        <div className={`${wrap} grid gap-3 pb-6 pt-3 sm:gap-4 ${side && land ? 'short:grid-cols-2' : 'short:grid-cols-[minmax(0,0.55fr)_minmax(0,1.45fr)]'} short:items-start short:gap-x-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-x-12 lg:pt-10`}>
+          {/* その場にいる人と、場面の絵（PCでは左に大きく）。答えたあとは、PC と横向きのスマホでは、ここに説明と「次へ」を出す */}
+          {side ? (
+            <div data-side-feedback className="sticky top-0 grid min-h-0 min-w-0 max-h-[calc(100dvh-5.5rem)] grid-rows-[minmax(0,1fr)_auto] gap-2 lg:max-h-[calc(100dvh-8rem)] lg:gap-3">
+              <div className="rise min-h-0 overflow-y-auto rounded-xl border-2 border-line bg-surface">
                 <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} order={order} ai={ai} onOpen={setDetail} sheet />
               </div>
               {nextBtn}
@@ -338,18 +338,10 @@ export function Quiz(p: {
               )}
             </div>
 
-            {/* PC：答えの下に説明 */}
-            {s.answer && fb && pc && <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} order={order} ai={ai} onOpen={setDetail} />}
           </div>
         </div>
       </main>
 
-      {/* PC：次へは、画面の下 */}
-      {s.answer && fb && pc && (
-        <footer className="border-t-2 border-hair bg-bg pb-4 pt-3">
-          <div className={`${wrap} flex justify-end`}>{nextBtn}</div>
-        </footer>
-      )}
       {/* スマホ：説明と次へを、下から出る板に（問いと答えは上に見えたまま） */}
       {s.answer && fb && !pc && !land && (
         <div ref={sheetRef} className="rise fixed inset-x-0 bottom-0 z-30 flex max-h-[60dvh] flex-col rounded-t-2xl border-t-2 border-line bg-surface shadow-[0_-6px_0_0_rgb(0_0_0/0.08)]">
