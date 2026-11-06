@@ -151,7 +151,7 @@ function Ask({ children }: { children: React.ReactNode }) {
       <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-line bg-act font-pixel text-lg text-actInk" aria-hidden>
         ?
       </span>
-      <h2 className="text-lg leading-snug sm:text-xl lg:text-3xl lg:leading-snug">{children}</h2>
+      <h2 className="text-lg leading-snug sm:text-xl lg:text-3xl lg:leading-snug">{typeof children === 'string' ? phrase(children) : children}</h2>
     </div>
   )
 }
@@ -340,7 +340,7 @@ function Noon({ picks, onDone }: { picks: MorningPicks; onDone: (a: Record<strin
                   <p className="text-sm text-ink2">{tool(card.conf.call?.tool)}</p>
                 </div>
               </div>
-              <h2 className="text-xl leading-snug lg:text-2xl">{card.conf.text}</h2>
+              <h2 className="text-xl leading-snug lg:text-2xl">{phrase(card.conf.text)}</h2>
               <dl className="grid gap-1 rounded-md border-2 border-hair p-3 text-base">
                 {card.to && (
                   <div className="flex gap-3">
@@ -394,7 +394,7 @@ function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>;
           <section data-verdict={ev.leaked ? 'leaked' : 'safe'} className={`grid gap-2 rounded-xl border-2 px-4 py-3 ${ev.leaked ? 'border-ng bg-ngBg' : 'border-ok bg-okBg'}`}>
             <h1 className={`flex items-center gap-2 text-2xl font-bold ${ev.leaked ? 'text-ng' : 'text-ok'}`}>
               <Mark ok={!ev.leaked} />
-              {ev.leaked ? W.LEAKED : W.NOT_LEAKED}
+              {phrase(ev.leaked ? W.LEAKED : W.NOT_LEAKED)}
             </h1>
             {leakedSend && (
               <p className="text-lg leading-snug">
@@ -569,7 +569,7 @@ function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine
           )}
           <p className="text-sm text-ink2">{one.note}</p>
           <section data-experiment className="rounded-lg border-2 border-hair bg-surface p-4">
-            <h2 className="text-base font-bold">{W.EXPERIMENT_HEAD}</h2>
+            <h2 className="text-base font-bold">{phrase(W.EXPERIMENT_HEAD)}</h2>
             <p className="mt-1 text-base">{EXPERIMENT_NOTE}</p>
             <p className="mt-1 text-sm text-ink2">{NOT_TESTED_NOTE}</p>
           </section>
