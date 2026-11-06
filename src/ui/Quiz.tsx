@@ -63,8 +63,8 @@ export function Quiz(p: {
   const [fb, setFb] = useState(false)
   const [combo, setCombo] = useState(0)
   const [gain, setGain] = useState(0)
-  /** 画面に入れるための詰め方（0：ふつう、1：人と絵を小さく、2：絵を黒板の中に、3：文字も少し小さく） */
-  const [dense, setDense] = useState(0)
+  /** 画面に入れるための詰め方（-1：空きがあれば大きく、0：ふつう、1：人と絵を小さく、2：絵を黒板の中に、3：文字も少し小さく）。スマホでは -1 から試し、はみ出したら1段ずつ詰める */
+  const [dense, setDense] = useState(-1)
   const [sheetH, setSheetH] = useState(0)
   const doneRef = useRef(false)
   /** 問題が出た時刻（指で「次へ」を2回押した時に、次の問題の答えまで押してしまわないように） */
@@ -114,7 +114,7 @@ export function Quiz(p: {
 
   // 問題が変わったら、まずふつうの大きさで並べてみる
   useLayoutEffect(() => {
-    setDense(0)
+    setDense(-1)
   }, [occ, pc])
   // 答えの最後が画面の下にはみ出していたら、1段ずつ詰める（描く前に決めるので、ちらつかない）
   useLayoutEffect(() => {
@@ -125,7 +125,7 @@ export function Quiz(p: {
     if (box.getBoundingClientRect().bottom > main.getBoundingClientRect().bottom - 8) setDense((d) => d + 1)
   })
   useEffect(() => {
-    const on = () => setDense(0)
+    const on = () => setDense(-1)
     window.addEventListener('resize', on)
     return () => window.removeEventListener('resize', on)
   }, [])
@@ -213,6 +213,8 @@ export function Quiz(p: {
   /** 答えたあと、説明を左の列に出すか（PC と横向きのスマホ）。右の問いと答えは動かさない */
   const side = (pc || land) && !!s.answer && fb
   const small = dense >= 1 && !pc
+  /** スマホで、答えの下に空きがある時は、人と絵と答えを1段大きく */
+  const roomy = dense < 0 && !pc && !land
   const tiny = dense >= 3 && !pc
   /** いちばん詰めた時（小さいスマホ）：場所の欄を出さず、すき間と答えの高さを少し小さく */
   const packed = dense >= 4 && !pc
@@ -272,12 +274,12 @@ export function Quiz(p: {
               <div key={occ} className="flex items-end justify-center gap-3 short:sticky short:top-0 short:flex-col short:items-center lg:sticky lg:top-0 lg:flex-col lg:items-center lg:gap-5">
                 {!land && (
                   <div className="overflow-hidden rounded-xl border-2 border-line bg-surface2">
-                    <Art id={FACE[q.who] ?? FACE.BOSS} scale={pc ? 5 : small ? 2 : 3} />
+                    <Art id={FACE[q.who] ?? FACE.BOSS} scale={pc ? 5 : small ? 2 : roomy ? 4 : 3} />
                   </div>
                 )}
                 {q.pic && (
                   <div className="overflow-hidden rounded-xl border-2 border-line bg-surface">
-                    <Art id={q.pic} scale={pc ? 6 : land || small ? 2 : 3} />
+                    <Art id={q.pic} scale={pc ? 6 : land || small ? 2 : roomy ? 4 : 3} />
                   </div>
                 )}
                 {land && board}
@@ -315,7 +317,7 @@ export function Quiz(p: {
                 <div className="grid grid-cols-2 gap-3">
                   {[0, 1].map((i) => (
                     <Choice key={i} i={i} mark={mark(i)} disabled={!!s.answer} onPick={pick} correct={isRight(q, i)} compact={packed || land} label={t.attr(i === 0 ? `○ ${t(S.yesWord)}` : `✕ ${t(S.noWord)}`)}>
-                      <span className={`grid justify-items-center ${packed || land ? 'py-1' : small ? 'py-1.5' : 'py-3'} lg:py-5`}>
+                      <span className={`grid justify-items-center ${packed || land ? 'py-1' : small ? 'py-1.5' : roomy ? 'py-4' : 'py-3'} lg:py-5`}>
                         <span className={`${packed || land ? 'text-4xl' : small ? 'text-5xl' : 'text-6xl'} leading-none text-ink lg:text-7xl`} aria-hidden>
                           {i === 0 ? '○' : '✕'}
                         </span>
@@ -327,7 +329,7 @@ export function Quiz(p: {
               ) : (
                 order.map((orig, d) => (
                   <Choice key={orig} i={orig} mark={mark(orig)} disabled={!!s.answer} onPick={pick} correct={orig === q.correct} compact={packed || land} hideDim={fb && !pc && !land}>
-                    <span className={`flex w-full items-center gap-3 px-3 text-left ${packed || land ? 'py-1.5' : 'py-2.5'}`}>
+                    <span className={`flex w-full items-center gap-3 px-3 text-left ${packed || land ? 'py-1.5' : roomy ? 'py-3.5' : 'py-2.5'}`}>
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink text-lg font-bold text-surface" aria-hidden>
                         {d + 1}
                       </span>
