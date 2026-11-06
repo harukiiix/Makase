@@ -118,6 +118,11 @@ describe('story and real cases', () => {
       expect(c.url.startsWith('https://'), c.id).toBe(true)
     }
   })
+  it('real cases do not name the company or local government (only the source keeps its name)', () => {
+    const NAMES = /NEXCO|西日本高速|Expressway|群馬|Gunma|藤岡|Fujioka|森康|Moriyasu|小松|Komatsu|石川|Ishikawa|新潟|Niigata|岩出|Iwade|戸田|Toda|横須賀|Yokosuka|神奈川|Kanagawa/
+    for (const c of Object.values(CASES))
+      for (const k of ['head', 'body', 'who'] as const) for (const lang of ['ja', 'en'] as const) expect(NAMES.test(c[k][lang]), `case ${c.id}.${k}.${lang}: ${c[k][lang]}`).toBe(false)
+  })
 })
 
 describe('house style', () => {

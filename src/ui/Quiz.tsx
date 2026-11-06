@@ -521,6 +521,7 @@ function RealPanel({ rc, onClose }: { rc: (typeof CASES)[string]; onClose: () =>
         <a className="inline-flex min-h-11 items-center text-base text-rule underline" href={rc.url} target="_blank" rel="noreferrer">
           {t(S.kv(t(S.source), t(rc.source)))}
         </a>
+        <p className="text-sm text-ink2">{t(S.summaryNote)}</p>
       </div>
     </Panel>
   )

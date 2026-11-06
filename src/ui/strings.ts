@@ -87,6 +87,7 @@ export const S = {
   finish: L('結果を見る', 'See results'),
   realCase: L('実際にあった話', 'This really happened'),
   source: L('出典', 'Source'),
+  summaryNote: L('報道・発表をもとに要約', 'Summarized from news reports and announcements'),
   sourcesN: (n: number) => L(`出典（${n}件）`, n === 1 ? 'Source (1)' : `Sources (${n})`),
   askAI: L('AIに聞く', 'Ask AI'),
   more: L('正解のわけ', 'Why the answer is right'),

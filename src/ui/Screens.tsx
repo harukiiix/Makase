@@ -126,6 +126,7 @@ export function Notebook({ progress, lang, setLang, onBack }: { progress: Progre
                   {t(S.kv(t(S.source), t(c.source)))}
                   {t.lang === 'ja' ? `（${host(c.url)}）` : ` (${host(c.url)})`}
                 </a>
+                <p className="text-sm text-ink2">{t(S.summaryNote)}</p>
               </article>
             ) : null
           })}
