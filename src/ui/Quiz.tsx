@@ -587,7 +587,7 @@ function BackToAnswer({ onClick }: { onClick: () => void }) {
 export function AiLeftPill({ n }: { n: number }) {
   const t = useT()
   return (
-    <span data-ai-left={n} title={t.attr(S.aiLeftWhy)} aria-label={`${t.attr(S.aiLeftN(n))}。${t.attr(S.aiLeftWhy)}`} className={`shrink-0 rounded-full border-2 px-2 py-0.5 text-sm font-bold ${n === 0 ? 'border-ng text-ng' : 'border-hair text-ink2'}`}>
+    <span data-ai-left={n} title={t.attr(S.aiLeftWhy)} aria-label={`${t.attr(S.aiLeftN(n))}${t.lang === 'en' ? '. ' : '。'}${t.attr(S.aiLeftWhy)}`} className={`shrink-0 rounded-full border-2 px-2 py-0.5 text-sm font-bold ${n === 0 ? 'border-ng text-ng' : 'border-hair text-ink2'}`}>
       {t(S.aiLeftN(n))}
     </span>
   )

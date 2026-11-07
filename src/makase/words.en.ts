@@ -71,12 +71,10 @@ export const OUTSIDE = "Outside";
 export const CAUSES = "What led to it";
 export const CAUSE_MORNING = "Morning";
 export const CAUSE_NOON = "Noon";
-export const LOOK_BACK = "Looking back";
-export const HOW_TO_PREVENT = "How to prevent it";
 
 export const TAKE_HEAD = "Instructions to take home";
 export const TAKE_SUB = "You can paste these into the instructions of the AI you use (such as CLAUDE.md)";
-export const TAKE_TODAY = "Today's key one";
+export const TAKE_TODAY = "Today's key instruction";
 export const COPY = "Copy all";
 export const COPIED = "Copied";
 export const COPY_FAIL = "Couldn't copy. Press and hold the text to select it";
@@ -107,7 +105,6 @@ export const WORK_OK = "done";
 export const WORK_NG = "not done";
 export const GUARD_OK = "held";
 export const GUARD_NG = "didn't hold";
-export const LESSON = "Remember";
 export const LEAKED_TO = "What went out";
 export const WHY_OUTSIDE = 'Why we can say it "went outside the company"';
 export const DETAILS = "See details";
@@ -126,3 +123,15 @@ export const DAY_EN = {
   note: "Scripted practice. No real AI runs. You can play it before finishing the five days.",
   go: "Try it",
 };
+
+export const IDEAS_HEAD = "Ideas from today";
+export const IDEAS_SUB = "Picked from your choices today: ideas that matter when you hand work to an AI";
+export const IDEA_TODAY = "From today";
+export const IDEA_USE = "With the AI you use";
+export const STORY_SUB = "In order, from morning to evening";
+export const STORY_DID = "What you did";
+export const STORY_HAPPENED = "What happened";
+export const STORY_WHY = "Why it matters";
+export const STORY_NEXT = "Next time";
+export const BECAUSE = "Why";
+export const TAKE_COPY_NOTE = "Only the instructions are copied (not the reasons)";

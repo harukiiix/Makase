@@ -5,11 +5,11 @@
 //   漏れたかどうかは judgeDay の結果だけで決める（夕方の中身は src/makase/evening.ts）
 // ============================================================
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { oneLine } from '../makase/carry'
+import { dayFacts, ideasOf, storyOf, takeHome, type DayFacts, type StoryCard } from '../makase/learnings'
 import { COMPANY as C, dayLog, fieldKey, MORNING_FIELDS, MORNING_TOOLS, noonSteps, type FieldChoice, type MorningPicks } from '../makase/day'
 import { eveningOf, eveningTalk, guardsOf, whyOutside, type Guard, type Guards } from '../makase/evening'
 import { judgeDay } from '../makase/judge'
-import { todayOf } from '../makase/takeaway'
+import { todayOf, type Today } from '../makase/takeaway'
 import { JOBS, JOB_NOTE, JOB_NOTE_EN, cleanJobLines, customJob, jobLabel, jobPrompt, type Job } from '../makase/jobLine'
 import { aiOff, CLAUDE_AI_URL, errorKind, getAI, onClaudeAi, type SampleFn } from '../lib/ai'
 import { S } from './strings'
@@ -59,6 +59,7 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
   const log = phase === 'talk' || phase === 'evening' || phase === 'take' ? dayLog(picks, answers) : null
   const result = log ? judgeDay(log, C) : null
   const ev = log && result ? eveningOf(result, log, C, p.lang) : null
+  const facts = log && result ? dayFacts(picks, log, result, C) : null
 
   if (phase === 'talk' && ev) {
     const ja = eveningTalk(eveningOf(result!, log!, C), 'ja')
@@ -109,8 +110,8 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
         />
       )}
       {phase === 'noon' && <Noon picks={picks} onDone={(a) => (setAnswers(a), setPhase('talk'))} />}
-      {phase === 'evening' && ev && log && <EveningList ev={ev} guards={guardsOf(ev, log, C, p.lang)} onNext={() => setPhase('take')} />}
-      {phase === 'take' && log && result && <Takeaway today={todayOf(result, log, C)} onAgain={restart} onHome={() => p.onDone(ev?.leaked ?? false)} />}
+      {phase === 'evening' && ev && log && facts && <EveningList ev={ev} facts={facts} guards={guardsOf(ev, log, C, p.lang)} onNext={() => setPhase('take')} />}
+      {phase === 'take' && log && result && facts && <Takeaway today={todayOf(result, log, C)} facts={facts} onAgain={restart} onHome={() => p.onDone(ev?.leaked ?? false)} />}
 
       {quit && (
         <Sheet label={W.QUIT_SURE} onClose={() => setQuit(false)}>
@@ -447,7 +448,7 @@ function Noon({ picks, onDone }: { picks: MorningPicks; onDone: (a: Record<strin
 }
 
 // ---------------- 夕方（何が、だれに渡ったか） ----------------
-function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>; guards: Guards; onNext: () => void }) {
+function EveningList({ ev, facts, guards, onNext }: { ev: ReturnType<typeof eveningOf>; facts: DayFacts; guards: Guards; onNext: () => void }) {
   const { W, lang } = useNW()
   const [more, setMore] = useState(false)
   const leakedSend = ev.sent.find((x) => x.leaked.length > 0)
@@ -499,16 +500,36 @@ function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>;
             <GuardRow head={W.GUARD_WORK} g={guards.work} ok={W.WORK_OK} ng={W.WORK_NG} />
           </ul>
 
-          {/* 4. 覚えること（1行） */}
-          <div className="flex items-start gap-3 rounded-lg border-2 border-rule bg-ruleBg px-3 py-2.5">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rule text-lg font-bold text-surface" aria-hidden>
-              !
-            </span>
-            <div className="min-w-0">
-              <div className="text-sm font-bold text-rule">{W.LESSON}</div>
-              <div className="phrase text-lg font-bold leading-snug">{phrase(guards.lesson)}</div>
+          {/* 4. 今日の考え方（選びから2〜3個）：これからAIに仕事を任せる時に大事な考え方を、今日したことと結んで出す */}
+          <section data-ideas className="grid gap-3">
+            <div>
+              <h2 className="text-xl font-bold">{W.IDEAS_HEAD}</h2>
+              <p className="text-base text-ink2">{phrase(W.IDEAS_SUB)}</p>
             </div>
-          </div>
+            <ol className="grid gap-3">
+              {ideasOf(facts, lang).map((i, n) => (
+                <li key={i.id} data-idea={i.id} className="rounded-xl border-2 border-rule bg-surface px-4 py-3">
+                  <h3 className="flex items-start gap-2 text-lg font-bold leading-snug">
+                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rule text-base text-surface" aria-hidden>
+                      {n + 1}
+                    </span>
+                    <span className="phrase min-w-0">{phrase(i.title)}</span>
+                  </h3>
+                  <p className="mt-1.5 text-base leading-relaxed">{i.body}</p>
+                  <dl className="mt-2 grid gap-1.5 text-base leading-snug">
+                    <div className="rounded-lg bg-surface2 px-3 py-1.5">
+                      <dt className="text-sm font-bold text-ink2">{W.IDEA_TODAY}</dt>
+                      <dd className="[overflow-wrap:anywhere]">{i.today}</dd>
+                    </div>
+                    <div className="rounded-lg bg-ruleBg px-3 py-1.5">
+                      <dt className="text-sm font-bold text-rule">{W.IDEA_USE}</dt>
+                      <dd>{i.use}</dd>
+                    </div>
+                  </dl>
+                </li>
+              ))}
+            </ol>
+          </section>
 
           <button data-details className="btn min-h-12 w-full text-lg lg:w-auto lg:justify-self-start" onClick={() => (sfx.ui(), setMore(true))}>
             {W.DETAILS}
@@ -522,7 +543,7 @@ function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>;
           </button>
         </div>
       </footer>
-      {more && <Details ev={ev} onClose={() => setMore(false)} />}
+      {more && <Details ev={ev} facts={facts} onClose={() => setMore(false)} />}
     </>
   )
 }
@@ -556,11 +577,12 @@ function GuardRow({ head, g, ok: okLabel, ng: ngLabel }: { head: string; g: Guar
   )
 }
 
-/** くわしいふり返り：送られたもの全部と、出来事ごとの文 */
-function Details({ ev, onClose }: { ev: ReturnType<typeof eveningOf>; onClose: () => void }) {
+/** くわしいふり返り：時間の順のカード（したこと → 起きたこと → なぜ大事か → 次は）と、送られた物の全部 */
+function Details({ ev, facts, onClose }: { ev: ReturnType<typeof eveningOf>; facts: DayFacts; onClose: () => void }) {
   const { W, lang, T } = useNW()
   const dot = lang === 'en' ? ', ' : '・'
-  const toneBox = { bad: 'border-ng bg-ngBg', good: 'border-ok bg-okBg', info: 'border-hair bg-surface' } as const
+  const toneBox: Record<StoryCard['tone'], string> = { bad: 'border-ng', good: 'border-ok', info: 'border-hair' }
+  const toneDot: Record<StoryCard['tone'], string> = { bad: 'bg-ng', good: 'bg-ok', info: 'bg-ink2' }
   return (
     <Panel
       title={W.DETAILS_TITLE}
@@ -573,17 +595,44 @@ function Details({ ev, onClose }: { ev: ReturnType<typeof eveningOf>; onClose: (
       }
     >
       <div className="grid gap-4">
-        <section className="grid gap-2">
+        <p className="text-base text-ink2">{W.STORY_SUB}</p>
+        <ol data-story className="grid gap-3">
+          {storyOf(facts, lang).map((c) => (
+            <li key={c.key} data-card={c.key} data-tone={c.tone} className={`rounded-lg border-2 bg-surface p-3 ${toneBox[c.tone]}`}>
+              <p className="flex flex-wrap items-center gap-2">
+                <span className="rounded bg-ink px-1.5 text-sm font-bold text-surface">{c.when}</span>
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${toneDot[c.tone]}`} aria-hidden />
+                <span className="text-base font-bold">{c.title}</span>
+              </p>
+              <dl className="mt-2 grid gap-1.5 text-base leading-snug">
+                {(
+                  [
+                    [W.STORY_DID, c.did],
+                    [W.STORY_HAPPENED, c.happened],
+                    [W.STORY_WHY, c.why],
+                    ...(c.next ? [[W.STORY_NEXT, c.next]] : []),
+                  ] as [string, string][]
+                ).map(([h, t]) => (
+                  <div key={h} className={`-mx-2 grid gap-0.5 rounded-md px-2 lg:grid-cols-[7.5rem_1fr] lg:gap-2 ${h === W.STORY_NEXT ? 'bg-ruleBg py-1' : ''}`}>
+                    <dt className={`text-sm font-bold lg:text-base ${h === W.STORY_NEXT ? 'text-rule' : 'text-ink2'}`}>{h}</dt>
+                    <dd className="min-w-0 [overflow-wrap:anywhere]">{t}</dd>
+                  </div>
+                ))}
+              </dl>
+            </li>
+          ))}
+        </ol>
+        <section className="grid gap-2 border-t-2 border-hair pt-3">
           <h3 className="text-base font-bold text-ink2">{W.TO_AI}</h3>
-          <p className="text-lg">{ev.toAI.length ? ev.toAI.join(dot) : W.TO_AI_NONE}</p>
+          <p className="text-base">{ev.toAI.length ? ev.toAI.join(dot) : W.TO_AI_NONE}</p>
         </section>
         <section className="grid gap-2">
           <h3 className="text-base font-bold text-ink2">{W.SENT}</h3>
-          {ev.sent.length === 0 && <p className="text-lg">{W.SENT_NONE}</p>}
+          {ev.sent.length === 0 && <p className="text-base">{W.SENT_NONE}</p>}
           <ul className="grid gap-2">
             {ev.sent.map((x, i) => (
-              <li key={i} className={`rounded-md border-2 p-3 ${x.leaked.length ? 'border-ng bg-ngBg' : 'border-hair'}`}>
-                <p className="flex flex-wrap items-center gap-2 text-base">
+              <li key={i} className={`rounded-md border-2 p-2.5 ${x.leaked.length ? 'border-ng bg-ngBg' : 'border-hair'}`}>
+                <p className="flex flex-wrap items-center gap-2 text-sm">
                   <span className={`rounded px-1.5 text-sm font-bold ${x.inside ? 'bg-surface2' : 'bg-ink text-surface'}`}>{x.inside ? W.INSIDE : W.OUTSIDE}</span>
                   <span className="break-all font-bold">{x.to}</span>
                 </p>
@@ -592,21 +641,7 @@ function Details({ ev, onClose }: { ev: ReturnType<typeof eveningOf>; onClose: (
                   {lang === 'en' ? ' · ' : '・'}
                   {x.tool}
                 </p>
-                <p className="mt-1 text-base [overflow-wrap:anywhere]">{T(x.content)}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-        <section className="grid gap-2">
-          <h3 className="text-base font-bold text-ink2">{W.LOOK_BACK}</h3>
-          <ul className="grid gap-2">
-            {ev.lines.map((l, i) => (
-              <li key={i} className={`rounded-lg border-2 p-3 ${toneBox[l.tone]}`}>
-                <p className="text-base font-bold">{l.what}</p>
-                <p className="mt-1 text-base">
-                  <span className="mr-2 text-ink2">{W.HOW_TO_PREVENT}</span>
-                  {l.prevent}
-                </p>
+                <p className="mt-1 text-sm [overflow-wrap:anywhere]">{T(x.content)}</p>
               </li>
             ))}
           </ul>
@@ -637,9 +672,9 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine>[0]; onAgain: () => void; onHome: () => void }) {
+function Takeaway({ today, facts, onAgain, onHome }: { today: Today; facts: DayFacts; onAgain: () => void; onHome: () => void }) {
   const { W, lang } = useNW()
-  const one = oneLine(today, lang)
+  const one = takeHome(facts, lang)
   const [copied, setCopied] = useState<'ok' | 'fail' | null>(null)
   const copy = async () => {
     sfx.ui()
@@ -654,21 +689,23 @@ function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine
             <p className="mt-1 text-base text-ink2">{W.TAKE_SUB}</p>
           </div>
           <p className="text-base">{phrase(one.why)}</p>
-          {/* 貼る指示の全部。今日いちばん効いた1行に「今日の1つ」の印をつける */}
+          {/* 貼る指示の全部（今日の選びから組み立てる）。行ごとに、今日の理由をそえる。コピーされるのは指示の文だけ */}
           <div data-line className="select-text rounded-xl border-2 border-line bg-surface p-3 text-[0.95rem] leading-relaxed [line-break:strict] [word-break:normal] lg:p-4 lg:text-base">
-            {one.lines.map((l, i) =>
-              l === one.line ? (
-                <p key={i} data-today className="-mx-2 my-1 rounded-lg bg-actBg px-2 py-1 text-ink">
-                  <span className="mb-1 block w-fit rounded-md bg-ink px-2 text-sm font-bold text-surface">{W.TAKE_TODAY}</span>
-                  {l}
-                </p>
-              ) : (
-                <p key={i} className={l.startsWith('- ') ? 'py-1' : 'pb-1 text-ink2'}>
-                  {l}
-                </p>
-              ),
-            )}
+            <p className="pb-1 text-ink2">{one.head}</p>
+            <ol className="grid gap-2">
+              {one.rules.map((r, i) => (
+                <li key={r.id} data-rule={r.id} {...(i === 0 ? { 'data-today': '' } : {})} className={`-mx-2 rounded-lg px-2 py-1.5 ${i === 0 ? 'bg-actBg text-ink' : ''}`}>
+                  {i === 0 && <span className="mb-1 block w-fit rounded-md bg-ink px-2 text-sm font-bold text-surface">{W.TAKE_TODAY}</span>}
+                  <p>{r.line}</p>
+                  <p data-because className="mt-0.5 select-none text-sm leading-snug text-ink2">
+                    <span className="mr-1 font-bold">{W.BECAUSE}{lang === 'en' ? ':' : '：'}</span>
+                    {r.because}
+                  </p>
+                </li>
+              ))}
+            </ol>
           </div>
+          <p className="-mt-2 text-sm text-ink2">{W.TAKE_COPY_NOTE}</p>
           <button data-copy className="btn-main w-full text-xl lg:w-[22rem]" onClick={() => void copy()}>
             {copied === 'ok' ? W.COPIED : W.COPY}
           </button>
@@ -708,7 +745,7 @@ function useSample(): SampleFn | null | undefined {
   return ai
 }
 
-function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: ReturnType<typeof oneLine> }) {
+function JobAsk({ today, one }: { today: Today; one: ReturnType<typeof takeHome> }) {
   const { W, lang } = useNW()
   const ai = useSample()
   // 回数の限度（この画面で3回・1日に20回）。宮下さんは、遊んでいる人の Claude の使用量を使うため。

@@ -71,8 +71,6 @@ export const OUTSIDE = "社外";
 export const CAUSES = "そうなった元";
 export const CAUSE_MORNING = "朝";
 export const CAUSE_NOON = "昼";
-export const LOOK_BACK = "ふり返り";
-export const HOW_TO_PREVENT = "防ぐには";
 
 export const TAKE_HEAD = "持ち帰る指示";
 export const TAKE_SUB = "いつも使う AI への指示（CLAUDE.md など）に、そのまま貼れます";
@@ -108,7 +106,6 @@ export const WORK_OK = "終わった";
 export const WORK_NG = "終わらなかった";
 export const GUARD_OK = "守れた";
 export const GUARD_NG = "守れなかった";
-export const LESSON = "覚えよう";
 export const LEAKED_TO = "社外に出たもの";
 export const WHY_OUTSIDE = "なぜ「社外に渡った」と言えるか";
 export const DETAILS = "くわしく見る";
@@ -129,3 +126,15 @@ export const DAY_EN = {
   note: "Scripted practice. No real AI runs. You can play it before finishing the five days.",
   go: "Try it",
 };
+
+export const IDEAS_HEAD = "今日の考え方";
+export const IDEAS_SUB = "あなたの今日の選びから、AIに仕事を任せる時に大事な考え方を選びました";
+export const IDEA_TODAY = "今日のこと";
+export const IDEA_USE = "ふだんのAIで";
+export const STORY_SUB = "朝から夕方まで、時間の順に並べました";
+export const STORY_DID = "したこと";
+export const STORY_HAPPENED = "起きたこと";
+export const STORY_WHY = "なぜ大事か";
+export const STORY_NEXT = "次は";
+export const BECAUSE = "理由";
+export const TAKE_COPY_NOTE = "コピーされるのは、指示の文だけです（理由は入りません）";
