@@ -87,6 +87,7 @@ export const JOB_SUB = "仕事を選ぶか書くと、AIの宮下さんが、今
 export const JOB_OWN = "ほかの仕事（自分で書く）";
 export const JOB_OWN_HINT = "例：とび職、設備、内装";
 export const JOB_OWN_GO = "この仕事で聞く";
+export const JOB_COPY = "この指示をコピーする";
 export const JOB_ASK = "あなたの仕事は？";
 export const JOB_THINKING = "宮下さんが考えています…";
 export const JOB_LEFT_WHY = "AIの宮下さんは、あなたの Claude の使用量を使います。この画面で3回、1日に20回まで聞けます。";

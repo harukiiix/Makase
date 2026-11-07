@@ -58,7 +58,8 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
   const back = () => {
     if (phase === 'morning' && step > 0) return setStep(step - 1)
     if (phase === 'morning') return setPhase('mail')
-    if (phase === 'evening' || phase === 'take') return p.onQuit()
+    if (phase === 'take') return setPhase('evening')
+    if (phase === 'evening') return p.onQuit()
     setQuit(true)
   }
 
@@ -578,28 +579,32 @@ function Details({ ev, onClose }: { ev: ReturnType<typeof eveningOf>; onClose: (
 }
 
 // ---------------- 持ち帰る指示（数行。今日の1つを先頭に） ----------------
+/** 文をコピーする。埋めこまれたページなどで使えない時は、昔のやり方で */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    try {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      document.body.appendChild(ta)
+      ta.select()
+      const ok = document.execCommand('copy')
+      ta.remove()
+      return ok
+    } catch {
+      return false
+    }
+  }
+}
+
 function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine>[0]; onAgain: () => void; onHome: () => void }) {
   const one = oneLine(today)
   const [copied, setCopied] = useState<'ok' | 'fail' | null>(null)
   const copy = async () => {
     sfx.ui()
-    try {
-      await navigator.clipboard.writeText(one.text)
-      setCopied('ok')
-    } catch {
-      // 埋めこまれたページなどで使えない時は、昔のやり方で
-      try {
-        const ta = document.createElement('textarea')
-        ta.value = one.text
-        document.body.appendChild(ta)
-        ta.select()
-        const ok = document.execCommand('copy')
-        ta.remove()
-        setCopied(ok ? 'ok' : 'fail')
-      } catch {
-        setCopied('fail')
-      }
-    }
+    setCopied((await copyText(one.text)) ? 'ok' : 'fail')
   }
   return (
     <>
@@ -609,7 +614,7 @@ function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine
             <h1 className="text-2xl font-bold">{W.TAKE_HEAD}</h1>
             <p className="mt-1 text-base text-ink2">{W.TAKE_SUB}</p>
           </div>
-          <p className="text-base">{one.why}</p>
+          <p className="text-base">{phrase(one.why)}</p>
           {/* 貼る指示の全部。今日いちばん効いた1行に「今日の1つ」の印をつける */}
           <div data-line className="select-text rounded-xl border-2 border-line bg-surface p-3 text-[0.95rem] leading-relaxed [line-break:strict] [word-break:normal] lg:p-4 lg:text-base">
             {one.lines.map((l, i) =>
@@ -673,6 +678,7 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
   const [job, setJob] = useState<Job['id'] | null>(null)
   const [lines, setLines] = useState<string[] | null>(null)
   const [own, setOwn] = useState('')
+  const [jobCopied, setJobCopied] = useState<'ok' | 'fail' | null>(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   // この見ている間に、AIを使う許可がないと決まったら、押せなくする（回数も数えない）
@@ -705,6 +711,7 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
     sfx.ui()
     setJob(j.id)
     setLines(null)
+    setJobCopied(null)
     setErr(null)
     setBusy(true)
     ctl.current = new AbortController()
@@ -762,8 +769,8 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
           <label className="w-full text-sm font-bold text-ink2" htmlFor="job-own">
             {W.JOB_OWN}
           </label>
-          <input id="job-own" data-job-own value={own} onChange={(e) => setOwn(e.target.value)} maxLength={30} placeholder={W.JOB_OWN_HINT} className="min-h-12 min-w-0 flex-1 rounded-lg border-2 border-edge bg-surface px-3 text-base text-ink placeholder:text-ink2 disabled:opacity-60" />
-          <button type="submit" data-job-own-go aria-pressed={job === 'custom'} className={`btn min-h-12 text-base disabled:opacity-60 ${job === 'custom' ? 'border-act bg-actBg' : ''}`} disabled={!customJob(own)}>
+          <input id="job-own" data-job-own value={own} onChange={(e) => setOwn(e.target.value)} maxLength={30} placeholder={W.JOB_OWN_HINT} className="min-h-12 w-full min-w-0 rounded-lg border-2 border-edge bg-surface px-3 text-base text-ink placeholder:text-ink2 disabled:opacity-60 sm:w-auto sm:flex-1" />
+          <button type="submit" data-job-own-go aria-pressed={job === 'custom'} className={`btn min-h-12 w-full text-base disabled:opacity-60 sm:w-auto ${job === 'custom' ? 'border-act bg-actBg' : ''}`} disabled={!customJob(own)}>
             {W.JOB_OWN_GO}
           </button>
         </form>
@@ -782,6 +789,10 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
               ))}
             </div>
             <p className="text-sm text-ink2">{JOB_NOTE}</p>
+            <button data-job-copy className="btn min-h-12 w-full text-base lg:w-auto lg:justify-self-start" onClick={() => void (sfx.ui(), copyText(lines.join('\n')).then((ok) => setJobCopied(ok ? 'ok' : 'fail')))}>
+              {jobCopied === 'ok' ? W.COPIED : W.JOB_COPY}
+            </button>
+            {jobCopied === 'fail' && <p className="text-base text-ng">{W.COPY_FAIL}</p>}
           </div>
         )}
         {err && !busy && <p className="rounded-lg border-2 border-ng bg-ngBg px-3 py-2 text-base">{err}</p>}

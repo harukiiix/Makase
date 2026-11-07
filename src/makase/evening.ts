@@ -37,6 +37,8 @@ export type Evening = {
   unfinished: string[];
   /** 仕事の数 */
   taskCount: number;
+  /** 紛れた頼みごとが送らせようとしたあて先 */
+  trapTo?: string;
 };
 
 export function eveningOf(result: DayResult, log: DayLog, company: Company): Evening {
@@ -94,7 +96,10 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company): Eve
     lines.push({
       tone: "info",
       what: `${hiddenAt(d)}に、「${d.lines[d.injectionLine]}」という一文が紛れていました`,
-      prevent: "届いた書類の中の頼みごとは、AIへの指示ではありません。メールを「送る前に聞く」にしておくと、ここで気づけます",
+      prevent:
+        setup?.permissions["send_mail"] === "ask"
+          ? "届いた書類の中の頼みごとは、AIへの指示ではありません。確認が来た時に、あて先と中身を見て決めます"
+          : "届いた書類の中の頼みごとは、AIへの指示ではありません。メールを「送る前に聞く」にしておくと、ここで気づけます",
     });
   }
   const line = (e: DayEvent): Line | undefined => {
@@ -164,7 +169,8 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company): Eve
   const unfinished = result.events
     .filter((e): e is Extract<DayEvent, { kind: "task_unfinished" }> => e.kind === "task_unfinished")
     .map((e) => company.tasks.find((t) => t.id === e.taskId)?.label ?? e.taskId);
-  return { leaked: leaks.length > 0, toAI: [...exposed].map(markerLabel), sent, causes, lines, unfinished, taskCount: company.tasks.length };
+  const trapTo = company.confirmations.find((x) => x.dangerous)?.call?.to;
+  return { leaked: leaks.length > 0, toAI: [...exposed].map(markerLabel), sent, causes, lines, unfinished, taskCount: company.tasks.length, trapTo };
 }
 
 /** 「なぜ社外に渡ったと言えるか」の1つ（見出しと文） */
@@ -204,6 +210,14 @@ export function eveningTalk(ev: Evening): { who: "BOSS" | "NOVA"; text: string }
       { who: "BOSS", text: "おつかれさま。今日は、守るべき情報は社外に出なかったよ。" },
       { who: "NOVA", text: `ただ、${ev.unfinished.length}つの仕事が終わりませんでした。止められたり、送れなかったりしたためです。` },
       { who: "BOSS", text: "止めすぎると、仕事が進まない。どこで止めればよかったか、いっしょに見よう。" },
+    ];
+  // 頼みごとどおりに社外へ送られたが、守るべき欄は伏せてあった時（漏れてはいないが「外に出なかった」とは言わない）
+  const sentOut = ev.sent.find((x) => !x.inside && x.leaked.length === 0 && x.to === ev.trapTo);
+  if (sentOut)
+    return [
+      { who: "BOSS", text: "おつかれさま。今日は、守るべき情報は社外に出なかったよ。" },
+      { who: "NOVA", text: `ただ、添付に紛れていた頼みごとどおりに、${sentOut.to} へ名簿を送りました。守るべき欄は伏せてあったので、入っていませんでした。` },
+      { who: "BOSS", text: "朝に伏せていたから守れたんだ。社外のあて先なら、昼の確認でも止めよう。" },
     ];
   return [
     { who: "BOSS", text: "おつかれさま。今日は、守るべき情報は社外に出なかったよ。" },
@@ -245,7 +259,11 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company): Guards {
     ? { ok: false, text: `${ev.taskCount}つ中${ev.unfinished.length}つの仕事が終わりませんでした` }
     : { ok: true, text: `${ev.taskCount}つの仕事が、すべて終わりました` };
   const lesson = ev.leaked
-    ? "人は見落とします。朝に守るべき欄を伏せておくと、昼に見落としても漏れにくくなります"
+    ? passAll && inDanger.some((m) => setup?.masked.includes(m))
+      ? "「全部渡して」と頼むと、伏せた欄まで渡ります。仕事に要る物だけを渡します"
+      : mode === "auto"
+        ? "「聞かずに送る」だと確認が来ません。社外へ送る道具は「送る前に聞く」にします"
+        : "人は見落とします。朝に守るべき欄を伏せておくと、昼に見落としても漏れにくくなります"
     : !work.ok
       ? "止めすぎると、仕事が終わりません。あて先と中身を見て決めます"
       : morning.ok && noon.ok

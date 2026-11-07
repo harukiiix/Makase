@@ -223,8 +223,8 @@ export const LESSON: Lesson = {
       ],
       correct: 1,
       why: {
-        ja: 'ファイルを開けなくして、お金を求めるウイルスなんだ。Wi‑Fiを切るかLANケーブルを抜いて、ほかのパソコンに広がらないようにして、すぐ宮下さんに知らせてね。',
-        en: 'This is a virus that locks files and demands money. Turn off the Wi-Fi or unplug the network cable so it does not spread to other PCs, and tell Miyashita right away.',
+        ja: 'ファイルを開けなくして、お金を求めるウイルスなんだ。Wi‑Fiを切るかLANケーブルを抜いて、ほかのパソコンに広がらないようにして、すぐ知らせてね。',
+        en: 'This is a virus that locks files and demands money. Turn off the Wi-Fi or unplug the network cable so it does not spread to other PCs, and tell me right away.',
       },
       wrongWhy: [
         {
