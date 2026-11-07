@@ -1,7 +1,7 @@
 // 合言葉ノート・学び方のしくみ・設定・あそびかた
 import { useEffect, useRef, useState } from 'react'
 import { CASES } from '../game/cases'
-import { ALL_QUESTIONS, LESSONS } from '../game/course'
+import { ALL_QUESTIONS, EXTRA_LESSONS, LESSONS } from '../game/course'
 import { BADGES, type Progress } from '../game/learn'
 import { PRINCIPLES } from '../game/science'
 import type { Lang } from '../game/types'
@@ -73,7 +73,7 @@ export function Notebook({ progress, lang, setLang, onBack }: { progress: Progre
       <section className="grid gap-2">
         <h2 className="text-lg">{t(S.mottos)}</h2>
         <ol className="panel divide-y-2 divide-hair p-0">
-          {LESSONS.map((l) => {
+          {[...LESSONS, ...EXTRA_LESSONS].map((l) => {
             const done = !!progress.lessons[l.id]?.done
             const tips = l.questions.filter((q) => seen.has(q.id))
             return (

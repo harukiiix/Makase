@@ -112,6 +112,19 @@ describe('progress', () => {
     expect(again.gains.bonus.lesson).toBeUndefined()
     expect(again.gains.newFloor).toBe(false)
   })
+  it('the extra lesson (net) gives points but no floor, and does not count toward finishing the five days', () => {
+    const q = tf('net-01', true, 'net')
+    let s = startSession('lesson', [q.id], 'net')
+    s = next(answer(s, q, 0))
+    let p = newProgress()
+    for (const id of ['see', 'gate', 'photo', 'send'] as TopicId[]) p.lessons[id] = { done: true, best: 1 }
+    const r = applySession(p, s, 200, 5)
+    expect(r.gains.newFloor).toBe(false)
+    expect(r.gains.bonus.lesson).toBe(XP.lesson)
+    expect(r.p.lessons.net).toEqual({ done: true, best: 1 })
+    expect(r.gains.badges).not.toContain('allLessons')
+    p = r.p
+  })
   it('streak counts days in a row and resets after a gap', () => {
     const s = startSession('review', [])
     let p = applySession(newProgress(), s, 10, 5).p

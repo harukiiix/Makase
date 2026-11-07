@@ -5,7 +5,7 @@ import { PALETTE } from '../art/palette'
 import { spriteSize } from '../art/raster'
 import { FACE, S, SPEAKER } from '../ui/strings'
 import { CASES } from './cases'
-import { ALL_QUESTIONS, LESSONS } from './course'
+import { ALL_QUESTIONS, EXTRA_LESSONS, LESSONS } from './course'
 import { whyFor } from './learn'
 import { ENDING, PROLOGUE } from './story'
 import type { L10n, Line, Question } from './types'
@@ -104,6 +104,39 @@ describe('lessons', () => {
   it('question ids are unique', () => {
     const ids = ALL_QUESTIONS.map((q) => q.id)
     expect(new Set(ids).size).toBe(ids.length)
+  })
+})
+
+describe('番外のレッスン（スマホとネット）', () => {
+  // 5日分と同じ決まりで確かめる。使わない言葉（BANNED_JA）は、ふつうの言葉で言いかえたので、この日だけ許す言葉もない
+  it('one extra lesson with 7 questions, in the same shape as the five days', () => {
+    expect(EXTRA_LESSONS.map((l) => l.id)).toEqual(['net'])
+    for (const l of EXTRA_LESSONS) {
+      for (const k of ['dayName', 'place', 'title', 'motto'] as const) l10n(`${l.id}.${k}`, l[k], 30)
+      lines(`${l.id}.intro`, l.intro)
+      expect(SPRITES[l.icon], `${l.id}.icon`).toBeTruthy()
+      expect(l.questions.length).toBe(7)
+      l.questions.forEach((q) => {
+        expect(q.topic).toBe(l.id)
+        question(q)
+      })
+      const tf = l.questions.filter((q) => q.kind === 'tf')
+      const mc = l.questions.filter((q) => q.kind === 'mc')
+      expect(tf.length).toBeGreaterThanOrEqual(2)
+      expect(mc.length).toBeGreaterThanOrEqual(2)
+      expect(new Set(tf.map((q) => q.kind === 'tf' && q.answer)).size).toBe(2)
+      expect(new Set(mc.map((q) => q.kind === 'mc' && q.correct)).size).toBeGreaterThanOrEqual(2)
+    }
+  })
+  it('uses one notation and does not overstate (必ず・保証・絶対 など)', () => {
+    const texts = jaTexts('EXTRA_LESSONS', EXTRA_LESSONS)
+    for (const [where, ja] of texts) {
+      expect(OFF_STYLE_JA.test(ja), `${where}: ${ja}`).toBe(false)
+      expect(/保証|絶対|必ず防げ|100%|完全に/.test(ja), `${where}: ${ja}`).toBe(false)
+    }
+  })
+  it('is not part of the five days or the final test', () => {
+    expect(LESSONS.some((l) => l.id === 'net')).toBe(false)
   })
 })
 

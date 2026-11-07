@@ -45,6 +45,7 @@ export const S = {
   buildingDoneSub: L('まとめテストに合格しました。', 'You passed the final test.'),
   best: (p: number) => L(`1回で正解 ${p}%`, `${p}% right first time`),
   lockedAfter: (prev: string) => L(`${prev}を終えると開きます`, `Finish ${prev}'s lesson to unlock`),
+  extraSub: L('番外・いつでも遊べます（7問）', 'Extra day · play any time (7 questions)'),
   finalTest: L('まとめテスト', 'Final test'),
   finalWhy: L('5日分から、まぜて10問。8問正解で合格です', '10 questions mixed from all five days. Get 8 right to pass.'),
   finalLocked: L('5日分を全部終えると開きます', 'Finish all five lessons to unlock'),

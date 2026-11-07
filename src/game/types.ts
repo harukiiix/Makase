@@ -15,7 +15,8 @@ export interface L10n {
 export type Who = 'BOSS' | 'YOU' | 'GUARD' | 'KIMURA' | 'SAWA' | 'STRANGER' | 'CLIENT' | 'NOVA' | 'SYS'
 
 /** レッスンの話題（1日に1つ） */
-export type TopicId = 'see' | 'gate' | 'photo' | 'send' | 'outside'
+/** 話題（1日に1つ）。net は番外の1日（5日間の見回りには数えない） */
+export type TopicId = 'see' | 'gate' | 'photo' | 'send' | 'outside' | 'net'
 
 /** 会話の1行 */
 export interface Line {

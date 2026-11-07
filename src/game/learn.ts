@@ -184,6 +184,9 @@ export interface Gains {
   accuracy: number
 }
 
+/** 番外の1日（5日間の見回りに数えない。建物の階も増えない） */
+export const EXTRA_TOPICS: ReadonlySet<TopicId> = new Set<TopicId>(['net'])
+
 /** 1回分が終わった時に、進み具合へ反映する */
 export function applySession(p: Progress, s: Session, today: number, lessonCount: number): { p: Progress; gains: Gains } {
   const ids = Object.keys(s.firstTry)
@@ -200,7 +203,7 @@ export function applySession(p: Progress, s: Session, today: number, lessonCount
     const prev = lessons[s.lesson]
     if (!prev?.done) {
       bonus.lesson = XP.lesson
-      newFloor = true
+      newFloor = !EXTRA_TOPICS.has(s.lesson)
     }
     if (accuracy === 1 && !(prev && prev.best === 1)) bonus.perfect = XP.perfect
     lessons[s.lesson] = { done: true, best: Math.max(prev?.best ?? 0, accuracy) }
@@ -251,7 +254,7 @@ function badgesOf(p: Progress, s: Session, accuracy: number, lessonCount: number
   if (p.streak >= 3) out.push('streak3')
   if (p.streak >= 7) out.push('streak7')
   if (p.reviews >= 10) out.push('review10')
-  if (Object.values(p.lessons).filter((l) => l?.done).length >= lessonCount) out.push('allLessons')
+  if (Object.entries(p.lessons).filter(([id, l]) => l?.done && !EXTRA_TOPICS.has(id as TopicId)).length >= lessonCount) out.push('allLessons')
   if (p.finalBest !== null && p.finalBest >= PASS) out.push('graduate')
   if (p.aiAsks > 0) out.push('askAI')
   return out

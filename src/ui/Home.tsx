@@ -5,7 +5,7 @@
 //   横か下：自分の階級・ポイント・続けた日数、のびていく建物
 // ============================================================
 import { useEffect, useState } from 'react'
-import { LESSONS, lessonOf, questionOf } from '../game/course'
+import { EXTRA_LESSONS, LESSONS, lessonOf, questionOf } from '../game/course'
 import { DAY_CARD_EYEBROW, DAY_CARD_GO, DAY_CARD_NOTE, DAY_CARD_TEXT, DAY_EN, DAY_SUB, DAY_TITLE } from '../makase/words'
 import { dayNumber, dueIds, lessonOpen, PASS, rankOf, weakTopic, type Progress } from '../game/learn'
 import type { Lang, TopicId } from '../game/types'
@@ -190,6 +190,26 @@ export function Home(p: {
                   </span>
                 </button>
               </li>
+              {/* 番外の1日（最初から遊べる。5日間とまとめテストには数えない） */}
+              {EXTRA_LESSONS.map((l) => {
+                const st = pr.lessons[l.id]
+                return (
+                  <li key={l.id}>
+                    <button data-lesson={l.id} onClick={go(() => p.onLesson(l.id))} className="flex w-full items-center gap-3 px-3 py-2.5 text-left enabled:hover:bg-surface2">
+                      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg font-pixel text-2xl ${st?.done ? 'bg-ok text-surface' : 'bg-ink text-surface'}`} aria-hidden>
+                        {dayTile(t(l.dayName))}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-lg font-bold leading-snug">{t(l.title)}</span>
+                        <span className="block text-sm text-ink2">{st?.done ? t(S.best(Math.round(st.best * 100))) : t(S.extraSub)}</span>
+                      </span>
+                      <span className="shrink-0" aria-hidden>
+                        {st?.done ? <Art id="icon.check" scale={2} /> : null}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
               {p.onNova && (
                 <li>
                   <button data-nova onClick={go(p.onNova)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left enabled:hover:bg-surface2">
