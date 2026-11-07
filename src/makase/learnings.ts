@@ -188,7 +188,7 @@ function idea(id: IdeaId, f: DayFacts, lang: Lang): Idea {
         today: f.overridden
           ? t(
               `今日は${oh.verb(list(f.over, lang))}いましたが、「全部渡して」と頼んだので、それも現場AIに渡りました。${f.restRisky.length ? `${list(f.restRisky, lang)}は、そのまま渡しました。` : ""}`,
-              `Today you ${oh.verb(fieldList(f.over, lang))}, but because you gave it the whole roster, ${f.over.length > 1 ? "they" : "it"} still reached the Site AI.${f.restRisky.length ? ` You handed over ${list(f.restRisky, lang)} as is.` : ""}`,
+              `Today you ${oh.verb(fieldList(f.over, lang))}, but because you gave the Site AI the whole roster, ${fieldList(f.over, lang)} still reached it.${f.restRisky.length ? ` You handed over ${list(f.restRisky, lang)} as is.` : ""}`,
             )
           : t(`今日は、${list(f.risky, lang)}を伏せずに渡しました。`, `Today you handed over ${list(f.risky, lang)} without masking.`),
         use: t("チャットのAIに名簿や書類を貼る時も同じです。貼る前に、要らない列を消します。", "The same goes for pasting a roster or a document into a chat AI. Delete the columns you don't need first."),
@@ -375,9 +375,9 @@ export function storyOf(f: DayFacts, lang: Lang = "ja"): StoryCard[] {
         : f.mail === "auto"
           ? t("メールは、あなたに確認しないまま送られる状態でした。", "Email could be sent without checking with you.")
           : f.mail === "deny"
-            ? t("メールは送れない状態でした。メールを使う仕事も止まります。", "Email couldn't be sent at all. Work that uses email stops too.")
+            ? t("メールは送れない状態でした。メールを使う仕事も止まりました。", "Email couldn't be sent at all, so work that uses email stopped too.")
             : t("メールは、送る前に1件ずつ、あなたに確認が来る状態でした。", "Each email would come to you for a check before it was sent."),
-      f.chat === "deny" ? t("現場チャットは、投稿できない状態でした。チャットに出す日報も止まります。", "The site chat couldn't be posted to, so the daily report stops too.") : "",
+      f.chat === "deny" ? t("現場チャットは、投稿できない状態でした。チャットに出す日報も止まりました。", "The site chat couldn't be posted to, so the daily report stopped too.") : "",
     ]
       .filter(Boolean)
       .join(t("", " ")),
@@ -523,12 +523,12 @@ export function takeHome(f: DayFacts, lang: Lang = "ja"): TakeHome {
       f.overridden
         ? t(
             `今日、${list(f.over, lang)}を${f.overHide === "drop" ? "渡さないにして" : f.overHide === "both" ? "伏せるか渡さないにして" : "伏せて"}も、「全部渡して」の指示で渡ったため${f.restRisky.length ? `（${list(f.restRisky, lang)}は、そのまま渡しました）` : ""}`,
-            `Because today, even though you ${oh.verb(fieldList(f.over, lang))}, giving it the whole roster sent ${f.over.length > 1 ? "them" : "it"} anyway${f.restRisky.length ? ` (you handed over ${list(f.restRisky, lang)} as is)` : ""}`,
+            `Because today, even though you ${oh.verb(fieldList(f.over, lang))}, giving the Site AI the whole roster sent ${fieldList(f.over, lang)} anyway${f.restRisky.length ? ` (you handed over ${list(f.restRisky, lang)} as is)` : ""}`,
           )
         : t(`今日、${list(f.risky, lang)}を伏せずに渡したため`, `Because today you handed over ${list(f.risky, lang)} without masking`),
     );
   if (f.order.kind === "pass_all")
-    add("only", f.overridden ? t(`今日、「全部渡して」と頼んで、${oh.ta}${list(f.over, lang)}まで渡ったため`, `Because today you gave it the whole roster, and even ${fieldList(f.over, lang)}, which you ${oh.ta}, went`) : t("今日、「全部渡して」と頼んで、名簿がまるごと渡ったため", 'Because today you gave it the whole roster, and the whole roster went'));
+    add("only", f.overridden ? t(`今日、「全部渡して」と頼んで、${oh.ta}${list(f.over, lang)}まで渡ったため`, `Because today you gave it the whole roster, and even ${fieldList(f.over, lang)}, which you ${oh.ta}, reached the Site AI`) : t("今日、「全部渡して」と頼んで、仕事に要らない電話番号や血圧まで渡ったため", "Because today you gave it the whole roster, so the phone numbers and blood pressure, which the work doesn't need, went to the Site AI too"));
   if (f.danger === "allowed" || f.danger === "auto")
     add("inject", f.leaked ? t("今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため", "Because today the roster was sent outside, as the request hidden in the attachment said") : t(`今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため（${list(f.hidden, lang)}は入っていませんでした）`, `Because today the roster was sent outside, as the hidden request said (${fieldList(f.hidden, lang)} ${f.hidden.length > 1 ? "weren't" : "wasn't"} in it)`));
   if (f.causes.missing) add("missing", t(`今日、仕事に要る${fieldList(f.missing, lang)}を渡さず、仕事が止まったため`, `Because today you didn't hand over ${fieldList(f.missing, lang)}, and the work stopped`));

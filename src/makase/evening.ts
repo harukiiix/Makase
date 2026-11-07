@@ -324,7 +324,7 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
         ok: false,
         text:
           overridden
-            ? t(`「全部渡して」と頼んだので、${overWord}欄まで渡りました`, `You said "I'm giving you the whole roster", so even the fields you ${overWord} went`)
+            ? t(`「全部渡して」と頼んだので、${overWord}欄まで渡りました`, `You said "I'm giving you the whole roster", so even the fields you ${overWord} went to the Site AI`)
             : t(`${label(open)}を、そのまま渡しました`, `You handed over ${label(open)} as is`),
       }
     : { ok: true, text: t(`${label(inDanger)}を、伏せるか渡さないにしました`, `You masked or left out ${label(inDanger)}`) };
@@ -359,7 +359,9 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
           ? t(`朝に${label(inDanger)}を${hideTe}おいたので、確認が来ないまま送られても漏れませんでした。送る道具は「送る前に聞く」にします`, `You ${hideTe} ${label(inDanger)} in the morning, so nothing leaked even though the roster was sent with no check. Set tools that send to "Ask before sending"`)
           : morning.ok
           ? t(`朝に${label(inDanger)}を${hideTe}おいたので、昼に許可しても漏れませんでした`, `You ${hideTe} ${label(inDanger)} in the morning, so allowing the send at noon didn't leak anything`)
-          : t("昼の確認で止められました。見落とすと漏れるので、朝に伏せておくと安心です", "You caught it at the noon check. If you had missed it, the data would have leaked, so mask the fields in the morning too");
+          : overridden
+            ? t(`昼の確認で止められました。「全部渡して」と頼むと${overWord}欄まで渡るので、仕事に要る物だけを渡す頼み方にします`, `You caught it at the noon check. Giving it the whole roster sent even the fields you ${overWord}, so ask it to use only what the work needs`)
+            : t("昼の確認で止められました。見落とすと漏れるので、朝に伏せておくと安心です", "You caught it at the noon check. If you had missed it, the data would have leaked, so mask the fields in the morning too");
   const mail = company.incoming.find((d) => d.injectionLine !== undefined);
   const trap = mail
     ? t(`${hiddenAt(mail)}に、名簿を社外の ${danger.call?.to} へ送らせる一文が、小さく紛れていました`, `At ${hiddenAt(mail, lang)}, a line in small print asked for the roster to be sent to ${danger.call?.to}, outside the company`)

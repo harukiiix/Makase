@@ -345,3 +345,36 @@ describe("2回目の見直しで見つかった所", () => {
       }
   });
 });
+
+describe("3回目の見直しで見つかった所", () => {
+  const F = (phone: "mask" | "drop" | "pass", health: "mask" | "drop" | "pass", drawing: "mask" | "drop" | "pass") =>
+    Object.fromEntries(MORNING_FIELDS.map((f) => [fieldKey(f), f.field === "電話番号" ? phone : f.field === "図面番号" ? drawing : health]));
+  const P = (p: Partial<MorningPicks>) => ({ ...none, ...p }) as MorningPicks;
+  const stopDanger = (d: boolean): Answer => (d ? "stop" : "allow");
+  const texts = (w: ReturnType<typeof play>, lang: "ja" | "en" = "ja") => {
+    const f = dayFacts(w.picks, w.log, w.result, c);
+    const g = guardsOf(eveningOf(w.result, w.log, c, lang), w.log, c, lang);
+    return [g.morning.text, g.noon.text, g.work.text, g.lesson, ...ideasOf(f, lang).flatMap((i) => [i.today, i.use]), ...storyOf(f, lang).flatMap((s) => [s.did, s.happened, s.next ?? ""]), ...takeHome(f, lang).rules.map((r) => r.because)];
+  };
+  it("「全部渡して」で伏せた欄まで渡り、昼に止めた時、夕方の覚えることで「朝に伏せておくと」と言わない", () => {
+    const w = play(P({ fields: F("mask", "mask", "pass"), nova: "nova-all" }), stopDanger);
+    expect(texts(w)[3]).not.toContain("朝に伏せておくと");
+    expect(texts(w)[3]).toContain("全部渡して");
+    expect(texts(w, "en")[3]).not.toContain("mask the fields in the morning too");
+  });
+  it("英語：電話番号（複数）を it で受けない、went で終わらない、同じことのくり返しにしない、時制をそろえる", () => {
+    const plays = [
+      play(P({ fields: F("mask", "pass", "pass"), nova: "nova-all" }), () => "allow"),
+      play(P({ fields: F("mask", "mask", "pass"), nova: "nova-all" }), () => "allow"),
+      play(P({ fields: F("pass", "pass", "pass"), nova: "nova-all" }), () => "allow"),
+      play(P({ tools: { send_mail: "deny", post_chat: "deny" }, nova: "nova-careful" }), () => "allow"),
+    ];
+    for (const w of plays)
+      for (const s of texts(w, "en")) {
+        expect(s, s).not.toMatch(/phone numbers[^.]*\bit (still|anyway)|sent it anyway/);
+        expect(s, s).not.toMatch(/ went$/);
+        expect(s, s).not.toMatch(/whole roster, and the whole roster/);
+        expect(s, s).not.toMatch(/couldn't[^.]*\. [^.]*stops too/);
+      }
+  });
+});
