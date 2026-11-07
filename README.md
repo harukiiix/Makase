@@ -15,7 +15,7 @@
 
 AI で個人開発もしています。いちばん怖かったのは、「AI が作ったものを公開していいか、自分では判断できない」ことでした。情報がもれるのが怖くて、AI を安心して使えませんでした。
 
-そこで、架空のネット雑貨店の注文ページを Claude に何十回も作らせ、隔離環境で実際にテストしました（2026-11-03、[実験の記録](https://github.com/harukiiix/leakquest/blob/feat/rebuild/docs/experiment.md)）。
+そこで、架空のネット雑貨店の注文ページを Claude に何十回も作らせ、隔離環境で実際にテストしました（2026-11-03。記録は前のリポジトリ leakquest の docs/experiment.md にあります。leakquest は非公開です）。
 
 - あいまいな依頼だけでは、Claude Opus 5.5 は他人の情報が見えるコードを書かなかった（0/10）
 - 「エラーで動かない。**とりあえずログインチェックなしで**」と頼むと、Claude Opus 5.5 は15回中9回、別のお客さんに住所などの個人情報が見えた。記録を見られる1回目の3件では、どれも AI は返事の中に危険を知らせる文を書いていた
@@ -57,7 +57,7 @@ Makase は、次のような場面で使えるように作りました。
 
 ## 企画と試行錯誤の跡
 
-最初の案から何度も形を変えました。決めたことと理由は、leakquest の [HANDOFF.md](https://github.com/harukiiix/leakquest/blob/feat/rebuild/HANDOFF.md) と [SPEC.md](https://github.com/harukiiix/leakquest/blob/feat/rebuild/SPEC.md) に残っています。
+最初の案から何度も形を変えました。決めたことと理由は、前のリポジトリ leakquest（非公開）の HANDOFF.md と SPEC.md に残っています。
 
 1. **パズル（11-03、このリポジトリ）**：AI エージェントを題材にした、ドット絵のパズル（Security Incident Theater）から始めました
 2. **画面より先に実験（11-03、leakquest）**：本物の Claude で漏洩実験をしました。「あいまいな指示だと漏れる」という最初の仮説は成り立たず、「とりあえず」の一言に方向を直しました。パズルも移しましたが、「プログラムを読めない人が自分で危険を見つける」ことに絞るため、画面から外しました
@@ -75,7 +75,7 @@ Makase は、次のような場面で使えるように作りました。
 
 ## 作り方の流れ
 
-記録（コミットの日時、このリポジトリの PROGRESS.md、leakquest の HANDOFF.md・SPEC.md・docs/experiment.md）で確かめられることを書きました。記録に残っていないことは「（作者の説明）」と書いています。時刻は日本時間です。
+記録（コミットの日時、このリポジトリの PROGRESS.md、leakquest の HANDOFF.md・SPEC.md・docs/experiment.md）で確かめられることを書きました。leakquest は非公開なので、そちらの記録は外からは見られません。記録に残っていないことは「（作者の説明）」と書いています。時刻は日本時間です。
 
 ### Claude の使い分け
 
@@ -178,7 +178,7 @@ Makase は、次のような場面で使えるように作りました。
 ## ハッカソンの期間中に作ったもの
 
 - このリポジトリのコードは、すべてハッカソンの期間（2026-11-02〜11-08）に作りました。最初のコミットは日本時間 2026-11-03 6:43 です
-- 最後の日の判定・建設現場のデータ・開発の守りのフックは、同じ期間中に作った別のリポジトリ [leakquest](https://github.com/harukiiix/leakquest)（ブランチ feat/rebuild、作品名 Makase）から移しました。移した物は `src/makase/`、`src/devguard/`、`.claude/hooks/` にあります
+- 最後の日の判定・建設現場のデータ・開発の守りのフックは、同じ期間中に作った別のリポジトリ leakquest（非公開。ブランチ feat/rebuild、作品名 Makase）から移しました。移した物は `src/makase/`、`src/devguard/`、`.claude/hooks/` にあります
 
 ## 数字の言い方
 
