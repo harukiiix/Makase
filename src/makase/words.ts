@@ -1,4 +1,4 @@
-// 最後の日「AIの事務員に頼む練習」の画面の言葉とせりふ（日本語を先に作る。英語は後で足す）
+// 最後の日「AIの事務員に頼む練習」の画面の言葉とせりふ（英語は words.en.ts。同じ名前をそろえる）
 // 言葉は現場の言葉にする：「権限」「アクセス」などは使わず、「送る前に聞く」のように言う
 import type { FieldChoice } from "./day";
 import type { Permission } from "./types";
@@ -120,12 +120,12 @@ export const DAY_CARD_EYEBROW = "最後の日（約3分）";
 export const DAY_CARD_TEXT = "会社が事務所に入れたAIの事務員「現場AI」に、名簿や図面の仕事を頼みます。何を渡し、何を送らせるかを決めて、1日を見届けます。";
 export const DAY_CARD_NOTE = "台本で動く練習です。本物のAIは動きません。5日を終えていなくても遊べます。";
 export const DAY_CARD_GO = "やってみる";
-/** 英語の画面のホームで出す、最後の日の名前と説明（最後の日の中身は、いまは日本語だけ） */
+/** 英語の画面のホームで出す、最後の日の名前と説明 */
 export const DAY_EN = {
   title: "Asking the AI clerk",
-  sub: "Final day · scripted practice, no real AI (Japanese only for now)",
+  sub: "Final day · scripted practice (no real AI runs)",
   eyebrow: "Final day (about 3 min)",
   text: "Give work to the Site AI, the AI clerk the company put in the site office. Decide what it may see and send, then watch the day play out.",
-  note: "Scripted practice. No real AI runs. You can play it before finishing the five days. This day is in Japanese only for now.",
+  note: "Scripted practice. No real AI runs. You can play it before finishing the five days.",
   go: "Try it",
 };

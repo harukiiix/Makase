@@ -4,18 +4,20 @@
 //   昼は、答えのあとに わけ を出さない（慣れて押してしまう体験のため）。わけは夕方にまとめて出す。
 //   漏れたかどうかは judgeDay の結果だけで決める（夕方の中身は src/makase/evening.ts）
 // ============================================================
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { oneLine } from '../makase/carry'
 import { COMPANY as C, dayLog, fieldKey, MORNING_FIELDS, MORNING_TOOLS, noonSteps, type FieldChoice, type MorningPicks } from '../makase/day'
 import { eveningOf, eveningTalk, guardsOf, whyOutside, type Guard, type Guards } from '../makase/evening'
 import { judgeDay } from '../makase/judge'
 import { todayOf } from '../makase/takeaway'
-import { JOBS, JOB_NOTE, cleanJobLines, customJob, jobPrompt, type Job } from '../makase/jobLine'
+import { JOBS, JOB_NOTE, JOB_NOTE_EN, cleanJobLines, customJob, jobLabel, jobPrompt, type Job } from '../makase/jobLine'
 import { aiOff, CLAUDE_AI_URL, errorKind, getAI, onClaudeAi, type SampleFn } from '../lib/ai'
 import { S } from './strings'
 import { useAiBudget } from './aiBudget'
 import type { Answer, Permission } from '../makase/types'
-import * as W from '../makase/words'
+import * as WJA from '../makase/words'
+import * as WEN from '../makase/words.en'
+import { tr } from '../makase/en'
 import type { Lang } from '../game/types'
 import { sfx } from '../lib/platform'
 import { Art } from './Art'
@@ -25,9 +27,15 @@ import { phrase } from './i18n'
 
 type Phase = 'intro' | 'mail' | 'morning' | 'noon' | 'talk' | 'evening' | 'take'
 const wrap = 'mx-auto w-full max-w-xl px-4 lg:max-w-6xl lg:px-10'
-const both = (s: string) => ({ ja: s, en: s })
 /** 新しいカードが出た直後の押しを捨てる（前のカードの2回押しで、次のカードに答えない） */
 const FRESH_MS = 350
+
+/** 最後の日の言葉（日本語・英語）。画面の部品は useNW で受け取る */
+const LangCtx = createContext<Lang>('ja')
+function useNW() {
+  const lang = useContext(LangCtx)
+  return { lang, W: lang === 'en' ? WEN : WJA, T: (x: string) => tr(x, lang) }
+}
 
 export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'normal' | 'fast' | 'instant'; onQuit: () => void; onDone: (leaked: boolean) => void }) {
   const [phase, setPhase] = useState<Phase>('intro')
@@ -36,6 +44,7 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
   const [answers, setAnswers] = useState<Record<string, Answer>>({})
   const [quit, setQuit] = useState(false)
   const [nonce, setNonce] = useState(0)
+  const W = p.lang === 'en' ? WEN : WJA
 
   const restart = () => {
     setPicks({ fields: {}, tools: {} })
@@ -45,13 +54,17 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
     setNonce((n) => n + 1)
   }
 
-  if (phase === 'intro') return <Talk key="intro" beats={W.INTRO.map((l) => ({ who: l.who, t: both(l.text) }))} header={W.DAY_TITLE} speed={p.speed} onDone={() => setPhase('mail')} />
+  if (phase === 'intro') return <Talk key="intro" beats={WJA.INTRO.map((l, i) => ({ who: l.who, t: { ja: l.text, en: WEN.INTRO[i].text } }))} header={W.DAY_TITLE} speed={p.speed} onDone={() => setPhase('mail')} />
 
   const log = phase === 'talk' || phase === 'evening' || phase === 'take' ? dayLog(picks, answers) : null
   const result = log ? judgeDay(log, C) : null
-  const ev = log && result ? eveningOf(result, log, C) : null
+  const ev = log && result ? eveningOf(result, log, C, p.lang) : null
 
-  if (phase === 'talk' && ev) return <Talk key="evening" beats={eveningTalk(ev).map((l) => ({ who: l.who, t: both(l.text) }))} header={`${W.DAY_TITLE}・${W.EVENING}`} speed={p.speed} onDone={() => setPhase('evening')} />
+  if (phase === 'talk' && ev) {
+    const ja = eveningTalk(eveningOf(result!, log!, C), 'ja')
+    const en = eveningTalk(eveningOf(result!, log!, C, 'en'), 'en')
+    return <Talk key="evening" beats={ja.map((l, i) => ({ who: l.who, t: { ja: l.text, en: en[i]?.text ?? l.text } }))} header={`${W.DAY_TITLE}${p.lang === 'en' ? ' · ' : '・'}${W.EVENING}`} speed={p.speed} onDone={() => setPhase('evening')} />
+  }
 
   const morningSteps = MORNING_FIELDS.length + MORNING_TOOLS.length + 1
   const progress = phase === 'mail' ? { label: W.MORNING, n: 0, of: morningSteps } : phase === 'morning' ? { label: W.MORNING, n: step, of: morningSteps } : phase === 'noon' ? { label: W.NOON, n: 1, of: 1 } : { label: W.EVENING, n: 1, of: 1 }
@@ -64,6 +77,7 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
   }
 
   return (
+    <LangCtx.Provider value={p.lang}>
     <div className="flex h-dvh flex-col" key={nonce}>
       <header className="border-b-2 border-hair py-2">
         <div className={`${wrap} flex items-center gap-3`}>
@@ -95,7 +109,7 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
         />
       )}
       {phase === 'noon' && <Noon picks={picks} onDone={(a) => (setAnswers(a), setPhase('talk'))} />}
-      {phase === 'evening' && ev && log && <EveningList ev={ev} guards={guardsOf(ev, log, C)} onNext={() => setPhase('take')} />}
+      {phase === 'evening' && ev && log && <EveningList ev={ev} guards={guardsOf(ev, log, C, p.lang)} onNext={() => setPhase('take')} />}
       {phase === 'take' && log && result && <Takeaway today={todayOf(result, log, C)} onAgain={restart} onHome={() => p.onDone(ev?.leaked ?? false)} />}
 
       {quit && (
@@ -117,6 +131,7 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
         </Sheet>
       )}
     </div>
+    </LangCtx.Provider>
   )
 }
 
@@ -203,6 +218,7 @@ function Layout({ children, face, footer, phoneFaceInBoard }: { children: React.
 
 // ---------------- けさのメール ----------------
 function Mail({ onNext }: { onNext: () => void }) {
+  const { W } = useNW()
   return (
     <Layout
       face="face.boss"
@@ -223,23 +239,28 @@ function Mail({ onNext }: { onNext: () => void }) {
 
 /** メール1通。添付があれば、開くまで中身は見えない（現場AIは、開かなくても添付まで読む） */
 function MailItem({ m }: { m: (typeof C.incoming)[number] }) {
+  const { W, lang, T } = useNW()
   const [open, setOpen] = useState(false)
   const body = m.attachFrom === undefined ? m.lines : m.lines.slice(0, m.attachFrom)
   const attach = m.attachFrom === undefined ? [] : m.lines.slice(m.attachFrom)
   return (
     <Board label={W.MAIL_HEAD} compact>
-      <p className="font-bold">{m.title}</p>
+      <p className="font-bold">{T(m.title)}</p>
       <p className="text-base text-chalk2">{m.from}</p>
       {body.map((l, i) => (
         <p key={i} className="mt-1">
-          {l}
+          {T(l)}
         </p>
       ))}
       {m.attachment && (
         <div className="mt-2 rounded-md border-2 border-chalk2 bg-chalk2/25 px-3 py-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-base">
-              📎 {W.ATTACH}：{m.attachment}・{W.attachPages(attach.filter((l) => /ページ/.test(l)).length)}
+              📎 {W.ATTACH}
+              {lang === 'en' ? ': ' : '：'}
+              {T(m.attachment)}
+              {lang === 'en' ? ' · ' : '・'}
+              {W.attachPages(attach.filter((l) => /ページ/.test(l)).length)}
             </span>
             <button data-attach aria-expanded={open} className="rounded-md border-2 border-chalk px-3 py-1 text-base font-bold text-chalk" onClick={() => (sfx.ui(), setOpen((v) => !v))}>
               {open ? W.ATTACH_CLOSE : W.ATTACH_OPEN}
@@ -251,7 +272,7 @@ function MailItem({ m }: { m: (typeof C.incoming)[number] }) {
                 const small = m.attachFrom! + i === m.injectionLine
                 return (
                   <p key={i} className={small ? 'mt-2 text-sm leading-snug text-chalk' : 'text-base'}>
-                    {l}
+                    {T(l)}
                   </p>
                 )
               })}
@@ -265,6 +286,8 @@ function MailItem({ m }: { m: (typeof C.incoming)[number] }) {
 
 // ---------------- 朝（1画面に1つ） ----------------
 function Morning({ step, picks, onPick }: { step: number; picks: MorningPicks; onPick: (p: MorningPicks) => void }) {
+  const { W, lang, T } = useNW()
+  const quote = (x: string) => (lang === 'en' ? `"${x}"` : `「${x}」`)
   const lock = useRef(false)
   useEffect(() => {
     lock.current = false
@@ -283,7 +306,7 @@ function Morning({ step, picks, onPick }: { step: number; picks: MorningPicks; o
     const cur = picks.fields[fieldKey(f)]
     return (
       <Layout key={step} phoneFaceInBoard>
-        <Board face="face.nova" label={`${W.MORNING} ${step + 1}`}>{W.fieldBoard(doc.title, field.label, field.value)}</Board>
+        <Board face="face.nova" label={`${W.MORNING} ${step + 1}`}>{W.fieldBoard(T(doc.title), T(field.label), T(field.value))}</Board>
         <Ask>{W.FIELD_ASK}</Ask>
         <div className="mt-auto grid gap-3 pt-2 lg:mt-0 lg:pt-0">
           {W.FIELD_CHOICES.map((c, i) => (
@@ -315,7 +338,7 @@ function Morning({ step, picks, onPick }: { step: number; picks: MorningPicks; o
       <Ask>{W.ORDER_ASK}</Ask>
       <div className="mt-auto grid gap-3 pt-2 lg:mt-0 lg:pt-0">
         {orders.map((o, i) => (
-          <Pick key={o.id} n={i + 1} label={`「${o.text}」`} chosen={picks.nova === o.id} onClick={() => choose({ ...picks, nova: o.id })} />
+          <Pick key={o.id} n={i + 1} label={quote(T(o.text))} chosen={picks.nova === o.id} onClick={() => choose({ ...picks, nova: o.id })} />
         ))}
       </div>
     </Layout>
@@ -324,6 +347,8 @@ function Morning({ step, picks, onPick }: { step: number; picks: MorningPicks; o
 
 // ---------------- 昼（確認のカード。わけは出さない） ----------------
 function Noon({ picks, onDone }: { picks: MorningPicks; onDone: (a: Record<string, Answer>) => void }) {
+  const { W, lang, T } = useNW()
+  const sep = lang === 'en' ? ': ' : '：'
   const steps = useMemo(() => noonSteps(picks), [picks])
   const [answers, setAnswers] = useState<Record<string, Answer>>({})
   const cur = steps.findIndex((s) => s.mode === 'ask' && !answers[s.conf.id])
@@ -336,8 +361,8 @@ function Noon({ picks, onDone }: { picks: MorningPicks; onDone: (a: Record<strin
     shownAt.current = performance.now()
     endRef.current?.scrollIntoView({ block: 'end' })
   }, [cur])
-  const emp = (id: string) => C.employees.find((e) => e.id === id)!
-  const tool = (id?: string) => C.tools.find((t) => t.id === id)?.label ?? ''
+  const emp = (id: string) => ({ name: T(C.employees.find((e) => e.id === id)!.name) })
+  const tool = (id?: string) => T(C.tools.find((t) => t.id === id)?.label ?? '')
   const answer = (a: Answer) => {
     if (done || performance.now() - shownAt.current < FRESH_MS) return
     sfx.ui()
@@ -363,7 +388,7 @@ function Noon({ picks, onDone }: { picks: MorningPicks; onDone: (a: Record<strin
             <ol className="grid gap-1.5" aria-label={W.NOON}>
               {shown.map((s) => (
                 <li key={s.conf.id} className="rounded-md bg-surface2 px-3 py-1.5 text-sm text-ink2">
-                  {s.mode === 'blocked' ? W.blockedLine(emp(s.conf.employeeId).name, tool(s.conf.call?.tool)) : s.mode === 'auto' ? W.autoLine(emp(s.conf.employeeId).name, tool(s.conf.call?.tool), s.content ?? '', s.to) : `${emp(s.conf.employeeId).name}：${s.conf.text}　→ ${answers[s.conf.id] === 'allow' ? W.ALLOW : W.STOP}`}
+                  {s.mode === 'blocked' ? W.blockedLine(emp(s.conf.employeeId).name, tool(s.conf.call?.tool)) : s.mode === 'auto' ? W.autoLine(emp(s.conf.employeeId).name, tool(s.conf.call?.tool), T(s.content ?? ''), s.to) : `${emp(s.conf.employeeId).name}${sep}${T(s.conf.text)}${lang === 'en' ? '  → ' : '　→ '}${answers[s.conf.id] === 'allow' ? W.ALLOW : W.STOP}`}
                 </li>
               ))}
             </ol>
@@ -379,17 +404,17 @@ function Noon({ picks, onDone }: { picks: MorningPicks; onDone: (a: Record<strin
                   <p className="text-sm text-ink2">{tool(card.conf.call?.tool)}</p>
                 </div>
               </div>
-              <h2 className="text-xl leading-snug lg:text-2xl">{phrase(card.conf.text)}</h2>
+              <h2 className="text-xl leading-snug lg:text-2xl">{phrase(T(card.conf.text))}</h2>
               <dl className="grid gap-1 rounded-md border-2 border-hair p-3 text-base">
                 {card.to && (
                   <div className="flex gap-3">
-                    <dt className="w-16 shrink-0 text-ink2">{W.TO}</dt>
+                    <dt className="w-20 shrink-0 text-ink2">{W.TO}</dt>
                     <dd className="min-w-0 break-all">{card.to}</dd>
                   </div>
                 )}
                 <div className="flex gap-3">
-                  <dt className="w-16 shrink-0 text-ink2">{W.CONTENT}</dt>
-                  <dd className="min-w-0 break-all">{card.content}</dd>
+                  <dt className="w-20 shrink-0 text-ink2">{W.CONTENT}</dt>
+                  <dd className="min-w-0 [overflow-wrap:anywhere]">{T(card.content ?? '')}</dd>
                 </div>
               </dl>
             </section>
@@ -423,6 +448,7 @@ function Noon({ picks, onDone }: { picks: MorningPicks; onDone: (a: Record<strin
 
 // ---------------- 夕方（何が、だれに渡ったか） ----------------
 function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>; guards: Guards; onNext: () => void }) {
+  const { W, lang } = useNW()
   const [more, setMore] = useState(false)
   const leakedSend = ev.sent.find((x) => x.leaked.length > 0)
   return (
@@ -437,8 +463,11 @@ function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>;
             </h1>
             {leakedSend && (
               <p className="text-lg leading-snug">
-                <span className="text-ink2">{W.LEAKED_TO}：</span>
-                <span className="font-bold">{leakedSend.leaked.join('・')}</span>
+                <span className="text-ink2">
+                  {W.LEAKED_TO}
+                  {lang === 'en' ? ': ' : '：'}
+                </span>
+                <span className="font-bold">{leakedSend.leaked.join(lang === 'en' ? ', ' : '・')}</span>
                 <span className="mx-1">→</span>
                 <span className="break-all font-bold">{leakedSend.to}</span>
               </p>
@@ -450,7 +479,7 @@ function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>;
             <section data-why-outside className="rounded-xl border-2 border-line bg-surface px-4 py-3">
               <h2 className="text-lg font-bold">{W.WHY_OUTSIDE}</h2>
               <dl className="mt-2 grid gap-2">
-                {whyOutside(ev, C).map((w) => (
+                {whyOutside(ev, C, lang).map((w) => (
                   <div key={w.head} className="grid gap-0.5 lg:grid-cols-[4.5rem_1fr] lg:gap-2">
                     <dt className="text-sm font-bold text-ng lg:text-base">{w.head}</dt>
                     <dd className="min-w-0 leading-snug [overflow-wrap:anywhere]">{phrase(w.text)}</dd>
@@ -508,13 +537,18 @@ function Mark({ ok }: { ok: boolean }) {
   )
 }
 
-function GuardRow({ head, g, ok = W.GUARD_OK, ng = W.GUARD_NG }: { head: string; g: Guard; ok?: string; ng?: string }) {
+function GuardRow({ head, g, ok: okLabel, ng: ngLabel }: { head: string; g: Guard; ok?: string; ng?: string }) {
+  const { W, lang } = useNW()
+  const ok = okLabel ?? W.GUARD_OK
+  const ng = ngLabel ?? W.GUARD_NG
   return (
     <li data-guard={g.ok ? 'ok' : 'ng'} className={`flex items-start gap-3 rounded-lg border-2 px-3 py-2.5 ${g.ok ? 'border-ok bg-surface' : 'border-ng bg-surface'}`}>
       <Mark ok={g.ok} />
       <div className="min-w-0">
         <div className="text-sm font-bold text-ink2">
-          {head}・{g.ok ? ok : ng}
+          {head}
+          {lang === 'en' ? ': ' : '・'}
+          {g.ok ? ok : ng}
         </div>
         <div className="text-lg leading-snug">{g.text}</div>
       </div>
@@ -524,6 +558,8 @@ function GuardRow({ head, g, ok = W.GUARD_OK, ng = W.GUARD_NG }: { head: string;
 
 /** くわしいふり返り：送られたもの全部と、出来事ごとの文 */
 function Details({ ev, onClose }: { ev: ReturnType<typeof eveningOf>; onClose: () => void }) {
+  const { W, lang, T } = useNW()
+  const dot = lang === 'en' ? ', ' : '・'
   const toneBox = { bad: 'border-ng bg-ngBg', good: 'border-ok bg-okBg', info: 'border-hair bg-surface' } as const
   return (
     <Panel
@@ -539,7 +575,7 @@ function Details({ ev, onClose }: { ev: ReturnType<typeof eveningOf>; onClose: (
       <div className="grid gap-4">
         <section className="grid gap-2">
           <h3 className="text-base font-bold text-ink2">{W.TO_AI}</h3>
-          <p className="text-lg">{ev.toAI.length ? ev.toAI.join('・') : W.TO_AI_NONE}</p>
+          <p className="text-lg">{ev.toAI.length ? ev.toAI.join(dot) : W.TO_AI_NONE}</p>
         </section>
         <section className="grid gap-2">
           <h3 className="text-base font-bold text-ink2">{W.SENT}</h3>
@@ -552,9 +588,11 @@ function Details({ ev, onClose }: { ev: ReturnType<typeof eveningOf>; onClose: (
                   <span className="break-all font-bold">{x.to}</span>
                 </p>
                 <p className="mt-1 text-sm text-ink2">
-                  {x.who}・{x.tool}
+                  {x.who}
+                  {lang === 'en' ? ' · ' : '・'}
+                  {x.tool}
                 </p>
-                <p className="mt-1 break-all text-base">{x.content}</p>
+                <p className="mt-1 text-base [overflow-wrap:anywhere]">{T(x.content)}</p>
               </li>
             ))}
           </ul>
@@ -600,7 +638,8 @@ async function copyText(text: string): Promise<boolean> {
 }
 
 function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine>[0]; onAgain: () => void; onHome: () => void }) {
-  const one = oneLine(today)
+  const { W, lang } = useNW()
+  const one = oneLine(today, lang)
   const [copied, setCopied] = useState<'ok' | 'fail' | null>(null)
   const copy = async () => {
     sfx.ui()
@@ -670,6 +709,7 @@ function useSample(): SampleFn | null | undefined {
 }
 
 function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: ReturnType<typeof oneLine> }) {
+  const { W, lang } = useNW()
   const ai = useSample()
   // 回数の限度（この画面で3回・1日に20回）。宮下さんは、遊んでいる人の Claude の使用量を使うため。
   // 画面は1回遊ぶごとに別に数える（もう一度遊べば、また3回。1日の20回は変わらない）
@@ -692,9 +732,9 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
   if (ai === null)
     return (
       <p data-ai-elsewhere className="text-sm text-ink2">
-        {W.JOB_HEAD}：
+        {W.JOB_HEAD}{lang === 'en' ? ': ' : '：'}
         <a href={CLAUDE_AI_URL} target="_blank" rel="noopener noreferrer" className="underline">
-          {S.aiElsewhere.ja}
+          {S.aiElsewhere[lang]}
         </a>
       </p>
     )
@@ -704,7 +744,7 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
     if (busy || spent || off) return
     if (aiOff()) {
       setOff(true)
-      setErr(S.aiNotAllowed.ja)
+      setErr(S.aiNotAllowed[lang])
       return
     }
     if (!budget.spend()) return
@@ -716,14 +756,14 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
     setBusy(true)
     ctl.current = new AbortController()
     try {
-      const { text } = await ai(jobPrompt(j, today, one), { modelTier: 'quick', cache: false, signal: ctl.current.signal })
-      const l = cleanJobLines(text)
+      const { text } = await ai(jobPrompt(j, today, one, lang), { modelTier: 'quick', cache: false, signal: ctl.current.signal })
+      const l = cleanJobLines(text, lang)
       if (l) setLines(l)
       else setErr(W.JOB_RETRY)
     } catch (e) {
       const k = errorKind(e)
       if (k === 'off') setOff(true)
-      if (k !== 'cancelled') setErr(k === 'off' ? S.aiNotAllowed.ja : k === 'busy' ? S.aiBusy.ja : S.aiFailed.ja)
+      if (k !== 'cancelled') setErr(k === 'off' ? S.aiNotAllowed[lang] : k === 'busy' ? S.aiBusy[lang] : S.aiFailed[lang])
     } finally {
       setBusy(false)
       // 答え（または限度・エラーの文）に目を移す。キーボードや読み上げで使う人が、置いていかれないように
@@ -747,14 +787,14 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
         <div className="flex items-center justify-between gap-2" aria-hidden>
           <span className="text-sm font-bold text-ink2">{W.JOB_ASK}</span>
           <span data-ai-left={budget.left.left} className={`shrink-0 rounded-full border-2 px-2 py-0.5 text-sm font-bold ${spent ? 'border-ng text-ng' : 'border-hair text-ink2'}`}>
-            {S.aiLeftN(budget.left.left).ja}
+            {S.aiLeftN(budget.left.left)[lang]}
           </span>
         </div>
-        <p className="sr-only">{S.aiLeftN(budget.left.left).ja}</p>
+        <p className="sr-only">{S.aiLeftN(budget.left.left)[lang]}</p>
         <div className="grid grid-cols-3 gap-2">
           {JOBS.map((j) => (
             <button key={j.id} data-job-pick={j.id} aria-pressed={job === j.id} aria-disabled={busy || undefined} className={`btn min-h-12 text-base disabled:opacity-60 ${job === j.id ? 'border-act bg-actBg' : ''}`} onClick={() => void ask(j)}>
-              {j.label}
+              {jobLabel(j, lang)}
             </button>
           ))}
         </div>
@@ -788,7 +828,7 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
                 </p>
               ))}
             </div>
-            <p className="text-sm text-ink2">{JOB_NOTE}</p>
+            <p className="text-sm text-ink2">{lang === 'en' ? JOB_NOTE_EN : JOB_NOTE}</p>
             <button data-job-copy className="btn min-h-12 w-full text-base lg:w-auto lg:justify-self-start" onClick={() => void (sfx.ui(), copyText(lines.join('\n')).then((ok) => setJobCopied(ok ? 'ok' : 'fail')))}>
               {jobCopied === 'ok' ? W.COPIED : W.JOB_COPY}
             </button>
@@ -798,7 +838,7 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
         {err && !busy && <p className="rounded-lg border-2 border-ng bg-ngBg px-3 py-2 text-base">{err}</p>}
         {spent && !busy && (
           <p data-ai-limit={budget.left.reason ?? 'screen'} className="rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base">
-            {budget.left.reason === 'day' ? S.aiLimitDay.ja : W.JOB_LIMIT}
+            {budget.left.reason === 'day' ? S.aiLimitDay[lang] : W.JOB_LIMIT}
           </p>
         )}
       </div>

@@ -42,9 +42,9 @@ describe("英語の最後の日", () => {
       ...c.instructions.map((i) => i.text),
       ...c.confirmations.flatMap((x) => [x.text, x.call?.content ?? ""]),
       ...c.tasks.map((t) => t.label),
-      ...c.incoming.map(hiddenAt),
     ].filter(Boolean);
     for (const s of shown) noJa(tr(s, "en"), s);
+    for (const d of c.incoming) noJa(hiddenAt(d, "en"), d.id);
     // 日本語の画面では、そのまま
     for (const s of shown) expect(tr(s, "ja")).toBe(s);
   });
