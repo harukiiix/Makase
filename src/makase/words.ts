@@ -82,6 +82,7 @@ export const JOB_HEAD = "あなたの仕事に合わせる";
 export const JOB_SUB = "仕事を選ぶと、AIの宮下さんが、今日の1つをその仕事向けの1行に書き直します。";
 export const JOB_ASK = "あなたの仕事は？";
 export const JOB_THINKING = "宮下さんが考えています…";
+export const JOB_LEFT_WHY = "AIの宮下さんは、あなたの Claude の使用量を使います。この画面で3回、1日に20回まで聞けます。";
 export const JOB_LIMIT = "この画面で聞けるのは、ここまでだよ。もう一度遊んだ時に、また聞いてね。";
 export const JOB_RETRY = "うまく1行にできませんでした。もう一度押してください。";
 export const HOME = "ホームへ";

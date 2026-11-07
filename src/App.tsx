@@ -3,7 +3,7 @@ import { LESSONS, lessonOf, questionOf } from './game/course'
 import { applySession, countAsk, dayNumber, dueIds, interleave, lessonOpen, newProgress, shuffle, weakTopic, type Gains, type Progress, type Session, type SessionKind } from './game/learn'
 import { ENDING, PROLOGUE } from './game/story'
 import type { L10n, Lang, Line, Question, TopicId } from './game/types'
-import { errorKind, getAI, practicePrompt, toQuestions } from './lib/ai'
+import { aiOff, errorKind, getAI, practicePrompt, toQuestions } from './lib/ai'
 import { spendAi } from './ui/aiBudget'
 import { FAST, loadProgress, loadResume, loadSettings, setAudio, writeProgress, writeResume, writeSettings, type Resume, type Settings } from './lib/platform'
 import { Done } from './ui/Done'
@@ -134,8 +134,10 @@ export default function App() {
     setScreen({ k: 'making' })
     const ai = await getAI()
     if (!ai) return setScreen({ k: 'home', note: S.aiOff })
-    // 回数の限度（練習問題づくりも1回に数える。宮下さんは、遊んでいる人の Claude の使用量を使うため）
-    if (!spendAi('practice')) return setScreen({ k: 'home', note: S.aiLimitPractice })
+    if (aiOff()) return setScreen({ k: 'home', note: S.aiNotAllowed })
+    // 回数の限度：練習問題づくりも、1日の20回のうちの1回に数える（宮下さんは、遊んでいる人の Claude の使用量を使うため）。
+    // 1画面3回の決まりは、問題ごとの質問のためなので、練習問題づくりは押すたびに別に数える
+    if (!spendAi(`practice:${Date.now()}`)) return setScreen({ k: 'home', note: S.aiLimitDay })
     const done = LESSONS.filter((l) => progress.lessons[l.id]?.done)
     const topic = weakTopic(progress, topicOf, (done[0] ?? LESSONS[0]).id)
     const l = lessonOf(topic)

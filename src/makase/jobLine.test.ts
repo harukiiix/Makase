@@ -29,7 +29,8 @@ describe("あなたの仕事に合わせた1行（AIの宮下さん）", () => {
 
   it("宮下さんへの指示に、言いすぎの言葉を使わないことと、短い1行で答えることを書く", () => {
     const p = jobPrompt(JOBS[3], leaked, oneLine(leaked));
-    for (const w of ["必ず防げる", "安全です", "保証", "絶対", "違法"]) expect(p).toContain(w);
+    for (const w of ["必ず防げる", "安全", "保証", "絶対", "違法", "確実", "大丈夫"]) expect(p).toContain(w);
+    expect(p).toContain("安全書類");
     expect(p).toMatch(/exactly one line/i);
     expect(p).toMatch(/80 Japanese characters/);
     expect(p).toContain("- ");
@@ -52,6 +53,31 @@ describe("あなたの仕事に合わせた1行（AIの宮下さん）", () => {
       "",
       "   \n  ",
       "- " + "あ".repeat(120),
+    ])
+      expect(cleanJobLine(bad), bad).toBeNull();
+  });
+
+  it("よくある言いすぎの言い方も使わない（確実・完全・心配ない・大丈夫・安全・安心・ゼロ・100%・防げる など）", () => {
+    for (const bad of [
+      "- これを守れば確実に防げます。",
+      "- 100%防止できるように、電話番号を消してください。",
+      "- 電話番号を消せば、漏れる心配はありません。",
+      "- 名簿を伏せれば大丈夫です。",
+      "- 完全に守られるように、伏せてから渡してください。",
+      "- 安全のため、電話番号を伏せてから渡してください。",
+      "- 伏せて渡せば安心して使えます。",
+      "- 情報もれをゼロにするため、伏せてください。",
+      "- 伏せることで、もれを防ぐことができます。",
+      "- 社外に送ると法令違反になります。",
+    ])
+      expect(cleanJobLine(bad), bad).toBeNull();
+  });
+
+  it("今日の結果を言い直す文や、頼む形でない文は使わない（判定はコードだけが決める）", () => {
+    for (const bad of [
+      "- 今日は名簿が社外に漏れたので、伏せてください。",
+      "- 電話番号がもれてしまいました。",
+      "- 名簿の電話番号は、大事な情報です。",
     ])
       expect(cleanJobLine(bad), bad).toBeNull();
   });

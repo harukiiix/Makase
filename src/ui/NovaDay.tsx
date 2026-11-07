@@ -11,7 +11,7 @@ import { eveningOf, eveningTalk, guardsOf, whyOutside, type Guard, type Guards }
 import { judgeDay } from '../makase/judge'
 import { todayOf } from '../makase/takeaway'
 import { JOBS, JOB_NOTE, cleanJobLine, jobPrompt, type Job } from '../makase/jobLine'
-import { errorKind, getAI, type SampleFn } from '../lib/ai'
+import { aiOff, errorKind, getAI, type SampleFn } from '../lib/ai'
 import { S } from './strings'
 import { useAiBudget } from './aiBudget'
 import type { Answer, Permission } from '../makase/types'
@@ -639,13 +639,21 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
   const [line, setLine] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  // この見ている間に、AIを使う許可がないと決まったら、押せなくする（回数も数えない）
+  const [off, setOff] = useState(aiOff)
   const ctl = useRef<AbortController | null>(null)
+  const out = useRef<HTMLDivElement>(null)
   useEffect(() => () => ctl.current?.abort(), [])
   if (!ai) return null
   const spent = budget.left.left === 0
 
   const ask = async (j: Job) => {
-    if (busy || spent) return
+    if (busy || spent || off) return
+    if (aiOff()) {
+      setOff(true)
+      setErr(S.aiNotAllowed.ja)
+      return
+    }
     if (!budget.spend()) return
     sfx.ui()
     setJob(j.id)
@@ -660,9 +668,12 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
       else setErr(W.JOB_RETRY)
     } catch (e) {
       const k = errorKind(e)
+      if (k === 'off') setOff(true)
       if (k !== 'cancelled') setErr(k === 'off' ? S.aiNotAllowed.ja : k === 'busy' ? S.aiBusy.ja : S.aiFailed.ja)
     } finally {
       setBusy(false)
+      // 答え（または限度・エラーの文）に目を移す。キーボードや読み上げで使う人が、置いていかれないように
+      requestAnimationFrame(() => out.current?.focus())
     }
   }
 
@@ -677,44 +688,40 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
           <p className="text-base text-ink2">{phrase(W.JOB_SUB)}</p>
         </div>
       </div>
-      <fieldset className="grid gap-2" disabled={busy || spent}>
+      <fieldset className="grid gap-2" disabled={spent || off}>
         <legend className="sr-only">{W.JOB_ASK}</legend>
         <div className="flex items-center justify-between gap-2" aria-hidden>
           <span className="text-sm font-bold text-ink2">{W.JOB_ASK}</span>
-          <span data-ai-left={budget.left.left} title={S.aiLeftWhy.ja} className={`shrink-0 rounded-full border-2 px-2 py-0.5 text-sm font-bold ${spent ? 'border-ng text-ng' : 'border-hair text-ink2'}`}>
+          <span data-ai-left={budget.left.left} className={`shrink-0 rounded-full border-2 px-2 py-0.5 text-sm font-bold ${spent ? 'border-ng text-ng' : 'border-hair text-ink2'}`}>
             {S.aiLeftN(budget.left.left).ja}
           </span>
         </div>
-        <p className="sr-only">{`${S.aiLeftN(budget.left.left).ja}。${S.aiLeftWhy.ja}`}</p>
+        <p className="sr-only">{S.aiLeftN(budget.left.left).ja}</p>
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           {JOBS.map((j) => (
-            <button key={j.id} data-job-pick={j.id} aria-pressed={job === j.id} className={`btn min-h-12 text-base disabled:opacity-60 ${job === j.id ? 'border-act bg-actBg' : ''}`} onClick={() => void ask(j)}>
+            <button key={j.id} data-job-pick={j.id} aria-pressed={job === j.id} aria-disabled={busy || undefined} className={`btn min-h-12 text-base disabled:opacity-60 ${job === j.id ? 'border-act bg-actBg' : ''}`} onClick={() => void ask(j)}>
               {j.label}
             </button>
           ))}
         </div>
+        <p className="text-sm text-ink2">{W.JOB_LEFT_WHY}</p>
       </fieldset>
-      {busy && (
-        <p className="blink rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base" aria-live="polite">
-          {W.JOB_THINKING}
-        </p>
-      )}
-      {line && !busy && (
-        <div data-job-line className="grid gap-1" aria-live="polite">
-          <p className="select-text rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base leading-relaxed [line-break:strict] [word-break:normal]">{line}</p>
-          <p className="text-sm text-ink2">{JOB_NOTE}</p>
-        </div>
-      )}
-      {err && !busy && (
-        <p className="rounded-lg border-2 border-ng bg-ngBg px-3 py-2 text-base" role="status">
-          {err}
-        </p>
-      )}
-      {spent && !busy && (
-        <p data-ai-limit={budget.left.reason ?? 'screen'} role="status" className="rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base">
-          {budget.left.reason === 'day' ? S.aiLimitDay.ja : W.JOB_LIMIT}
-        </p>
-      )}
+      {/* 答え・エラー・限度の文は、いつもある1つの場所に出す（読み上げで伝わるように） */}
+      <div ref={out} tabIndex={-1} aria-live="polite" className="grid gap-2 outline-none empty:hidden">
+        {busy && <p className="blink rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base">{W.JOB_THINKING}</p>}
+        {line && !busy && (
+          <div data-job-line className="grid gap-1">
+            <p className="select-text rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base leading-relaxed [line-break:strict] [word-break:normal]">{line}</p>
+            <p className="text-sm text-ink2">{JOB_NOTE}</p>
+          </div>
+        )}
+        {err && !busy && <p className="rounded-lg border-2 border-ng bg-ngBg px-3 py-2 text-base">{err}</p>}
+        {spent && !busy && (
+          <p data-ai-limit={budget.left.reason ?? 'screen'} className="rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base">
+            {budget.left.reason === 'day' ? S.aiLimitDay.ja : W.JOB_LIMIT}
+          </p>
+        )}
+      </div>
     </section>
   )
 }

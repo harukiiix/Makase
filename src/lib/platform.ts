@@ -63,13 +63,16 @@ export function writeResume(r: Resume | null) {
 const AKEY = 'sit.aiUse'
 let aiMem: AiUse | null = null
 export function loadAiUse(): AiUse | null {
+  let saved: AiUse | null = null
   try {
     const raw = localStorage.getItem(AKEY)
-    if (raw) return JSON.parse(raw) as AiUse
+    if (raw) saved = JSON.parse(raw) as AiUse
   } catch {
     /* プライベートモード等 */
   }
-  return aiMem
+  // 保存に失敗した時（容量がいっぱい等）は、開いている間に覚えた数のほうが新しい。同じ日なら多いほうを使う
+  if (aiMem && saved && aiMem.day === saved.day && (aiMem.total ?? 0) > (saved.total ?? 0)) return aiMem
+  return saved ?? aiMem
 }
 export function writeAiUse(u: AiUse) {
   aiMem = u

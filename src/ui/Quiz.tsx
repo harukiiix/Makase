@@ -11,7 +11,7 @@ import { CASES } from '../game/cases'
 import { lessonOf } from '../game/course'
 import { answer, finished, isRight, next, shuffle, startSession, whyFor, type Session, type SessionKind } from '../game/learn'
 import type { Lang, Question, TopicId } from '../game/types'
-import { errorKind, getAI, tutorRules, type SampleFn } from '../lib/ai'
+import { aiOff, errorKind, getAI, tutorRules, type SampleFn } from '../lib/ai'
 import { useAiBudget } from './aiBudget'
 import { FAST, sfx } from '../lib/platform'
 import { Art } from './Art'
@@ -586,7 +586,8 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
   const [live, setLive] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
-  const [off, setOff] = useState(false)
+  // この見ている間に、AIを使う許可がないと決まっていたら、はじめから止めておく（回数も数えない）
+  const [off, setOff] = useState(aiOff)
   const [text, setText] = useState('')
   const [explain, setExplain] = useState(false)
   // 回数の限度（1問に3回・1日に20回）。宮下さんは、遊んでいる人の Claude の使用量を使うため
@@ -603,6 +604,11 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
   const ask = async (msg: string) => {
     const m = msg.trim()
     if (!m || busy || off || spent) return
+    if (aiOff()) {
+      setOff(true)
+      setErr(t(S.aiNotAllowed))
+      return
+    }
     if (!budget.spend()) return
     const history = [...turns, { role: 'user' as const, content: m }].slice(-8)
     setTurns(history)

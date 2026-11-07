@@ -110,7 +110,6 @@ export const S = {
   aiLeftN: (n: number) => L(`あと${n}回`, n === 1 ? '1 question left' : `${n} questions left`),
   aiLeftWhy: L('AIの宮下さんは、あなたの Claude の使用量を使います。1問に3回、1日に20回まで聞けます。', 'AI Miyashita uses your own Claude usage. You can ask 3 times per question and 20 times a day.'),
   aiLimitScreen: L('この問題で聞けるのは、ここまでだよ。ほかの問題で、また聞いてね。', "That's all for this question. Ask me again on another one."),
-  aiLimitPractice: L('AIの練習は、今日はここまで。また明日やろう。', "That's all the AI practice for today. Let's do more tomorrow."),
   aiLimitDay: L('今日はここまで。また明日聞いてね。', "That's all for today. Ask me again tomorrow."),
   aiNotAllowed: L('この画面では、AIを使う許可がありません。', "This page isn't allowed to use AI here."),
   aiBusy: L('混み合っています。少し待ってから、もう一度送ってください。', 'Busy right now. Wait a moment and send it again.'),
