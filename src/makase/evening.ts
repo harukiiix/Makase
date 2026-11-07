@@ -343,7 +343,7 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
     : { ok: true, text: t(`${ev.taskCount}つの仕事が、すべて終わりました`, `All ${ev.taskCount} jobs were finished`) };
   const lesson = ev.leaked
     ? overridden
-      ? t(`「全部渡して」と頼むと、${overWord}欄まで渡ります。仕事に要る物だけを渡す頼み方にします`, `Giving it the whole roster sends even the fields you ${overWord}. Ask it to use only what the work needs`)
+      ? t(`「全部渡して」と頼むと、${overWord}欄まで渡ります。仕事に要る物だけを渡す頼み方にします`, `Giving it the whole roster sends even the fields you ${overWord}. Hand over only what the work needs instead`)
       : mode === "auto"
         ? t("「聞かずに送る」だと確認が来ません。社外へ送る道具は「送る前に聞く」にします", '"Send without asking" means no check comes. Set tools that send outside to "Ask before sending"')
         : t("人は見落とします。朝に守るべき欄を伏せておくと、昼に見落としても漏れにくくなります", "People miss things. If you mask protected fields in the morning, a miss at noon is less likely to cause a leak")
@@ -360,8 +360,8 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
           : morning.ok
           ? t(`朝に${label(inDanger)}を${hideTe}おいたので、昼に許可しても漏れませんでした`, `You ${hideTe} ${label(inDanger)} in the morning, so allowing the send at noon didn't leak anything`)
           : overridden
-            ? t(`昼の確認で止められました。「全部渡して」と頼むと${overWord}欄まで渡るので、仕事に要る物だけを渡す頼み方にします`, `You caught it at the noon check. Giving it the whole roster sent even the fields you ${overWord}, so ask it to use only what the work needs`)
-            : t("昼の確認で止められました。見落とすと漏れるので、朝に伏せておくと安心です", "You caught it at the noon check. If you had missed it, the data would have leaked, so mask the fields in the morning too");
+            ? t(`昼の確認で止められました。「全部渡して」と頼むと${overWord}欄まで渡るので、仕事に要る物だけを渡す頼み方にします`, `You caught it at the noon check. Giving it the whole roster sent even the fields you ${overWord}, so hand over only what the work needs`)
+            : t(`昼の確認で止められました。見落とすと${label(open)}が漏れるので、朝に伏せておくと安心です`, `You caught it at the noon check. If you had missed it, ${label(open)} would have leaked, so mask ${label(open)} in the morning too`);
   const mail = company.incoming.find((d) => d.injectionLine !== undefined);
   const trap = mail
     ? t(`${hiddenAt(mail)}に、名簿を社外の ${danger.call?.to} へ送らせる一文が、小さく紛れていました`, `At ${hiddenAt(mail, lang)}, a line in small print asked for the roster to be sent to ${danger.call?.to}, outside the company`)

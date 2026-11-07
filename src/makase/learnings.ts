@@ -338,7 +338,7 @@ export function storyOf(f: DayFacts, lang: Lang = "ja"): StoryCard[] {
   const only = f.seen.filter((x) => !f.risky.includes(x));
   const fieldsNext = [
     f.overridden
-      ? t(`「全部渡して」と頼むと、${oh.ta}欄まで渡ります。仕事に要る物だけを渡す頼み方にします。`, `Giving it the whole roster sends even the fields you ${oh.ta}. Ask it to use only what the work needs.`)
+      ? t(`「全部渡して」と頼むと、${oh.ta}欄まで渡ります。仕事に要る物だけを渡す頼み方にします。`, `Giving it the whole roster sends even the fields you ${oh.ta}. Hand over only what the work needs instead.`)
       : f.risky.length
         ? t(`${list(f.risky, lang)}のように仕事に要らない欄は、渡す前に伏せます。`, `Mask fields the work doesn't need, like ${list(f.risky, lang)}, before handing them over.`)
         : "",
@@ -531,11 +531,17 @@ export function takeHome(f: DayFacts, lang: Lang = "ja"): TakeHome {
     add("only", f.overridden ? t(`今日、「全部渡して」と頼んで、${oh.ta}${list(f.over, lang)}まで渡ったため`, `Because today you gave it the whole roster, and even ${fieldList(f.over, lang)}, which you ${oh.ta}, reached the Site AI`) : t("今日、「全部渡して」と頼んで、仕事に要らない電話番号や血圧まで渡ったため", "Because today you gave it the whole roster, so the phone numbers and blood pressure, which the work doesn't need, went to the Site AI too"));
   if (f.danger === "allowed" || f.danger === "auto")
     add("inject", f.leaked ? t("今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため", "Because today the roster was sent outside, as the request hidden in the attachment said") : t(`今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため（${list(f.hidden, lang)}は入っていませんでした）`, `Because today the roster was sent outside, as the hidden request said (${fieldList(f.hidden, lang)} ${f.hidden.length > 1 ? "weren't" : "wasn't"} in it)`));
+  // 仕事が止まったわけに合う指示を1つ、頼み方の指示を1つ。そのあとに残りを（5行の中に、数えた気をつける所がどれも入るように）
+  const workFirst = f.causes.missing ? "missing" : f.causes.block.length ? "block" : f.causes.stop ? "stop" : "";
+  if (workFirst === "missing") add("missing", t(`今日、仕事に要る${fieldList(f.missing, lang)}を渡さず、仕事が止まったため`, `Because today you didn't hand over ${fieldList(f.missing, lang)}, and the work stopped`));
+  if (workFirst === "block") add("ask", blockClause);
+  if (workFirst === "stop") add("balance", t(`今日、安全な確認を${f.safeStopped}件止めて、仕事が止まったため`, `Because today you stopped ${f.safeStopped} safe check${f.safeStopped === 1 ? "" : "s"}, and work stopped`));
+  if (badOrder(f)) add("scope", t(`今日、${q(f.order.text, lang)}と頼んだため`, `Because today you asked: ${q(tr(f.order.text, lang), lang)}`));
+  if (f.danger === "allowed") add("verify", t(`今日、会社が決めていないあて先（${f.trapTo}）への送信を許可したため`, `Because today you allowed a send to a recipient the company never chose (${f.trapTo})`));
   if (f.causes.missing) add("missing", t(`今日、仕事に要る${fieldList(f.missing, lang)}を渡さず、仕事が止まったため`, `Because today you didn't hand over ${fieldList(f.missing, lang)}, and the work stopped`));
   if (f.causes.block.length) add("ask", blockClause);
   if (f.causes.stop) add("balance", t(`今日、安全な確認を${f.safeStopped}件止めて、仕事が止まったため`, `Because today you stopped ${f.safeStopped} safe check${f.safeStopped === 1 ? "" : "s"}, and work stopped`));
-  if (f.danger === "allowed") add("verify", t(`今日、会社が決めていないあて先（${f.trapTo}）への送信を許可したため`, `Because today you allowed a send to a recipient the company never chose (${f.trapTo})`));
-  if (badOrder(f)) add("scope", t(`今日、${q(f.order.text, lang)}と頼んだため`, `Because today you asked: ${q(tr(f.order.text, lang), lang)}`));
+
   // 今日守れた所も、いつものAIに頼んでおく
   add(
     "inject",

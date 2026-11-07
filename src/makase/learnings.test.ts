@@ -378,3 +378,28 @@ describe("3回目の見直しで見つかった所", () => {
       }
   });
 });
+
+describe("4回目の見直しで見つかった所", () => {
+  const F = (phone: "mask" | "drop" | "pass", health: "mask" | "drop" | "pass", drawing: "mask" | "drop" | "pass") =>
+    Object.fromEntries(MORNING_FIELDS.map((f) => [fieldKey(f), f.field === "電話番号" ? phone : f.field === "図面番号" ? drawing : health]));
+  const P = (p: Partial<MorningPicks>) => ({ ...none, ...p }) as MorningPicks;
+  it("夕方の覚えること（英語）は、漏れそうだった欄を名前で言う", () => {
+    const w = play(P({ fields: F("pass", "mask", "pass"), nova: "nova-careful" }), (d) => (d ? "stop" : "allow"));
+    const l = guardsOf(eveningOf(w.result, w.log, c, "en"), w.log, c, "en").lesson;
+    expect(l).not.toMatch(/the data would have leaked|mask the fields/);
+    expect(l).toContain("phone numbers");
+  });
+  it("英語でも「渡すのは要る物だけ」を教える（AIに使うなと頼むのではなく）", () => {
+    const w = play(P({ fields: F("pass", "mask", "pass"), nova: "nova-all" }), () => "allow");
+    const f = dayFacts(w.picks, w.log, w.result, c);
+    const g = guardsOf(eveningOf(w.result, w.log, c, "en"), w.log, c, "en");
+    for (const s of [g.lesson, storyOf(f, "en").find((x) => x.key === "fields")!.next ?? ""]) expect(s, s).not.toMatch(/ask it to use only/i);
+  });
+  it("数えた気をつける所には、どれにも指示が1つはある（頼み方の指示が5行から落ちない）", () => {
+    for (const p of [P({ fields: F("pass", "pass", "drop"), tools: { post_chat: "deny" }, nova: "nova-toriaezu" }), P({ fields: F("pass", "pass", "drop"), tools: { send_mail: "auto" }, nova: "nova-toriaezu" })])
+      for (const ans of [(d: boolean): Answer => (d ? "allow" : "stop"), () => "stop" as Answer]) {
+        const w = play(p, ans);
+        expect(takeHome(dayFacts(w.picks, w.log, w.result, c), "ja").rules.map((r) => r.id)).toContain("scope");
+      }
+  });
+});
