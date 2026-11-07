@@ -25,9 +25,6 @@ jobs:
       - run: npm run build
         env:
           PAGES_BASE: /Makase/
-          # AIの宮下さん・現場AIに聞く を GitHub Pages でも使うための鍵（リポジトリの Settings → Secrets に入れる。
-          # ハッカソンの期間だけ。ページの中に入るので、使用量の上限を低くした専用の鍵にし、終わったら消す）
-          VITE_ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

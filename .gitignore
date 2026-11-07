@@ -3,3 +3,5 @@ dist
 *.log
 dist-single
 .previews
+.env*
+!.env.example
