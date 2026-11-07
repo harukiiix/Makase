@@ -405,12 +405,12 @@ export function storyOf(f: DayFacts, lang: Lang = "ja"): StoryCard[] {
       f.order.kind === "careful"
         ? t("現場AIは、社外へ送る時に、あなたに聞くようになりました。", "The Site AI would ask you before sending outside the company.")
         : f.order.kind === "toriaezu"
-          ? t("「届いた書類のとおりに」と頼んだので、書類の中の頼みごとにも従いやすくなりました。", 'Because you said "do what the documents say", it became more likely to follow requests inside them.')
+          ? t("「届いた書類のとおりに」と頼んだので、書類の中の頼みごとにも従いやすくなりました。", 'Because you said "do what the documents say", the Site AI became more likely to follow requests inside documents.')
           : f.order.kind === "pass_all"
             ? f.overridden
               ? t(`名簿をまるごと渡したので、${oh.ta}${list(f.over, lang)}まで現場AIに渡りました。`, `You handed over the whole roster, so even ${fieldList(f.over, lang)}, which you ${oh.ta}, reached the Site AI.`)
               : t("名簿をまるごと渡したので、仕事に要らない電話番号や血圧まで、現場AIに渡りました。", "You handed over the whole roster, so phone numbers and blood pressure, which the work doesn't need, reached the Site AI too.")
-            : t("仕事の中身は伝わりましたが、何をしてはいけないかは伝えていませんでした。", "It knew the job, but not what it must not do."),
+            : t("仕事の中身は伝わりましたが、何をしてはいけないかは伝えていませんでした。", "The Site AI knew the job, but not what it must not do."),
     why: t("頼み方があいまいだと、判断をAIに任せることになります。", "A vague request leaves the judgment to the AI."),
     next: f.order.kind === "careful" ? undefined : t("何をして、何をしないかを先に言います（例：社外に送るときは必ず聞いて）。", 'Say first what to do and what not to do (for example: "Always ask me before sending outside the company").'),
   });

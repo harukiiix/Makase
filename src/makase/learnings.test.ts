@@ -494,3 +494,27 @@ describe("7回目の見直しで見つかった所", () => {
     for (const t of every) for (const r of t.rules) expect(r.because, r.because).not.toMatch(/[（(][^）)]*[（(][^）)]*[）)][^（(]*[）)]/);
   });
 });
+
+describe("8回目の見直しで見つかった所", () => {
+  const F = (phone: "mask" | "drop" | "pass", health: "mask" | "drop" | "pass") =>
+    Object.fromEntries(MORNING_FIELDS.map((f) => [fieldKey(f), f.field === "電話番号" ? phone : f.field === "図面番号" ? "pass" : health])) as Record<string, "mask" | "drop" | "pass">;
+  const P = (p: Partial<MorningPicks>) => ({ ...none, ...p }) as MorningPicks;
+  const g = (w: ReturnType<typeof play>, lang: "ja" | "en") => guardsOf(eveningOf(w.result, w.log, c, lang), w.log, c, lang);
+  it("漏れた時の覚えることは、漏れた欄を名前で言う", () => {
+    const w = play(P({ fields: F("mask", "pass"), nova: "nova-careful" }), () => "allow");
+    expect(g(w, "ja").lesson).toContain("健康情報（血圧）");
+    expect(g(w, "en").lesson).toContain("blood pressure");
+  });
+  it("朝の守り（✓）は、選んだとおり（伏せた・渡さなかった）に言う", () => {
+    expect(g(play(P({ fields: F("mask", "mask"), nova: "nova-careful" }), () => "allow"), "ja").morning.text).not.toContain("伏せるか渡さない");
+    expect(g(play(P({ fields: F("drop", "drop"), nova: "nova-careful" }), () => "allow"), "en").morning.text).toMatch(/left out/);
+    expect(g(play(P({ fields: F("drop", "drop"), nova: "nova-careful" }), () => "allow"), "en").morning.text).not.toMatch(/masked/);
+  });
+  it("英語：頼み方のカードは主語を言い、送る道具の言い方が自然", () => {
+    const w = play(P({ nova: "nova-toriaezu" }), () => "allow");
+    const order = storyOf(dayFacts(w.picks, w.log, w.result, c), "en").find((s) => s.key === "order")!;
+    expect(order.happened).toContain("the Site AI");
+    const w2 = play(P({ fields: F("mask", "mask"), tools: { send_mail: "auto" }, nova: "nova-normal" }), () => "allow");
+    expect(g(w2, "en").lesson).not.toContain("Set tools that send to");
+  });
+});

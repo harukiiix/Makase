@@ -327,7 +327,7 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
             ? t(`「全部渡して」と頼んだので、${overWord}欄まで渡りました`, `You said "I'm giving you the whole roster", so even the fields you ${overWord} went to the Site AI`)
             : t(`${label(open)}を、そのまま渡しました`, `You handed over ${label(open)} as is`),
       }
-    : { ok: true, text: t(`${label(inDanger)}を、伏せるか渡さないにしました`, `You masked or left out ${label(inDanger)}`) };
+    : { ok: true, text: t(`${label(inDanger)}を、${dMasked.length && dDropped.length ? "伏せるか渡さないにしました" : dDropped.length ? "渡しませんでした" : "伏せて渡しました"}`, `You ${dMasked.length && dDropped.length ? "masked or left out" : dDropped.length ? "left out" : "masked"} ${label(inDanger)}`) };
   const mode = confirmationMode(company, log.instructions, setup, danger.id);
   const noon: Guard =
     mode === "blocked"
@@ -348,7 +348,7 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
         ? t("「全部渡して」と頼むと、伏せても名簿ごと渡ります。要らない欄を伏せたうえで、仕事に要る物だけを渡す頼み方にします", "Giving the Site AI the whole roster hands over every field, even ones you mask. Mask what isn't needed, and hand over only what the work needs")
       : mode === "auto"
         ? t("「聞かずに送る」だと確認が来ません。社外へ送る道具は「送る前に聞く」にします", '"Send without asking" means no check comes. Set tools that send outside to "Ask before sending"')
-        : t("人は見落とします。朝に守るべき欄を伏せておくと、昼に見落としても漏れにくくなります", "People miss things. If you mask protected fields in the morning, a miss at noon is less likely to cause a leak")
+        : t(`人は見落とします。朝に${label(open)}${dMasked.length + dDropped.length ? "も" : "を"}伏せておけば漏れにくい`, `People miss things. If you ${dMasked.length + dDropped.length ? "also " : ""}mask ${label(open)} in the morning, a miss at noon is less likely to cause a leak`)
     : !work.ok
       ? ev.unStop
         ? t("止めすぎると、仕事が終わりません。あて先と中身を見て決めます", "Stop too much, and the work doesn't get done. Decide by the recipient and the contents")
@@ -358,7 +358,7 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
       : morning.ok && noon.ok
         ? t("朝と昼の2つで守れました。どちらかを見落としても、もう一方で守れることがあります", "Morning and noon both held. If you miss one, the other can still protect you")
         : morning.ok && mode === "auto"
-          ? t(`朝に${label(inDanger)}を${hideTe}おいたので、確認が来ないまま送られても漏れませんでした。送る道具は「送る前に聞く」にします`, `You ${hideTe} ${label(inDanger)} in the morning, so nothing leaked even though the roster was sent with no check. Set tools that send to "Ask before sending"`)
+          ? t(`朝に${label(inDanger)}を${hideTe}おいたので、確認が来ないまま送られても漏れませんでした。送る道具は「送る前に聞く」にします`, `You ${hideTe} ${label(inDanger)} in the morning, so nothing leaked even though the roster was sent with no check. Set sending tools to "Ask before sending"`)
           : morning.ok
           ? t(`朝に${label(inDanger)}を${hideTe}おいたので、昼に許可しても漏れませんでした`, `You ${hideTe} ${label(inDanger)} in the morning, so allowing the send at noon didn't leak anything`)
           : passAll && !overridden
