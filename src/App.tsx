@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { LESSONS, lessonOf, questionOf } from './game/course'
-import { applySession, countAsk, dayNumber, dueIds, interleave, lessonOpen, newProgress, shuffle, weakTopic, type Gains, type Progress, type Session, type SessionKind } from './game/learn'
+import { applySession, countAsk, dayNumber, dueIds, interleave, lessonOpen, newProgress, reviewOrder, shuffle, weakTopic, type Gains, type Progress, type Session, type SessionKind } from './game/learn'
 import { ENDING, PROLOGUE } from './game/story'
 import type { L10n, Lang, Line, Question, TopicId } from './game/types'
 import { aiOff, errorKind, getAI, practicePrompt, toQuestions } from './lib/ai'
@@ -118,7 +118,8 @@ export default function App() {
   }
 
   const startReview = () => {
-    const ids = dueIds(progress.cards, dayNumber(), topicOf, 10)
+    // 出す問題は、日をあけた予定の早い順に10問まで。並びは毎回入れかえる
+    const ids = reviewOrder(dueIds(progress.cards, dayNumber(), topicOf, 10), topicOf, Date.now())
     const qs = ids.map((id) => questionOf(id)).filter((q): q is Question => !!q)
     if (qs.length) quiz('review', S.reviewTitle, qs, undefined, false, true)
   }

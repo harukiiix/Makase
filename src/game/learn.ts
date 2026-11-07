@@ -57,6 +57,11 @@ export function interleave(ids: string[], topicOf: (id: string) => TopicId | und
   return out
 }
 
+/** 復習の並び：出す問題は変えずに、並びだけ毎回入れかえる（同じ話題が続かない決まりは残す） */
+export function reviewOrder(ids: string[], topicOf: (id: string) => TopicId | undefined, seed: number): string[] {
+  return interleave(shuffle(ids, seed), topicOf)
+}
+
 // ---------------- 1回分（レッスン・復習・まとめテスト・AIの練習） ----------------
 export type SessionKind = 'lesson' | 'review' | 'final' | 'ai'
 

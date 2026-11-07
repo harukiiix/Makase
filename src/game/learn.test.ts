@@ -1,7 +1,7 @@
 // 学びの仕組みの点検（中身の問題とは関係なく、決まりどおりに動くか）
 import { describe, expect, it } from 'vitest'
 import { toQuestions } from '../lib/ai'
-import { answer, applySession, dueIds, finished, firstRight, interleave, isRight, lessonOpen, newProgress, next, rankOf, RANKS, schedule, shuffle, startSession, weakTopic, XP } from './learn'
+import { answer, applySession, dueIds, finished, firstRight, interleave, reviewOrder, isRight, lessonOpen, newProgress, next, rankOf, RANKS, schedule, shuffle, startSession, weakTopic, XP } from './learn'
 import type { MCQuestion, TFQuestion, TopicId } from './types'
 
 const L = (s: string) => ({ ja: s, en: s })
@@ -89,6 +89,18 @@ describe('spaced review', () => {
     expect(topics[ids[0]]).not.toBe(topics[ids[1]])
     expect(dueIds(cards, 4, (id) => topics[id])).toEqual([])
     expect(interleave(['a1', 'a2', 'b1'], (id) => topics[id])).toEqual(['a1', 'b1', 'a2'])
+  })
+  it('review order changes each time, but keeps the same questions and does not put the same topic twice in a row', () => {
+    const topics: Record<string, TopicId> = { a1: 'see', a2: 'see', a3: 'see', b1: 'gate', b2: 'gate', b3: 'gate', c1: 'photo', c2: 'photo', d1: 'send', d2: 'send' }
+    const ids = Object.keys(topics)
+    const orders = [1, 2, 3, 4, 5, 6, 7, 8].map((seed) => reviewOrder(ids, (id) => topics[id], seed))
+    for (const o of orders) {
+      expect([...o].sort()).toEqual([...ids].sort())
+      for (let i = 1; i < o.length; i++) expect(topics[o[i]], o.join(',')).not.toBe(topics[o[i - 1]])
+    }
+    expect(new Set(orders.map((o) => o.join(','))).size).toBeGreaterThan(1)
+    expect(reviewOrder(ids, (id) => topics[id], 3)).toEqual(reviewOrder(ids, (id) => topics[id], 3))
+    expect(reviewOrder([], (id) => topics[id], 1)).toEqual([])
   })
 })
 
