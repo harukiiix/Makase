@@ -357,7 +357,7 @@ export function Quiz(p: {
               ) : (
                 order.map((orig, d) => (
                   <Choice key={orig} i={orig} mark={mark(orig)} disabled={!!s.answer} onPick={pick} correct={orig === q.correct} compact={tight} hideDim={fb && !pc && !land}>
-                    <span className={`flex w-full items-center gap-3 px-3 text-left ${tight ? 'py-1.5' : roomy ? 'py-3.5' : 'py-2.5'}`}>
+                    <span className={`flex w-full items-center gap-3 px-3.5 text-left ${tight ? 'py-1.5' : roomy ? 'py-4' : 'py-3'}`}>
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-ink text-lg font-bold text-surface" aria-hidden>
                         {d + 1}
                       </span>
@@ -374,11 +374,9 @@ export function Quiz(p: {
 
       {/* スマホ：説明と次へを、下から出る板に（問いと答えは上に見えたまま） */}
       {s.answer && fb && !pc && !land && (
-        <div ref={sheetRef} style={sheetMax ? { maxHeight: sheetMax } : undefined} className="rise fixed inset-x-0 bottom-0 z-30 flex max-h-[68dvh] flex-col rounded-t-2xl border-t-2 border-line bg-surface shadow-[0_-6px_0_0_rgb(0_0_0/0.08)]">
+        <div ref={sheetRef} style={sheetMax ? { maxHeight: sheetMax } : undefined} className="rise fixed inset-x-0 bottom-0 z-30 flex max-h-[68dvh] flex-col overflow-hidden rounded-t-2xl border-t-2 border-line bg-surface shadow-[0_-6px_0_0_rgb(0_0_0/0.08)]">
           <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="mx-auto max-w-xl short:max-w-4xl">
-              <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} ai={ai} onOpen={setDetail} sheet noActions />
-            </div>
+            <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} ai={ai} onOpen={setDetail} sheet noActions />
           </div>
           {/* ボタンは、板の中で隠れないように、次へのすぐ上にいつも出す */}
           <div className="grid gap-2 border-t-2 border-hair px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
@@ -462,7 +460,9 @@ function Feedback({ ref, q, pick, ok, gained, combo, ai, onOpen, sheet, noAction
   // まちがえた時は、その答えを選んだ人への言葉を先に。正解のわけは、押すと出る（決め方は learn.ts の whyFor、テストあり）
   return (
     <section ref={ref} className={`${sheet ? '' : 'rise panel overflow-hidden'} scroll-mt-3`} role="status" aria-live="polite">
-      <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-4 ${sheet ? 'rounded-t-2xl py-1.5' : 'border-b-2 border-line py-2'} ${ok ? 'bg-okBg' : 'bg-ngBg'}`}>
+      {/* スマホの板では、色の帯は板の幅いっぱいに。中身だけ読みやすい幅にそろえる */}
+      <div className={ok ? 'bg-okBg' : 'bg-ngBg'}>
+      <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 px-4 ${sheet ? 'mx-auto max-w-xl py-1.5 short:max-w-4xl' : 'border-b-2 border-line py-2'}`}>
         <span className="overflow-hidden rounded-lg border-2 border-line bg-surface2" aria-hidden>
           <Art id={ok ? 'face.boss_happy' : 'face.boss_worry'} scale={1.5} />
         </span>
@@ -478,7 +478,8 @@ function Feedback({ ref, q, pick, ok, gained, combo, ai, onOpen, sheet, noAction
           </span>
         )}
       </div>
-      <div className={`grid px-4 ${sheet ? 'gap-2.5 pb-2 pt-2.5' : 'gap-3 py-3'}`}>
+      </div>
+      <div className={`grid px-4 ${sheet ? 'mx-auto max-w-xl gap-2.5 pb-2 pt-2.5 short:max-w-4xl' : 'gap-3 py-3'}`}>
         <p data-why className={`${sheet ? 'text-base sm:text-lg' : 'text-lg'} leading-relaxed`}>{t(whyFor(q, pick))}</p>
         {/* 覚えること：青い丸は「こうする」の印（安全標識の指示の色）。スマホの板では、隠れないように先に */}
         <div className={`flex items-start gap-3 rounded-lg border-2 border-rule bg-ruleBg px-3 py-2.5 ${sheet ? '-order-1' : ''}`}>
@@ -506,17 +507,17 @@ function FeedbackActions({ q, ok, ai, onOpen, compact, noLink }: { q: Question; 
       {(!ok || rc || ai) && (
           <div className="grid grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2">
             {!ok && (
-              <button data-more className={`btn px-3 ${compact ? 'min-h-11 py-1 text-sm' : 'min-h-12 text-base'}`} onClick={() => (sfx.ui(), onOpen('more'))}>
+              <button data-more className={`btn px-3 ${compact ? 'min-h-11 py-1 text-base' : 'min-h-12 text-base'}`} onClick={() => (sfx.ui(), onOpen('more'))}>
                 {t(S.more)}
               </button>
             )}
             {rc && (
-              <button data-real className={`btn px-3 ${compact ? 'min-h-11 py-1 text-sm' : 'min-h-12 text-base'}`} onClick={() => (sfx.ui(), onOpen('real'))}>
+              <button data-real className={`btn px-3 ${compact ? 'min-h-11 py-1 text-base' : 'min-h-12 text-base'}`} onClick={() => (sfx.ui(), onOpen('real'))}>
                 {t(S.realCase)}
               </button>
             )}
             {ai && (
-              <button data-ask-ai className={`btn px-3 ${compact ? 'min-h-11 py-1 text-sm' : 'min-h-12 text-base'}`} onClick={() => (sfx.ui(), onOpen('ai'))}>
+              <button data-ask-ai className={`btn px-3 ${compact ? 'min-h-11 py-1 text-base' : 'min-h-12 text-base'}`} onClick={() => (sfx.ui(), onOpen('ai'))}>
                 <Art id="icon.ai" scale={1.5} />
                 {t(S.askAI)}
               </button>
