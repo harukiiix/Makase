@@ -149,3 +149,71 @@ describe("渡さなすぎて終わらなかった時は、止めすぎとは言�
     for (const s of [...ideasOf(f, "en").map((i) => i.today), ...storyOf(f, "en").map((x) => x.happened)]) expect(s).not.toMatch(/\b1 of \d+ jobs weren't/);
   });
 });
+
+describe("見直しで見つかった、選びとちがうことを言う所", () => {
+  const F = (phone: "mask" | "drop" | "pass", health: "mask" | "drop" | "pass", drawing: "mask" | "drop" | "pass") =>
+    Object.fromEntries(MORNING_FIELDS.map((f) => [fieldKey(f), f.field === "電話番号" ? phone : f.field === "図面番号" ? drawing : health]));
+  const facts = (w: ReturnType<typeof play>) => dayFacts(w.picks, w.log, w.result, c);
+  const allText = (w: ReturnType<typeof play>, lang: "ja" | "en" = "ja") => {
+    const f = facts(w);
+    return [...ideasOf(f, lang).flatMap((i) => [i.title, i.body, i.today, i.use]), ...storyOf(f, lang).flatMap((s) => [s.did, s.happened, s.why, s.next ?? ""]), ...takeHome(f, lang).rules.flatMap((r) => [r.line, r.because]), takeHome(f, lang).why];
+  };
+  const stopDanger = (d: boolean): Answer => (d ? "stop" : "allow");
+
+  it("図面番号を渡さなかった時：図面番号を使うなとは言わず、「伏せて渡す」をすすめる", () => {
+    const w = play({ ...none, fields: F("mask", "mask", "drop"), nova: "nova-careful" } as MorningPicks, stopDanger);
+    const t = takeHome(facts(w), "ja");
+    expect(t.rules.map((r) => r.id)).toContain("missing");
+    for (const r of t.rules) expect(r.line).not.toMatch(/図面番号[^。]*使わずに/);
+    for (const s of allText(w)) expect(s).not.toContain("名前や資格");
+    expect(storyOf(facts(w)).find((s) => s.key === "fields")!.next ?? "").toContain("伏せて渡す");
+  });
+  it("「全部渡して」で、伏せていないのに「伏せた欄まで」とは言わない", () => {
+    const w = play({ ...none, fields: F("pass", "pass", "pass"), nova: "nova-all" } as MorningPicks, () => "allow");
+    for (const s of allText(w)) expect(s, s).not.toContain("伏せた欄まで");
+  });
+  it("「全部渡して」で伏せた時、「伏せずに渡した」とは言わない", () => {
+    const w = play({ ...none, fields: F("mask", "mask", "mask"), nova: "nova-all" } as MorningPicks, stopDanger);
+    for (const s of allText(w)) expect(s, s).not.toContain("伏せずに");
+    expect(allText(w).some((s) => s.includes("全部渡して"))).toBe(true);
+  });
+  it("図面番号だけをそのまま渡した時、朝の守り（✓）と食いちがわない", () => {
+    const w = play({ ...none, fields: F("mask", "mask", "pass") } as MorningPicks, stopDanger);
+    const f = facts(w);
+    expect(ideasOf(f).map((i) => i.id)).not.toContain("need");
+    expect(storyOf(f).find((s) => s.key === "fields")!.tone).not.toBe("bad");
+    for (const s of allText(w)) expect(s).not.toMatch(/伏せずに渡しました|気をつける所が/);
+  });
+  it("メールを「聞かずに送る」でも「必ず聞いて」と頼んだ時、確認が来なかったとは言わない", () => {
+    for (const ans of [() => "allow" as Answer, stopDanger]) {
+      const w = play({ ...none, tools: { send_mail: "auto" }, nova: "nova-careful" } as MorningPicks, ans);
+      for (const s of allText(w)) expect(s, s).not.toContain("確認が来ないまま");
+    }
+  });
+  it("「送らせない」で仕事が止まった時、「止めすぎ」とも「あなたが止めた」とも言わない", () => {
+    for (const tools of [{ send_mail: "deny" }, { post_chat: "deny" }] as Record<string, "deny">[]) {
+      const w = play({ ...none, fields: F("mask", "mask", "mask"), tools } as MorningPicks, () => "allow");
+      for (const s of allText(w)) expect(s, s).not.toMatch(/止めすぎ|今日は止められました/);
+      expect(allText(w).some((s) => s.includes("送らせない"))).toBe(true);
+    }
+  });
+  it("「渡さない」を選んだのに「伏せて」とだけは言わない", () => {
+    const w = play({ ...none, fields: F("drop", "drop", "mask"), nova: "nova-careful" } as MorningPicks, stopDanger);
+    for (const s of allText(w)) expect(s, s).not.toMatch(/朝に伏せて、|今日は伏せて渡せました/);
+  });
+  it("全部止めた時、社外でも守るべき情報のない仕事の連絡は通してよいと伝える", () => {
+    expect(allText(WAYS.stopAll).some((s) => s.includes("社外でも"))).toBe(true);
+  });
+  it("安全な確認を止めて危ない1枚だけ許可した時は、「確認が続くと」の考え方を出さない", () => {
+    const w = play(none, (d) => (d ? "allow" : "stop"));
+    expect(ids(w)).not.toContain("fatigue");
+  });
+  it("英語：文は大文字で始まり、欄の名前には the、3つ並ぶ時はコンマで", () => {
+    for (const w of [WAYS.allowAll, play({ ...none, fields: F("mask", "mask", "drop") } as MorningPicks, stopDanger)])
+      for (const s of allText(w, "en").filter(Boolean)) {
+        expect(s, s).toMatch(/^[A-Z0-9"-]/);
+        expect(s, s).not.toMatch(/hand over drawing number|over (?!the )drawing/);
+        expect(s, s).not.toMatch(/ and [^.]* and the drawing/);
+      }
+  });
+});
