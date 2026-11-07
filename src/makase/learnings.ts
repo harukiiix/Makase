@@ -500,8 +500,8 @@ export function takeHome(f: DayFacts, lang: Lang = "ja"): TakeHome {
     scope: t("- 頼まれていない作業や、頼んだ範囲より広い作業を始める前に、何をするかを先に教えてください。", "- Before doing any work I didn't ask for, or more than I asked for, tell me first what you are going to do."),
     missing: t("- 仕事に要る情報が足りない時は、止まったままにせず、何が足りないかを私に聞いてください。", "- If you're missing information the job needs, don't just stop. Ask me what is missing."),
     balance: t(
-      "- 会社のあて先への社内の連絡と、守るべき情報が入っていない仕事の連絡（工程表など）は、まとめて1回の確認にしてかまいません。",
-      "- Internal messages to company addresses, and work messages with no protected information (like a schedule), can be grouped into one check.",
+      "- 外へ送る前は、あて先と中身を私に確認してください。ただし、会社のあて先への社内の連絡と、守るべき情報が入っていない仕事の連絡（工程表など）は、まとめて1回の確認にしてかまいません。",
+      "- Before sending anything outside, check the recipient and the contents with me. Internal messages to company addresses, and work messages with no protected information (like a schedule), can be grouped into one check.",
     ),
   };
   const out: Rule[] = [];
@@ -518,7 +518,7 @@ export function takeHome(f: DayFacts, lang: Lang = "ja"): TakeHome {
       [
         f.danger === "auto"
           ? t("今日、メールを「聞かずに送る」にしたので、名簿のメールも確認が来ないまま送られたため", 'Because today email was set to "Send without asking", and even the roster email was sent with no check')
-          : t("今日、メールを「聞かずに送る」にしたため（メールで確認が来たのは、「必ず聞いて」と頼んだ現場AIの社外あてだけでした）", 'Because today email was set to "Send without asking" (the only emails that came to you for a check were the Site AI\'s outside ones, because you told it to ask)'),
+          : t("今日、メールを「聞かずに送る」にしたため。メールで確認が来たのは、「必ず聞いて」と頼んだ現場AIの社外あてだけでした", 'Because today email was set to "Send without asking". The only emails that came to you for a check were the Site AI\'s outside ones, because you told it to ask'),
         f.causes.block.length ? t(`。また、${blockWord}を「送らせない」にして、仕事が止まったため`, `. Also, ${blockWord} ${blockWas} set to "Don't let it send", and the work stopped`) : "",
       ].join(""),
     );
@@ -527,15 +527,15 @@ export function takeHome(f: DayFacts, lang: Lang = "ja"): TakeHome {
       "mask",
       f.overridden
         ? t(
-            `今日、${list(f.over, lang)}を${f.overHide === "drop" ? "渡さないにして" : f.overHide === "both" ? "伏せるか渡さないにして" : "伏せて"}も、「全部渡して」の指示で渡ったため${f.restRisky.length ? `（${list(f.restRisky, lang)}は、そのまま渡しました）` : ""}`,
-            `Because today, even though you ${oh.verb(fieldList(f.over, lang))}, giving the Site AI the whole roster sent ${fieldList(f.over, lang)} anyway${f.restRisky.length ? ` (you handed over ${list(f.restRisky, lang)} as is)` : ""}`,
+            `今日、${list(f.over, lang)}を${f.overHide === "drop" ? "渡さないにして" : f.overHide === "both" ? "伏せるか渡さないにして" : "伏せて"}も、「全部渡して」の指示で渡ったため${f.restRisky.length ? `。${list(f.restRisky, lang)}は、そのまま渡しました` : ""}`,
+            `Because today, even though you ${oh.verb(fieldList(f.over, lang))}, giving the Site AI the whole roster sent ${fieldList(f.over, lang)} anyway${f.restRisky.length ? `. You also handed over ${list(f.restRisky, lang)} as is` : ""}`,
           )
         : t(`今日、${list(f.risky, lang)}を伏せずに渡したため`, `Because today you handed over ${list(f.risky, lang)} without masking`),
     );
   if (f.order.kind === "pass_all")
     add("only", f.overridden ? t(`今日、「全部渡して」と頼んで、${oh.ta}${list(f.over, lang)}まで渡ったため`, `Because today you gave the Site AI the whole roster, and even ${fieldList(f.over, lang)}, which you ${oh.ta}, reached the Site AI`) : t("今日、「全部渡して」と頼んで、仕事に要らない電話番号や血圧まで渡ったため", "Because today you gave the Site AI the whole roster, and the phone numbers and blood pressure, which the work doesn't need, went to it too"));
   if (f.danger === "allowed" || f.danger === "auto")
-    add("inject", f.leaked ? t("今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため", "Because today the roster was sent outside, as the request hidden in the attachment said") : t(`今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため（${list(f.hidden, lang)}は入っていませんでした）`, `Because today the roster was sent outside, as the hidden request said (${fieldList(f.hidden, lang)} ${f.hidden.length > 1 ? "weren't" : "wasn't"} in it)`));
+    add("inject", f.leaked ? t("今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため", "Because today the roster was sent outside, as the request hidden in the attachment said") : t(`今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため。${list(f.hidden, lang)}は入っていませんでした`, `Because today the roster was sent outside, as the hidden request said. ${cap(fieldList(f.hidden, lang))} ${f.hidden.length > 1 ? "weren't" : "wasn't"} in it`));
   // 仕事が止まったわけに合う指示を1つ、頼み方の指示を1つ。そのあとに残りを（5行の中に、数えた気をつける所がどれも入るように）
   const workFirst = f.causes.missing ? "missing" : f.causes.block.length ? "block" : f.causes.stop ? "stop" : "";
   if (workFirst === "missing") add("missing", t(`今日、仕事に要る${fieldList(f.missing, lang)}を渡さず、仕事が止まったため`, `Because today you didn't hand over ${fieldList(f.missing, lang)}, and the work stopped`));

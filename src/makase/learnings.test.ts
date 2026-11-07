@@ -470,3 +470,27 @@ describe("6回目の見直しで見つかった所", () => {
     }
   });
 });
+
+describe("7回目の見直しで見つかった所", () => {
+  const CH = ["pass", "mask", "drop"] as const;
+  const PERM = ["ask", "auto", "deny"] as const;
+  const NOVA = ["nova-careful", "nova-normal", "nova-toriaezu", "nova-all"];
+  const NOON: ((d: boolean) => Answer)[] = [() => "allow", () => "stop", (d) => (d ? "stop" : "allow"), (d) => (d ? "allow" : "stop")];
+  const all = () => {
+    const out: ReturnType<typeof takeHome>[] = [];
+    for (const a of CH) for (const b of CH) for (const d of CH) for (const m of PERM) for (const ch of PERM) for (const n of NOVA) for (const nf of NOON) {
+      const fields = Object.fromEntries(MORNING_FIELDS.map((f, i) => [fieldKey(f), [a, b, d][i]]));
+      const p = { fields, tools: { send_mail: m, post_chat: ch }, nova: n } as MorningPicks;
+      const w = play(p, nf);
+      for (const lang of ["ja", "en"] as const) out.push(takeHome(dayFacts(w.picks, w.log, w.result, c), lang));
+    }
+    return out;
+  };
+  const every = all();
+  it("全部の遊び方で：まとめて確認してよいと言う時は、送る前の確認を求める文も入っている", () => {
+    for (const t of every) if (t.rules.some((r) => r.id === "balance")) expect(t.text, t.text).toMatch(/確認してください|check the recipient and the contents with me/);
+  });
+  it("全部の遊び方で：理由の文に、かっこの中のかっこがない", () => {
+    for (const t of every) for (const r of t.rules) expect(r.because, r.because).not.toMatch(/[（(][^）)]*[（(][^）)]*[）)][^（(]*[）)]/);
+  });
+});
