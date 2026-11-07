@@ -303,16 +303,23 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
   const inDanger = company.markers.filter((m) => m.find.some((x) => normalize(danger.call?.content ?? "").includes(normalize(x)))).map((m) => m.id);
   const open = inDanger.filter((m) => exposed.has(m));
   const passAll = setup ? passedAllDocs(company, log.instructions).size > 0 : false;
+  // 「全部渡して」で、遊んだ人が伏せた・渡さなかった欄まで渡ったか（渡さなかった欄も上書きされる）
+  const fieldOf = (m: string) => company.documents.flatMap((d) => d.fields.filter((f) => f.marker === m).map((f) => ({ doc: d.id, label: f.label })))[0];
+  const wasMasked = open.filter((m) => setup?.masked.includes(m));
+  const wasDropped = open.filter((m) => setup && fieldOf(m) && !setup.passed[fieldOf(m).doc]?.includes(fieldOf(m).label));
+  const overridden = passAll && wasMasked.length + wasDropped.length > 0;
+  const overWord =
+    wasMasked.length && wasDropped.length ? t("伏せたり渡さなかったりした", "masked or left out") : wasDropped.length ? t("渡さなかった", "left out") : t("伏せた", "masked");
   const label = (ids: string[]) => ids.map((id) => tr(company.markers.find((m) => m.id === id)?.label ?? id, lang)).join(t("・", " and "));
   const morning: Guard = open.length
     ? {
         ok: false,
         text:
-          passAll && inDanger.some((m) => setup?.masked.includes(m))
-            ? t("「全部渡して」と頼んだので、伏せた欄まで渡りました", 'You asked it to "hand over everything", so even the masked fields went')
+          overridden
+            ? t(`「全部渡して」と頼んだので、${overWord}欄まで渡りました`, `You asked it to "hand over everything", so even the fields you ${overWord} went`)
             : t(`${label(open)}を、そのまま渡しました`, `You handed over ${label(open)} as is`),
       }
-    : { ok: true, text: t("守るべき欄を、伏せるか渡さないにしました", "You masked or left out the protected fields") };
+    : { ok: true, text: t(`${label(inDanger)}を、伏せるか渡さないにしました`, `You masked or left out ${label(inDanger)}`) };
   const mode = confirmationMode(company, log.instructions, setup, danger.id);
   const noon: Guard =
     mode === "blocked"
@@ -327,8 +334,8 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
     ? { ok: false, text: t(`${ev.taskCount}つ中${ev.unfinished.length}つの仕事が終わりませんでした`, `${ev.unfinished.length} of ${ev.taskCount} jobs ${ev.unfinished.length === 1 ? "wasn't" : "weren't"} finished`) }
     : { ok: true, text: t(`${ev.taskCount}つの仕事が、すべて終わりました`, `All ${ev.taskCount} jobs were finished`) };
   const lesson = ev.leaked
-    ? passAll && inDanger.some((m) => setup?.masked.includes(m))
-      ? t("「全部渡して」と頼むと、伏せた欄まで渡ります。仕事に要る物だけを渡します", '"Hand over everything" sends even masked fields. Hand over only what the work needs')
+    ? overridden
+      ? t(`「全部渡して」と頼むと、${overWord}欄まで渡ります。仕事に要る物だけを渡す頼み方にします`, `"Hand over everything" sends even the fields you ${overWord}. Ask it to use only what the work needs`)
       : mode === "auto"
         ? t("「聞かずに送る」だと確認が来ません。社外へ送る道具は「送る前に聞く」にします", '"Send without asking" means no check comes. Set tools that send outside to "Ask before sending"')
         : t("人は見落とします。朝に守るべき欄を伏せておくと、昼に見落としても漏れにくくなります", "People miss things. Mask protected fields in the morning, and a miss at noon is less likely to leak")
@@ -342,7 +349,7 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
           ? t("朝に伏せておいたので、確認が来ないまま送られても漏れませんでした。送る道具は「送る前に聞く」にします", 'You masked it in the morning, so nothing leaked even though it was sent with no check. Set tools that send to "Ask before sending"')
           : morning.ok
           ? t("朝に伏せておいたので、昼に許可しても漏れませんでした", "You masked it in the morning, so allowing it at noon didn't leak anything")
-          : t("昼の確認で止められました。見落とすと漏れるので、朝に伏せておくと安心です", "You stopped it at the noon check. A miss would have leaked, so mask it in the morning too");
+          : t("昼の確認で止められました。見落とすと漏れるので、朝に伏せておくと安心です", "You caught it at the noon check. If you had missed it, the data would have leaked, so mask the fields in the morning too");
   const mail = company.incoming.find((d) => d.injectionLine !== undefined);
   const trap = mail
     ? t(`${hiddenAt(mail)}に、名簿を社外の ${danger.call?.to} へ送らせる一文が、小さく紛れていました`, `At ${hiddenAt(mail, lang)}, a line in small print asked for the roster to be sent to ${danger.call?.to}, outside the company`)

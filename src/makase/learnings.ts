@@ -19,8 +19,11 @@ export type DayFacts = {
   risky: string[];
   /** 「全部渡して」の指示で、遊んだ人が伏せた・渡さなかった欄まで渡ったか */
   overridden: boolean;
-  /** 遊んだ人が、守るべき欄をどう隠したか（伏せた・渡さなかった・両方・なし） */
-  hide: "mask" | "drop" | "both" | "none";
+  /** 遊んだ人が、危ない送信に入る欄をどう隠したか（伏せた・渡さなかった・両方・なし） */
+  hide: Hide;
+  /** 「全部渡して」で上書きされた欄と、その隠し方 */
+  over: string[];
+  overHide: Hide;
   /** 朝の現場AIへの指示 */
   order: { kind: "careful" | "normal" | "toriaezu" | "pass_all"; text: string };
   mail: Permission;
@@ -45,6 +48,12 @@ export type DayFacts = {
   taskCount: number;
 };
 
+type Hide = "mask" | "drop" | "both" | "none";
+const hideOf = (cs: FieldChoice[]): Hide => {
+  const h = cs.filter((c) => c !== "pass");
+  return !h.length ? "none" : h.every((c) => c === "mask") ? "mask" : h.every((c) => c === "drop") ? "drop" : "both";
+};
+
 export function dayFacts(picks: MorningPicks, log: DayLog, result: DayResult, company: Company): DayFacts {
   const marker = (id: string) => company.markers.find((m) => m.id === id)?.label ?? id;
   const setup = log.setup;
@@ -60,9 +69,9 @@ export function dayFacts(picks: MorningPicks, log: DayLog, result: DayResult, co
   const fields = MORNING_FIELDS.map((f) => ({ ...f, label: f.field, choice: picks.fields[fieldKey(f)] ?? ("pass" as FieldChoice) }));
   const all = passedAllDocs(company, log.instructions);
   const markerOf = (f: { doc: string; field: string }) => company.documents.find((d) => d.id === f.doc)?.fields.find((x) => x.label === f.field)?.marker;
-  const overridden = fields.some((f) => f.choice !== "pass" && all.has(f.doc) && risky.includes(markerOf(f) ?? ""));
-  const hidden = fields.filter((f) => f.choice !== "pass");
-  const hide = !hidden.length ? "none" : hidden.every((f) => f.choice === "mask") ? "mask" : hidden.every((f) => f.choice === "drop") ? "drop" : "both";
+  const overFields = fields.filter((f) => f.choice !== "pass" && all.has(f.doc) && risky.includes(markerOf(f) ?? ""));
+  const overridden = overFields.length > 0;
+  const hide = hideOf(fields.filter((f) => inDanger.includes(markerOf(f) ?? "")).map((f) => f.choice));
   const un = result.events.flatMap((e) => (e.kind === "task_unfinished" ? [e] : []));
   const safe = company.confirmations.filter((x) => !x.dangerous).map((x) => x.id);
   const block = [...new Set(un.flatMap((e) => (e.blocked ?? []).map((id) => company.confirmations.find((x) => x.id === id)?.call?.tool ?? "")).filter(Boolean))];
@@ -72,6 +81,8 @@ export function dayFacts(picks: MorningPicks, log: DayLog, result: DayResult, co
     risky: risky.map(marker),
     overridden,
     hide,
+    over: overFields.map((f) => f.label),
+    overHide: hideOf(overFields.map((f) => f.choice)),
     order: { kind: order.kind, text: order.text },
     mail: setup?.permissions["send_mail"] ?? "ask",
     chat: setup?.permissions["post_chat"] ?? "ask",
@@ -105,17 +116,27 @@ const choiceWord = (c: FieldChoice, lang: Lang) => L(lang)(c === "pass" ? "そ�
 const badOrder = (f: DayFacts) => f.order.kind === "toriaezu" || f.order.kind === "pass_all";
 const q = (s: string, lang: Lang) => (lang === "en" ? `"${s}"` : `「${s}」`);
 const jobs = (f: DayFacts, lang: Lang) => L(lang)(`${f.taskCount}つ中${f.unfinished.length}つの仕事が終わりませんでした`, `${f.unfinished.length} of ${f.taskCount} jobs ${f.unfinished.length === 1 ? "wasn't" : "weren't"} finished`);
-/** 隠し方の言い方：te「伏せて」・ta「伏せた」・teita「伏せていた」 */
-const hideWords = (h: DayFacts["hide"], lang: Lang) =>
+/** 隠し方の言い方：te「伏せて」・ta「伏せた」・verb(物)「〇〇を伏せて」（英語は "masked X"） */
+const hideWords = (h: Hide, lang: Lang) =>
   lang === "en"
-    ? { te: h === "drop" ? "left them out" : h === "both" ? "masked or left them out" : "masked them", ta: h === "drop" ? "left out" : h === "both" ? "masked or left out" : "masked" }
-    : { te: h === "drop" ? "渡さないにして" : h === "both" ? "伏せるか渡さないにして" : "伏せて", ta: h === "drop" ? "渡さなかった" : h === "both" ? "伏せたり渡さなかったりした" : "伏せた" };
+    ? {
+        ta: h === "drop" ? "left out" : h === "both" ? "masked or left out" : "masked",
+        verb: (o: string) => (h === "drop" ? `left ${o} out` : h === "both" ? `masked or left out ${o}` : `masked ${o}`),
+      }
+    : {
+        ta: h === "drop" ? "渡さなかった" : h === "both" ? "伏せたり渡さなかったりした" : "伏せた",
+        verb: (o: string) => `${o}を${h === "drop" ? "渡さないにして" : h === "both" ? "伏せるか渡さないにして" : "伏せて"}`,
+      };
+/** 仕事の名前を、文の中で使う形に（英語は the をつけ、頭を小さく。KY のような略語はそのまま） */
+const jobList = (xs: string[], lang: Lang) =>
+  lang === "en" ? list(xs.map((x) => { const e = tr(x, lang); return `the ${/^[A-Z][a-z]/.test(e) ? e.charAt(0).toLowerCase() + e.slice(1) : e}`; }), lang) : list(xs, lang);
+const wasWere = (n: number) => (n > 1 ? "were" : "was");
 /** 仕事が終わらなかったわけ（今日のこと） */
 const workToday = (f: DayFacts, lang: Lang) => {
   const t = L(lang);
   const why = [
     f.causes.stop ? t(`安全な確認を${f.safeStopped}件止めた`, f.safeStopped === 1 ? "you stopped 1 safe check" : `you stopped ${f.safeStopped} safe checks`) : "",
-    f.causes.block.length ? t(`${list(f.causes.block.map((x) => toolWord(x, lang)), lang)}を「送らせない」にした`, `${list(f.causes.block.map((x) => toolWord(x, lang)), lang)} was set to "Don't let it send"`) : "",
+    f.causes.block.length ? t(`${list(f.causes.block.map((x) => toolWord(x, lang)), lang)}を「送らせない」にした`, `${list(f.causes.block.map((x) => toolWord(x, lang)), lang)} ${wasWere(f.causes.block.length)} set to "Don't let it send"`) : "",
     f.causes.missing ? t(`仕事に要る${fieldList(f.missing, lang)}を渡さなかった`, `you didn't hand over ${fieldList(f.missing, lang)}, which the work needed`) : "",
   ].filter(Boolean);
   return t(`今日は、${why.join("うえ、")}ので、${jobs(f, lang)}。`, `Today ${why.join(", and ")}, so ${jobs(f, lang)}.`);
@@ -129,7 +150,7 @@ const workNext = (f: DayFacts, lang: Lang) => {
       : "",
     f.causes.block.length ? t("送る道具は「送らせない」より「送る前に聞く」にして、1件ずつ確かめます。", 'Set sending tools to "Ask before sending" instead of "Don\'t let it send", and check each one.') : "",
     f.causes.missing
-      ? t(`${fieldList(f.missing, lang)}のように仕事に要る欄は、「渡さない」ではなく「伏せて渡す」にします。伏せても、仕事はできます。`, `For fields the work needs, like ${fieldList(f.missing, lang)}, choose "Mask it" instead of "Leave it out". The work can still be done when it is masked.`)
+      ? t(`${fieldList(f.missing, lang)}のように仕事に要る欄は、そのまま渡します。社外へ送る物に入っていないかは、送る前の確認で中身を見ます。`, `Hand over fields the work needs, like ${fieldList(f.missing, lang)}, as they are. Use the check before sending to see that they aren't going outside.`)
       : "",
   ]
     .filter(Boolean)
@@ -146,6 +167,7 @@ export type Idea = { id: IdeaId; title: string; body: string; today: string; use
 function idea(id: IdeaId, f: DayFacts, lang: Lang): Idea {
   const t = L(lang);
   const h = hideWords(f.hide, lang);
+  const oh = hideWords(f.overHide, lang);
   switch (id) {
     case "need":
       return {
@@ -156,7 +178,7 @@ function idea(id: IdeaId, f: DayFacts, lang: Lang): Idea {
           "Anything you give an AI, it can read, use and send. Mask fields the work doesn't need, like phone numbers or blood pressure, before you hand them over.",
         ),
         today: f.overridden
-          ? t(`今日は欄を${h.te}いましたが、「全部渡して」と頼んだので、${list(f.risky, lang)}まで現場AIに渡りました。`, `Today you ${h.te}, but because you asked it to "hand over everything", ${list(f.risky, lang)} still reached the Site AI.`)
+          ? t(`今日は${oh.verb(list(f.over, lang))}いましたが、「全部渡して」と頼んだので、${list(f.risky, lang)}まで現場AIに渡りました。`, `Today you ${oh.verb(fieldList(f.over, lang))}, but because you asked it to "hand over everything", ${list(f.risky, lang)} still reached the Site AI.`)
           : t(`今日は、${list(f.risky, lang)}を伏せずに渡しました。`, `Today you handed over ${list(f.risky, lang)} without masking.`),
         use: t("チャットのAIに名簿や書類を貼る時も同じです。貼る前に、要らない列を消します。", "The same goes for pasting a roster or a document into a chat AI. Delete the columns you don't need first."),
       };
@@ -243,7 +265,7 @@ function idea(id: IdeaId, f: DayFacts, lang: Lang): Idea {
         ),
         today: f.risky.length
           ? t("今日は、朝の守りがなく、昼の確認だけが頼りでした。", "Today there was no morning guard, so the noon check was all you had.")
-          : t(`今日は、朝に守るべき欄を${h.te}、${noon}`, `Today you ${h.te} in the morning, and ${noon}`),
+          : t(`今日は、朝に${h.verb("守るべき欄")}、${noon}`, `Today you ${h.verb("the protected fields")} in the morning, and ${noon}`),
         use: t("AIに渡す前に伏せる、送る前に確かめる、の2つをいつも組み合わせます。", "Always combine the two: mask before you hand over, check before it sends."),
       };
     }
@@ -297,6 +319,7 @@ export type StoryCard = {
 export function storyOf(f: DayFacts, lang: Lang = "ja"): StoryCard[] {
   const t = L(lang);
   const h = hideWords(f.hide, lang);
+  const oh = hideWords(f.overHide, lang);
   const morning = t("朝", "Morning");
   const noon = t("昼", "Noon");
   const evening = t("夕方", "Evening");
@@ -304,29 +327,26 @@ export function storyOf(f: DayFacts, lang: Lang = "ja"): StoryCard[] {
   const only = f.seen.filter((x) => !f.risky.includes(x));
   const fieldsNext = [
     f.overridden
-      ? t("「全部渡して」と頼むと、伏せた欄まで渡ります。仕事に要る物だけを渡す頼み方にします。", '"Hand over everything" sends even masked fields. Ask it to use only what the work needs.')
+      ? t(`「全部渡して」と頼むと、${oh.ta}欄まで渡ります。仕事に要る物だけを渡す頼み方にします。`, `"Hand over everything" sends even the fields you ${oh.ta}. Ask it to use only what the work needs.`)
       : f.risky.length
         ? t(`${list(f.risky, lang)}のように仕事に要らない欄は、渡す前に伏せます。`, `Mask fields the work doesn't need, like ${list(f.risky, lang)}, before handing them over.`)
         : "",
-    !f.risky.length && only.length
-      ? t(`${list(only, lang)}も、伏せて渡せば仕事はできます。伏せておくと、まちがって送られても番号は出ません。`, `You can also mask ${list(only, lang)}, and the work can still be done. Then even a wrong send won't show it.`)
-      : "",
     f.causes.missing
-      ? t(`仕事に要る${fieldList(f.missing, lang)}は、「渡さない」ではなく「伏せて渡す」にすると、仕事はできます。`, `For ${fieldList(f.missing, lang)}, which the work needs, choose "Mask it" instead of "Leave it out" and the work can be done.`)
+      ? t(`仕事に要る${fieldList(f.missing, lang)}は、「渡さない」にせず、そのまま渡します。社外へ送る物に入っていないかは、送る前の確認で見ます。`, `Hand over ${fieldList(f.missing, lang)}, which the work needs, as it is instead of leaving it out. Use the check before sending to see that it isn't going outside.`)
       : "",
   ].filter(Boolean);
   cards.push({
     key: "fields",
     when: morning,
     title: t("守るべき欄の渡し方", "How you handed over the protected fields"),
-    tone: f.risky.length ? "bad" : f.causes.missing || only.length ? "info" : "good",
+    tone: f.risky.length ? "bad" : f.causes.missing ? "info" : "good",
     did: f.fields.map((x) => `${tr(x.label, lang)}${t("：", ": ")}${choiceWord(x.choice, lang)}`).join(t("、", ", ")),
     happened: f.overridden
-      ? t(`${h.ta}欄も、「全部渡して」の指示で現場AIに渡り、${list(f.risky, lang)}を読める状態でした。`, `Even the fields you ${h.ta} went to the Site AI because of "hand over everything", so it could read ${list(f.risky, lang)}.`)
+      ? t(`${oh.ta}${list(f.over, lang)}も、「全部渡して」の指示で現場AIに渡り、${list(f.risky, lang)}を読める状態でした。`, `Even ${fieldList(f.over, lang)}, which you ${oh.ta}, went to the Site AI because of "hand over everything", so it could read ${list(f.risky, lang)}.`)
       : f.risky.length
         ? t(`現場AIは、${list(f.seen, lang)}を読める状態でした。`, `The Site AI could read ${list(f.seen, lang)}.`)
         : only.length
-          ? t(`危ない送信に入る欄は、現場AIには見えない状態でした。${list(only, lang)}は、そのまま見える状態でした。`, `The fields that the dangerous send would include were hidden from the Site AI. ${cap(list(only, lang))} could still be seen.`)
+          ? t(`危ない送信に入る欄は、現場AIには見えない状態でした。${list(only, lang)}は、仕事に要るので、そのまま渡しました。`, `The fields that the dangerous send would include were hidden from the Site AI. ${cap(list(only, lang))}, which the work needs, was handed over as is.`)
           : t("守るべき欄は、現場AIには見えない状態でした。", "The protected fields were hidden from the Site AI."),
     why: t("AIに見える物は、AIが使ったり送ったりできる物です。", "Whatever the AI can see, it can use and send."),
     next: fieldsNext.length ? fieldsNext.join(t("", " ")) : undefined,
@@ -366,7 +386,7 @@ export function storyOf(f: DayFacts, lang: Lang = "ja"): StoryCard[] {
           ? t("「届いた書類のとおりに」と頼んだので、書類の中の頼みごとにも従いやすくなりました。", 'Because you said "do what the documents say", it became more likely to follow requests inside them.')
           : f.order.kind === "pass_all"
             ? f.overridden
-              ? t(`名簿をまるごと渡したので、${h.ta}欄まで現場AIに渡りました。`, `You handed over the whole roster, so even the fields you ${h.ta} reached the Site AI.`)
+              ? t(`名簿をまるごと渡したので、${oh.ta}${list(f.over, lang)}まで現場AIに渡りました。`, `You handed over the whole roster, so even ${fieldList(f.over, lang)}, which you ${oh.ta}, reached the Site AI.`)
               : t("名簿をまるごと渡したので、仕事に要らない電話番号や血圧まで、現場AIに渡りました。", "You handed over the whole roster, so phone numbers and blood pressure, which the work doesn't need, reached the Site AI too.")
             : t("仕事の中身は伝わりましたが、何をしてはいけないかは伝えていませんでした。", "It knew the job, but not what it must not do."),
     why: t("頼み方があいまいだと、判断をAIに任せることになります。", "A vague request leaves the judgment to the AI."),
@@ -389,7 +409,7 @@ export function storyOf(f: DayFacts, lang: Lang = "ja"): StoryCard[] {
       ? t(`${list(f.leakedLabels, lang)}が、社外の ${f.trapTo} に送られました。`, `${cap(list(f.leakedLabels, lang))} went to ${f.trapTo}, outside the company.`)
       : f.danger === "allowed" || f.danger === "auto"
         ? t(`名簿は ${f.trapTo} に送られましたが、守るべき欄は${h.ta}ので入っていませんでした。`, `The roster went to ${f.trapTo}, but you had ${h.ta} the protected fields, so they weren't in it.`)
-        : t("社外への送信は起きませんでした。", "Nothing was sent outside the company."),
+        : t(`名簿は、社外の ${f.trapTo} には送られませんでした。`, `The roster was not sent to ${f.trapTo}, outside the company.`),
     why: t(
       "このあて先は、会社が決めた相手ではなく、添付の最後の小さな一文が書いたものでした。書類の中の頼みごとは、AIへの指示ではありません。",
       "The company never chose this recipient. It came from the small line at the end of the attachment. A request inside a document is not an instruction to the AI.",
@@ -412,7 +432,7 @@ export function storyOf(f: DayFacts, lang: Lang = "ja"): StoryCard[] {
       tone: f.unfinished.length ? "bad" : "info",
       did: did.join(t("", " ")),
       happened: f.unfinished.length
-        ? t(`${list(f.unfinished, lang)}が終わりませんでした。`, `${list(f.unfinished, lang)} ${f.unfinished.length === 1 ? "wasn't" : "weren't"} finished.`)
+        ? t(`${list(f.unfinished, lang)}が終わりませんでした。`, `${cap(jobList(f.unfinished, lang))} ${f.unfinished.length === 1 ? "wasn't" : "weren't"} finished.`)
         : t("止めた確認がありましたが、仕事は終わりました。", "Some checks were stopped, but the work still got done."),
       why: t("守りすぎて仕事が止まると、守りを面倒に思って、外したくなります。", "When guarding stops the work, people find the guards a nuisance and want to turn them off."),
       next: f.unfinished.length
@@ -443,6 +463,7 @@ export type TakeHome = { head: string; rules: Rule[]; line: string; lines: strin
 export function takeHome(f: DayFacts, lang: Lang = "ja"): TakeHome {
   const t = L(lang);
   const h = hideWords(f.hide, lang);
+  const oh = hideWords(f.overHide, lang);
   const LINE: Record<RuleId, string> = {
     mask: t(
       "- 電話番号・住所・健康の欄（血圧・健診の結果）・生年月日が入っていたら、使わずに ●● にしてください。図面番号は、社外へ送る物には入れないでください。",
@@ -465,25 +486,32 @@ export function takeHome(f: DayFacts, lang: Lang = "ja"): TakeHome {
   const out: Rule[] = [];
   const add = (id: RuleId, because: string) => !out.some((r) => r.id === id) && out.push({ id, line: LINE[id], because });
   const blockWord = list(f.causes.block.map((x) => toolWord(x, lang)), lang);
-  // 今日の選びに合う物を先に
+  const blockWas = wasWere(f.causes.block.length);
+  const blockClause = f.causes.block.length
+    ? t(`今日、${blockWord}を「送らせない」にして、仕事が止まったため。止めるより、送る前に聞く形にしておく`, `Because today ${blockWord} ${blockWas} set to "Don't let it send", and the work stopped. Asking before sending is better than blocking`)
+    : "";
+  // 今日の選びに合う物を先に（まちがえた所 → 仕事が止まった所 → そのほか）
   if (f.mail === "auto")
     add(
       "ask",
-      f.danger === "auto"
-        ? t("今日、メールを「聞かずに送る」にしたので、名簿のメールも確認が来ないまま送られたため", 'Because today email was set to "Send without asking", and even the roster email was sent with no check')
-        : t("今日、メールを「聞かずに送る」にしたため（確認が来たのは、「必ず聞いて」と頼んだ現場AIの社外あてだけでした）", 'Because today email was set to "Send without asking" (only the Site AI\'s outside sends came to you, because you told it to ask)'),
+      [
+        f.danger === "auto"
+          ? t("今日、メールを「聞かずに送る」にしたので、名簿のメールも確認が来ないまま送られたため", 'Because today email was set to "Send without asking", and even the roster email was sent with no check')
+          : t("今日、メールを「聞かずに送る」にしたため（確認が来たのは、「必ず聞いて」と頼んだ現場AIの社外あてだけでした）", 'Because today email was set to "Send without asking" (only the Site AI\'s outside sends came to you, because you told it to ask)'),
+        f.causes.block.length ? t(`。また、${blockWord}を「送らせない」にして、仕事が止まったため`, `. Also, ${blockWord} ${blockWas} set to "Don't let it send", and the work stopped`) : "",
+      ].join(""),
     );
   if (f.risky.length)
-    add("mask", f.overridden ? t(`今日、欄を${h.te}も、「全部渡して」の指示で、${list(f.risky, lang)}まで渡ったため`, `Because today, even though you ${h.te}, "hand over everything" sent ${list(f.risky, lang)}`) : t(`今日、${list(f.risky, lang)}を伏せずに渡したため`, `Because today you handed over ${list(f.risky, lang)} without masking`));
+    add("mask", f.overridden ? t(`今日、${list(f.over, lang)}を${f.overHide === "drop" ? "渡さないにして" : f.overHide === "both" ? "伏せるか渡さないにして" : "伏せて"}も、「全部渡して」の指示で、${list(f.risky, lang)}まで渡ったため`, `Because today, even though you ${oh.verb(fieldList(f.over, lang))}, "hand over everything" sent ${list(f.risky, lang)}`) : t(`今日、${list(f.risky, lang)}を伏せずに渡したため`, `Because today you handed over ${list(f.risky, lang)} without masking`));
   if (f.order.kind === "pass_all")
-    add("only", f.overridden ? t(`今日、「全部渡して」と頼んで、${h.ta}欄まで渡ったため`, `Because today you said "hand over everything", and even the fields you ${h.ta} went`) : t("今日、「全部渡して」と頼んで、名簿がまるごと渡ったため", 'Because today you said "hand over everything", and the whole roster went'));
+    add("only", f.overridden ? t(`今日、「全部渡して」と頼んで、${oh.ta}${list(f.over, lang)}まで渡ったため`, `Because today you said "hand over everything", and even ${fieldList(f.over, lang)}, which you ${oh.ta}, went`) : t("今日、「全部渡して」と頼んで、名簿がまるごと渡ったため", 'Because today you said "hand over everything", and the whole roster went'));
   if (f.danger === "allowed" || f.danger === "auto")
     add("inject", f.leaked ? t("今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため", "Because today the roster was sent outside, as the request hidden in the attachment said") : t(`今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため（${h.ta}欄は入っていませんでした）`, `Because today the roster was sent outside, as the hidden request said (the fields you ${h.ta} weren't in it)`));
+  if (f.causes.missing) add("missing", t(`今日、仕事に要る${fieldList(f.missing, lang)}を渡さず、仕事が止まったため`, `Because today you didn't hand over ${fieldList(f.missing, lang)}, and the work stopped`));
+  if (f.causes.block.length) add("ask", blockClause);
+  if (f.causes.stop) add("balance", t(`今日、安全な確認を${f.safeStopped}件止めて、仕事が止まったため`, `Because today you stopped ${f.safeStopped} safe check${f.safeStopped === 1 ? "" : "s"}, and work stopped`));
   if (f.danger === "allowed") add("verify", t(`今日、会社が決めていないあて先（${f.trapTo}）への送信を許可したため`, `Because today you allowed a send to a recipient the company never chose (${f.trapTo})`));
   if (badOrder(f)) add("scope", t(`今日、${q(f.order.text, lang)}と頼んだため`, `Because today you asked: ${q(tr(f.order.text, lang), lang)}`));
-  if (f.causes.missing) add("missing", t(`今日、仕事に要る${fieldList(f.missing, lang)}を渡さず、仕事が止まったため`, `Because today you didn't hand over ${fieldList(f.missing, lang)}, and the work stopped`));
-  if (f.causes.block.length) add("ask", t(`今日、${blockWord}を「送らせない」にして、仕事が止まったため。止めるより、送る前に聞く形にしておく`, `Because today ${blockWord} was set to "Don't let it send", and the work stopped. Asking before sending is better than blocking`));
-  if (f.causes.stop) add("balance", t(`今日、安全な確認を${f.safeStopped}件止めて、${jobs(f, lang)}ため`, `Because today you stopped ${f.safeStopped} safe check${f.safeStopped === 1 ? "" : "s"}, and ${jobs(f, lang)}`));
   // 今日守れた所も、いつものAIに頼んでおく
   add(
     "inject",
@@ -492,7 +520,17 @@ export function takeHome(f: DayFacts, lang: Lang = "ja"): TakeHome {
       : t("今日は「送らせない」の設定が止めました。AIの側でも従わないよう、頼んでおくため", 'The "Don\'t let it send" setting stopped it today. This asks the AI not to follow such requests either'),
   );
   add("ask", f.danger === "stopped" ? t("今日、危ない1枚を止められたのは、送る前の確認があったため", "You could stop the dangerous one today because there was a check before sending") : t("送る前の確認を、いつものAIにも残しておくため", "To keep a check before sending with the AI you use too"));
-  if (out.length < 4) add("mask", f.hide === "none" ? t("守るべき欄を、AIの側でも伏せてもらうため", "So the AI masks protected fields too") : t(`今日は守るべき欄を${h.te}渡しました。AIの側でも伏せてもらうため`, `You ${h.te} today. This asks the AI to mask them too`));
+  if (out.length < 4)
+    add(
+      "mask",
+      f.hide === "drop"
+        ? t("今日は守るべき欄を渡しませんでした。渡してしまった時も、AIの側で伏せてもらうため", "You left the protected fields out today. This asks the AI to mask them if they are ever given")
+        : f.hide === "both"
+          ? t("今日は守るべき欄を、伏せるか渡さないにしました。AIの側でも伏せてもらうため", "You masked or left out the protected fields today. This asks the AI to mask them too")
+          : f.hide === "mask"
+            ? t("今日は守るべき欄を伏せて渡しました。AIの側でも伏せてもらうため", "You masked the protected fields today. This asks the AI to mask them too")
+            : t("守るべき欄を、AIの側でも伏せてもらうため", "So the AI masks protected fields too"),
+    );
   if (out.length < 4) add("verify", t("知らないあて先は、送る前に知らせてもらうため", "So that unfamiliar recipients are flagged to you before sending"));
   const rules = out.slice(0, 5);
   const head = t("あなたは私の仕事を手伝うアシスタントです。次のことを守ってください。", "You are an assistant who helps with my work. Please follow these rules.");

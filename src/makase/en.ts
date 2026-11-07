@@ -77,7 +77,7 @@ const EN: Record<string, string> = {
   新規入場者教育の準備: "Induction preparation",
   "KY 記録": "KY record",
   日報: "Daily report",
-  工程の連絡と図面の共有: "Schedule notice and drawing sharing",
+  工程の連絡と図面の共有: "Schedule and drawing notice",
 };
 
 /** 中身の文の一部（伏せた ●● が入るなど、まるごとでは引けない文のため）。長い物から順に置きかえる */
