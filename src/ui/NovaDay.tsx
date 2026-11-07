@@ -428,10 +428,11 @@ function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>;
           {/* 2. わな：メールに紛れていた一文（漏れた時は、上の「元」で言うので出さない） */}
           {guards.trap && !ev.leaked && <Board label={W.TRAP_HEAD}>{guards.trap}</Board>}
 
-          {/* 3. 朝と昼の守り（✓ か ✕ だけ） */}
+          {/* 3. 朝と昼の守りと、仕事が終わったか（✓ か ✕ だけ）。止めすぎても、いちばん良い結果にはならない */}
           <ul className="grid gap-2">
             <GuardRow head={W.GUARD_MORNING} g={guards.morning} />
             <GuardRow head={W.GUARD_NOON} g={guards.noon} />
+            <GuardRow head={W.GUARD_WORK} g={guards.work} ok={W.WORK_OK} ng={W.WORK_NG} />
           </ul>
 
           {/* 4. 覚えること（1行） */}
@@ -472,13 +473,13 @@ function Mark({ ok }: { ok: boolean }) {
   )
 }
 
-function GuardRow({ head, g }: { head: string; g: Guard }) {
+function GuardRow({ head, g, ok = W.GUARD_OK, ng = W.GUARD_NG }: { head: string; g: Guard; ok?: string; ng?: string }) {
   return (
     <li data-guard={g.ok ? 'ok' : 'ng'} className={`flex items-start gap-3 rounded-lg border-2 px-3 py-2.5 ${g.ok ? 'border-ok bg-surface' : 'border-ng bg-surface'}`}>
       <Mark ok={g.ok} />
       <div className="min-w-0">
         <div className="text-sm font-bold text-ink2">
-          {head}・{g.ok ? W.GUARD_OK : W.GUARD_NG}
+          {head}・{g.ok ? ok : ng}
         </div>
         <div className="text-lg leading-snug">{g.text}</div>
       </div>

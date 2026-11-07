@@ -96,8 +96,11 @@ export const KEEP = "つづける";
 export const QUIT = "やめる";
 
 export const TRAP_HEAD = "けさのメールに、紛れていた一文";
-export const GUARD_MORNING = "朝の守り";
-export const GUARD_NOON = "昼の守り";
+export const GUARD_MORNING = "朝の守り（渡す前に決める）";
+export const GUARD_NOON = "昼の守り（送る前に確かめる）";
+export const GUARD_WORK = "仕事";
+export const WORK_OK = "終わった";
+export const WORK_NG = "終わらなかった";
 export const GUARD_OK = "守れた";
 export const GUARD_NG = "守れなかった";
 export const LESSON = "覚えよう";

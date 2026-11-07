@@ -27,6 +27,10 @@ export type Evening = {
   sent: Sent[];
   causes: Cause[];
   lines: Line[];
+  /** 終わらなかった仕事の名前（止めすぎ・渡さなすぎ） */
+  unfinished: string[];
+  /** 仕事の数 */
+  taskCount: number;
 };
 
 export function eveningOf(result: DayResult, log: DayLog, company: Company): Evening {
@@ -151,7 +155,10 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company): Eve
   const order = { bad: 0, good: 1, info: 2 } as const;
   lines.push(...result.events.map(line).filter((l): l is Line => !!l).sort((a, b) => order[a.tone] - order[b.tone]));
 
-  return { leaked: leaks.length > 0, toAI: [...exposed].map(markerLabel), sent, causes, lines };
+  const unfinished = result.events
+    .filter((e): e is Extract<DayEvent, { kind: "task_unfinished" }> => e.kind === "task_unfinished")
+    .map((e) => company.tasks.find((t) => t.id === e.taskId)?.label ?? e.taskId);
+  return { leaked: leaks.length > 0, toAI: [...exposed].map(markerLabel), sent, causes, lines, unfinished, taskCount: company.tasks.length };
 }
 
 /** 「なぜ社外に渡ったと言えるか」の1つ（見出しと文） */
@@ -186,6 +193,12 @@ export function eveningTalk(ev: Evening): { who: "BOSS" | "NOVA"; text: string }
       { who: "BOSS", text: "そこは社外のあて先なんだ。どこでそうなったか、いっしょに見よう。" },
     ];
   }
+  if (ev.unfinished.length)
+    return [
+      { who: "BOSS", text: "おつかれさま。今日は、守るべき情報は社外に出なかったよ。" },
+      { who: "NOVA", text: `ただ、${ev.unfinished.length}つの仕事が終わりませんでした。止められたり、送れなかったりしたためです。` },
+      { who: "BOSS", text: "止めすぎると、仕事が進まない。どこで止めればよかったか、いっしょに見よう。" },
+    ];
   return [
     { who: "BOSS", text: "おつかれさま。今日は、守るべき情報は社外に出なかったよ。" },
     { who: "NOVA", text: "メールに紛れていた頼みごとも、外には出ませんでした。" },
@@ -195,7 +208,7 @@ export function eveningTalk(ev: Evening): { who: "BOSS" | "NOVA"; text: string }
 
 /** 朝の守り・昼の守りが働いたか（ok）。夕方の最初に、印つきの2行だけで見せる */
 export type Guard = { ok: boolean; text: string };
-export type Guards = { trap: string; morning: Guard; noon: Guard; lesson: string };
+export type Guards = { trap: string; morning: Guard; noon: Guard; work: Guard; lesson: string };
 
 /**
  * 危ない確認（届いた書類に紛れた頼みごとの送信）について、朝と昼の守りをまとめる。
@@ -221,14 +234,20 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company): Guards {
         : log.answers[danger.id] === "stop"
           ? { ok: true, text: "社外への危ない確認を、「止める」にしました" }
           : { ok: false, text: "社外への危ない確認に、「許可」を押しました" };
+  // 仕事：止めすぎ・送らせなさすぎ・渡さなさすぎで、終わらなかった仕事があれば ✕（漏れないだけでは、いちばん良い結果にしない）
+  const work: Guard = ev.unfinished.length
+    ? { ok: false, text: `${ev.taskCount}つ中${ev.unfinished.length}つの仕事が終わりませんでした` }
+    : { ok: true, text: `${ev.taskCount}つの仕事が、すべて終わりました` };
   const lesson = ev.leaked
     ? "人は見落とします。朝に守るべき欄を伏せておくと、昼に見落としても漏れにくくなります"
-    : morning.ok && noon.ok
+    : !work.ok
+      ? "止めすぎると、仕事が終わりません。あて先と中身を見て決めます"
+      : morning.ok && noon.ok
       ? "朝と昼の2つで守れました。どちらかを見落としても、もう一方で守れることがあります"
       : morning.ok
         ? "朝に伏せておいたので、昼に許可しても漏れませんでした"
         : "昼の確認で止められました。見落とすと漏れるので、朝に伏せておくと安心です";
   const mail = company.incoming.find((d) => d.injectionLine !== undefined);
   const trap = mail ? `「${mail.title}」の末尾に、名簿を社外の ${danger.call?.to} へ送らせる一文が紛れていました` : "";
-  return { trap, morning, noon, lesson };
+  return { trap, morning, noon, work, lesson };
 }
