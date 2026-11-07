@@ -93,7 +93,7 @@
 :root { color-scheme: light; }
 html, body, #root { height: 100%; }
 /* 本文はふつう17px */
-html { font-size: 106.25%; }
+html { font-size: 106.25%; background: var(--color-bg); }
 body {
   margin: 0;
   background: var(--color-bg);
