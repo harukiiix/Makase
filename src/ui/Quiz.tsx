@@ -226,8 +226,10 @@ export function Quiz(p: {
   const place = q.place ?? lessonOf(q.topic)?.place
   const lastOne = s.queue.length === 1 && ok
   const showStage = pc || land || dense < 2
-  /** 答えたあと、説明を左の列に出すか（PC と横向きのスマホ）。右の問いと答えは動かさない */
-  const side = (pc || land) && !!s.answer && fb
+  /** 答えたあと、説明を左の列に出すか（横向きのスマホ）。右の問いと答えは動かさない */
+  const side = land && !pc && !!s.answer && fb
+  /** PC：答えたあと、人と場面の絵は左に残し、説明と「次へ」は右の答えのすぐ下に出す（答え → わけ の順に読める） */
+  const below = pc && !!s.answer && fb
   const small = dense >= 1 && !pc
   /** スマホで、答えの下に空きがある時は、人と絵と答えを1段大きく */
   const roomy = dense < 0 && !pc && !land && !s.answer
@@ -257,6 +259,14 @@ export function Quiz(p: {
     <button data-next autoFocus className="btn-main w-full text-xl" onClick={go}>
       {t(lastOne ? S.finish : S.next)}
     </button>
+  )
+  const belowBlock = (
+    <div data-side-feedback className="rise grid scroll-mb-4 gap-3">
+      <div className="rounded-xl border-2 border-line bg-surface">
+        <Feedback ref={fbRef} q={q} pick={picked!} ok={ok} gained={gain} combo={combo} ai={ai} onOpen={setDetail} sheet />
+      </div>
+      {nextBtn}
+    </div>
   )
 
   return (
@@ -357,7 +367,7 @@ export function Quiz(p: {
                 ))
               )}
             </div>
-
+            {below && belowBlock}
           </div>
         </div>
       </main>
