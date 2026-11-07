@@ -11,7 +11,7 @@ import { CASES } from '../game/cases'
 import { lessonOf } from '../game/course'
 import { answer, finished, isRight, next, shuffle, startSession, whyFor, type Session, type SessionKind } from '../game/learn'
 import type { Lang, Question, TopicId } from '../game/types'
-import { aiOff, CLAUDE_AI_URL, errorKind, getAI, tutorRules, type SampleFn } from '../lib/ai'
+import { aiOff, CLAUDE_AI_URL, errorKind, getAI, onClaudeAi, tutorRules, type SampleFn } from '../lib/ai'
 import { useAiBudget } from './aiBudget'
 import { FAST, sfx } from '../lib/platform'
 import { Art } from './Art'
@@ -531,7 +531,7 @@ function FeedbackActions({ q, ok, ai, onOpen, compact, noLink }: { q: Question; 
 /** AIが使えない所（GitHub Pages など）では、claude.ai の版を案内する（遊ぶ人自身の Claude で答えるため） */
 function AiElsewhere({ ai }: { ai: SampleFn | null | undefined }) {
   const t = useT()
-  if (ai !== null) return null
+  if (ai !== null || onClaudeAi()) return null
   return (
     <a data-ai-elsewhere href={CLAUDE_AI_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-ink2 underline">
       <Art id="icon.ai" scale={1.5} />

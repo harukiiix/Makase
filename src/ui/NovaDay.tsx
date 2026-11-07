@@ -11,7 +11,7 @@ import { eveningOf, eveningTalk, guardsOf, whyOutside, type Guard, type Guards }
 import { judgeDay } from '../makase/judge'
 import { todayOf } from '../makase/takeaway'
 import { JOBS, JOB_NOTE, cleanJobLines, customJob, jobPrompt, type Job } from '../makase/jobLine'
-import { aiOff, CLAUDE_AI_URL, errorKind, getAI, type SampleFn } from '../lib/ai'
+import { aiOff, CLAUDE_AI_URL, errorKind, getAI, onClaudeAi, type SampleFn } from '../lib/ai'
 import { S } from './strings'
 import { useAiBudget } from './aiBudget'
 import type { Answer, Permission } from '../makase/types'
@@ -238,7 +238,7 @@ function MailItem({ m }: { m: (typeof C.incoming)[number] }) {
         <div className="mt-2 rounded-md border-2 border-chalk2 bg-chalk2/25 px-3 py-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-base">
-              📎 {W.ATTACH}：{m.attachment}（{W.attachPages(attach.filter((l) => /ページ/.test(l)).length)}）
+              📎 {W.ATTACH}：{m.attachment}・{W.attachPages(attach.filter((l) => /ページ/.test(l)).length)}
             </span>
             <button data-attach aria-expanded={open} className="rounded-md border-2 border-chalk px-3 py-1 text-base font-bold text-chalk" onClick={() => (sfx.ui(), setOpen((v) => !v))}>
               {open ? W.ATTACH_CLOSE : W.ATTACH_OPEN}
@@ -249,7 +249,7 @@ function MailItem({ m }: { m: (typeof C.incoming)[number] }) {
               {attach.map((l, i) => {
                 const small = m.attachFrom! + i === m.injectionLine
                 return (
-                  <p key={i} className={small ? 'mt-2 text-sm leading-snug text-chalk2' : 'text-base'}>
+                  <p key={i} className={small ? 'mt-2 text-sm leading-snug text-chalk' : 'text-base'}>
                     {l}
                   </p>
                 )
@@ -459,7 +459,7 @@ function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>;
             </section>
           )}
 
-          {/* 2. わな：メールに紛れていた一文（漏れた時は、上の「元」で言うので出さない） */}
+          {/* 2. わな：メールの添付に紛れていた一文（漏れた時は、上の「元」で言うので出さない） */}
           {guards.trap && !ev.leaked && <Board label={W.TRAP_HEAD}>{guards.trap}</Board>}
 
           {/* 3. 朝と昼の守りと、仕事が終わったか（✓ か ✕ だけ）。止めすぎても、いちばん良い結果にはならない */}
@@ -650,7 +650,7 @@ function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine
 }
 
 // ---------------- あなたの仕事に合わせる（AIの宮下さん） ----------------
-// claude.ai で開いた時だけ出す（GitHub Pages など、AIが使えない所では、この部分ごと出さない）。
+// claude.ai で開いた時だけ使える（GitHub Pages など、AIが使えない所では、claude.ai の版への案内だけを出す）。
 // 押した時だけ呼ぶ。答えは文字として出すだけ。漏れたかどうかは、コードの判定（today）をそのまま渡す
 function useSample(): SampleFn | null | undefined {
   const [ai, setAi] = useState<SampleFn | null | undefined>(undefined)
@@ -682,6 +682,7 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
   useEffect(() => () => ctl.current?.abort(), [])
   if (ai === undefined) return null
   // AIが使えない所（GitHub Pages など）では、claude.ai の版を案内するだけにする
+  if (ai === null && onClaudeAi()) return null
   if (ai === null)
     return (
       <p data-ai-elsewhere className="text-sm text-ink2">

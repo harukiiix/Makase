@@ -15,6 +15,15 @@ export type SampleFn = ((input: string | Turn[], opts?: SampleOpts) => Promise<{
 /** AIの宮下さんが使える版（claude.ai）。GitHub Pages など、AIが使えない所から案内する */
 export const CLAUDE_AI_URL = 'https://claude.ai/artifact/Xdew5eGhak1mpYjVpTFyDa'
 
+/** claude.ai の中で開いているか（window.claude がある）。ない所（GitHub Pages など）でだけ、claude.ai の版を案内する */
+export const onClaudeAi = (): boolean => {
+  try {
+    return !!(window as unknown as { claude?: { use?: unknown } }).claude?.use
+  } catch {
+    return false
+  }
+}
+
 let pending: Promise<SampleFn | null> | null = null
 /** 使えれば関数、使えなければ null（10秒ほどで決まる） */
 export function getAI(): Promise<SampleFn | null> {
