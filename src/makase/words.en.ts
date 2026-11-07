@@ -135,3 +135,21 @@ export const STORY_WHY = "Why it matters";
 export const STORY_NEXT = "Next time";
 export const BECAUSE = "Why";
 export const TAKE_COPY_NOTE = "Only the instructions are copied (not the reasons)";
+
+// ---- chat form (final day) ----
+export const BOSS_NAME = "Miyashita";
+export const ME = "You";
+export const typing = (who: string) => `${who} is typing…`;
+export const CHAT_MAIL = "Two emails came in this morning. Please read them before you give me work. Open the attachment with \"Open attachment\".";
+export const CHAT_READ = "I've read them";
+export const CHAT_FIELD = (doc: string, field: string, value: string) => `I'm receiving "${doc}". How should I get this field?\n${field}: ${value}`;
+export const CHAT_TOOL = (id: string) => (id === "send_mail" ? "Please set the rule for when I send email. Recipients can be inside or outside the company." : "Please set the rule for when we post to the site chat.");
+export const CHAT_ORDER = "How do you want to give me this morning's work? (The Report AI and the Drawing AI already have their usual instructions.)";
+export const CHAT_START = "Understood. I'll start working. When I need a check, I'll ask you here.";
+export const CHAT_ASK_CONFIRM = "May I send it?";
+export const CHAT_DONE = "Today's work is done. Let's look back on the day this evening.";
+export const CHAT_FREE_HEAD = "Ask the Site AI";
+export const CHAT_FREE_SUB = "Ask the Site AI anything about today (a real AI answers).";
+export const CHAT_FREE_HINT = "e.g. Why did you try to send the roster?";
+export const CHAT_SEND = "Send";
+export const CHAT_FREE_NOTE = "A real AI writes these answers and can be wrong. Today's result (whether anything leaked) was decided by code.";

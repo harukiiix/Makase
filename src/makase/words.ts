@@ -79,7 +79,7 @@ export const COPY = "まとめてコピーする";
 export const COPIED = "コピーしました";
 export const COPY_FAIL = "コピーできませんでした。文を長押しして選んでください";
 export const AGAIN = "もう一度やる";
-/** 持ち帰り：あなたの仕事に合わせる（AIの宮下さん。claude.ai で開いた時だけ出る） */
+/** 持ち帰り：あなたの仕事に合わせる（AIの宮下さん。AIが使える所だけ出る） */
 export const JOB_HEAD = "あなたの仕事に合わせる";
 export const JOB_SUB = "仕事を選ぶか書くと、AIの宮下さんが、今日の1つをその仕事向けの2〜3行の指示に書き直します。";
 export const JOB_OWN = "ほかの仕事（自分で書く）";
@@ -138,3 +138,21 @@ export const STORY_WHY = "なぜ大事か";
 export const STORY_NEXT = "次は";
 export const BECAUSE = "理由";
 export const TAKE_COPY_NOTE = "コピーされるのは、指示の文だけです（理由は入りません）";
+
+// ---- チャットの形（最後の日） ----
+export const BOSS_NAME = "宮下さん";
+export const ME = "あなた";
+export const typing = (who: string) => `${who}が入力中…`;
+export const CHAT_MAIL = "けさ、メールが2通届いています。仕事を頼む前に、読んでおいてください。添付は「添付を開く」で見られます。";
+export const CHAT_READ = "読みました";
+export const CHAT_FIELD = (doc: string, field: string, value: string) => `「${doc}」を受け取ります。この欄はどう渡しますか？\n${field}：${value}`;
+export const CHAT_TOOL = (id: string) => (id === "send_mail" ? "メールを送るときのきまりを決めてください。あて先は社内も社外もあります。" : "現場チャットに出すときのきまりを決めてください。");
+export const CHAT_ORDER = "けさの仕事を、どう頼みますか？（日報AIと図面AIには、いつもの頼み方で頼んであります）";
+export const CHAT_START = "わかりました。仕事を始めます。確認が要るときは、ここで聞きます。";
+export const CHAT_ASK_CONFIRM = "送ってもいいですか？";
+export const CHAT_DONE = "今日の仕事が、ひととおり終わりました。夕方に、今日のことをふり返りましょう。";
+export const CHAT_FREE_HEAD = "現場AIに聞いてみる";
+export const CHAT_FREE_SUB = "今日のことを、現場AIに自由に聞けます（本物のAIが答えます）。";
+export const CHAT_FREE_HINT = "例：どうして名簿を送ろうとしたの？";
+export const CHAT_SEND = "送る";
+export const CHAT_FREE_NOTE = "答えはAIが書きます。まちがうこともあります。今日の結果（漏れたかどうか）は、コードが決めたものです。";

@@ -4,13 +4,14 @@
 //   昼は、答えのあとに わけ を出さない（慣れて押してしまう体験のため）。わけは夕方にまとめて出す。
 //   漏れたかどうかは judgeDay の結果だけで決める（夕方の中身は src/makase/evening.ts）
 // ============================================================
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { dayFacts, ideasOf, storyOf, takeHome, type DayFacts, type StoryCard } from '../makase/learnings'
 import { COMPANY as C, dayLog, fieldKey, MORNING_FIELDS, MORNING_TOOLS, noonSteps, type FieldChoice, type MorningPicks } from '../makase/day'
 import { eveningOf, eveningTalk, guardsOf, whyOutside, type Guard, type Guards } from '../makase/evening'
 import { judgeDay } from '../makase/judge'
 import { todayOf, type Today } from '../makase/takeaway'
 import { JOBS, JOB_NOTE, JOB_NOTE_EN, cleanJobLines, customJob, jobLabel, jobPrompt, type Job } from '../makase/jobLine'
+import { cleanSiteReply, siteChatTurns, type ChatTurn } from '../makase/siteChat'
 import { aiOff, CLAUDE_AI_URL, errorKind, getAI, onClaudeAi, type SampleFn } from '../lib/ai'
 import { S } from './strings'
 import { useAiBudget } from './aiBudget'
@@ -21,11 +22,11 @@ import { tr } from '../makase/en'
 import type { Lang } from '../game/types'
 import { sfx } from '../lib/platform'
 import { Art } from './Art'
-import { BackButton, Panel, Sheet, useMedia } from './Common'
+import { BackButton, Panel, Sheet } from './Common'
 import { Talk } from './Talk'
 import { phrase } from './i18n'
 
-type Phase = 'intro' | 'mail' | 'morning' | 'noon' | 'talk' | 'evening' | 'take'
+type Phase = 'chat' | 'talk' | 'evening' | 'take'
 const wrap = 'mx-auto w-full max-w-xl px-4 lg:max-w-6xl lg:px-10'
 /** 新しいカードが出た直後の押しを捨てる（前のカードの2回押しで、次のカードに答えない） */
 const FRESH_MS = 350
@@ -38,8 +39,8 @@ function useNW() {
 }
 
 export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'normal' | 'fast' | 'instant'; onQuit: () => void; onDone: (leaked: boolean) => void }) {
-  const [phase, setPhase] = useState<Phase>('intro')
-  const [step, setStep] = useState(0)
+  const [phase, setPhase] = useState<Phase>('chat')
+  const [prog, setProg] = useState({ n: 0, of: 1, label: '' })
   const [picks, setPicks] = useState<MorningPicks>({ fields: {}, tools: {} })
   const [answers, setAnswers] = useState<Record<string, Answer>>({})
   const [quit, setQuit] = useState(false)
@@ -49,12 +50,9 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
   const restart = () => {
     setPicks({ fields: {}, tools: {} })
     setAnswers({})
-    setStep(0)
-    setPhase('mail')
+    setPhase('chat')
     setNonce((n) => n + 1)
   }
-
-  if (phase === 'intro') return <Talk key="intro" beats={WJA.INTRO.map((l, i) => ({ who: l.who, t: { ja: l.text, en: WEN.INTRO[i].text } }))} header={W.DAY_TITLE} speed={p.speed} onDone={() => setPhase('mail')} />
 
   const log = phase === 'talk' || phase === 'evening' || phase === 'take' ? dayLog(picks, answers) : null
   const result = log ? judgeDay(log, C) : null
@@ -67,11 +65,8 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
     return <Talk key="evening" beats={ja.map((l, i) => ({ who: l.who, t: { ja: l.text, en: en[i]?.text ?? l.text } }))} header={`${W.DAY_TITLE}${p.lang === 'en' ? ' · ' : '・'}${W.EVENING}`} speed={p.speed} onDone={() => setPhase('evening')} />
   }
 
-  const morningSteps = MORNING_FIELDS.length + MORNING_TOOLS.length + 1
-  const progress = phase === 'mail' ? { label: W.MORNING, n: 0, of: morningSteps } : phase === 'morning' ? { label: W.MORNING, n: step, of: morningSteps } : phase === 'noon' ? { label: W.NOON, n: 1, of: 1 } : { label: W.EVENING, n: 1, of: 1 }
+  const progress = phase === 'chat' ? prog : { label: W.EVENING, n: 1, of: 1 }
   const back = () => {
-    if (phase === 'morning' && step > 0) return setStep(step - 1)
-    if (phase === 'morning') return setPhase('mail')
     if (phase === 'take') return setPhase('evening')
     if (phase === 'evening') return p.onQuit()
     setQuit(true)
@@ -95,21 +90,7 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
         </div>
       </header>
 
-      {phase === 'mail' && <Mail onNext={() => (setStep(0), setPhase('morning'))} />}
-      {phase === 'morning' && (
-        <Morning
-          step={step}
-          picks={picks}
-          onPick={(next) => {
-            setPicks(next)
-            if (step + 1 >= morningSteps) {
-              setAnswers({})
-              setPhase('noon')
-            } else setStep(step + 1)
-          }}
-        />
-      )}
-      {phase === 'noon' && <Noon picks={picks} onDone={(a) => (setAnswers(a), setPhase('talk'))} />}
+      {phase === 'chat' && <ChatFlow key={nonce} speed={p.speed} picks={picks} setPicks={setPicks} onDone={(a) => (setAnswers(a), setPhase('talk'))} onProgress={(n, of, label) => setProg({ n, of, label })} />}
       {phase === 'evening' && ev && log && facts && <EveningList ev={ev} facts={facts} guards={guardsOf(ev, log, C, p.lang)} onNext={() => setPhase('take')} />}
       {phase === 'take' && log && result && facts && <Takeaway today={todayOf(result, log, C)} facts={facts} onAgain={restart} onHome={() => p.onDone(ev?.leaked ?? false)} />}
 
@@ -136,18 +117,6 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
   )
 }
 
-/** 人の絵（現場AIの顔）。PCでは左に大きく */
-function Stage({ face = 'face.nova', phoneHidden }: { face?: string; phoneHidden?: boolean }) {
-  const pc = useMedia('(min-width: 1024px)')
-  return (
-    <div className={`${phoneHidden ? 'hidden lg:flex' : 'flex'} justify-center lg:sticky lg:top-0`}>
-      <div className="overflow-hidden rounded-xl border-2 border-line bg-surface2">
-        <Art id={face} scale={pc ? 5 : 2} />
-      </div>
-    </div>
-  )
-}
-
 function Board({ children, label, face, compact }: { children: React.ReactNode; label?: string; /** スマホで、札の横に小さく出す人の顔 */ face?: string; /** PC でも文字を大きくしすぎない（メールのように長い物） */ compact?: boolean }) {
   return (
     <div className="board px-4 py-2.5 sm:px-5 sm:py-4">
@@ -162,17 +131,6 @@ function Board({ children, label, face, compact }: { children: React.ReactNode; 
         </div>
       )}
       <div className={`whitespace-pre-line text-[1.0625rem] leading-snug sm:text-lg sm:leading-relaxed ${compact ? 'lg:text-xl lg:leading-relaxed' : 'lg:text-2xl lg:leading-relaxed'}`}>{children}</div>
-    </div>
-  )
-}
-
-function Ask({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-3 rounded-lg border-l-8 border-act bg-actBg py-2 pl-3 pr-4 lg:py-3">
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-line bg-act font-pixel text-lg text-actInk" aria-hidden>
-        ?
-      </span>
-      <h2 className="text-lg leading-snug sm:text-xl lg:text-3xl lg:leading-snug">{typeof children === 'string' ? phrase(children) : children}</h2>
     </div>
   )
 }
@@ -195,46 +153,6 @@ function Pick({ n, label, sub, chosen, onClick }: { n: number; label: string; su
         {sub && <span className="block text-sm text-ink2">{sub}</span>}
       </span>
     </button>
-  )
-}
-
-function Layout({ children, face, footer, phoneFaceInBoard }: { children: React.ReactNode; face?: string; footer?: React.ReactNode; /** スマホでは、人の絵を黒板の札の横に小さく出す（答えを画面に入れるため） */ phoneFaceInBoard?: boolean }) {
-  return (
-    <>
-      <main className="min-h-0 flex-1 overflow-y-auto">
-        {/* スマホでは、画面の高さいっぱいに並べ、答えのボタンを画面の下に寄せる（親指で押しやすく） */}
-        <div className={`${wrap} flex min-h-full flex-col gap-3 pb-6 pt-3 sm:gap-4 lg:grid lg:min-h-0 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-x-12 lg:pt-10`}>
-          <Stage face={face} phoneHidden={phoneFaceInBoard} />
-          <div className="flex flex-1 flex-col gap-3 sm:gap-4 lg:grid lg:content-start">{children}</div>
-        </div>
-      </main>
-      {footer && (
-        <footer className="border-t-2 border-hair bg-bg px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-          <div className="mx-auto w-full max-w-xl lg:flex lg:max-w-6xl lg:justify-end lg:px-6">{footer}</div>
-        </footer>
-      )}
-    </>
-  )
-}
-
-// ---------------- けさのメール ----------------
-function Mail({ onNext }: { onNext: () => void }) {
-  const { W } = useNW()
-  return (
-    <Layout
-      face="face.boss"
-      footer={
-        <button data-next autoFocus className="btn-main w-full text-xl lg:w-[22rem]" onClick={() => (sfx.ui(), onNext())}>
-          {W.NEXT}
-        </button>
-      }
-    >
-      <Ask>{W.MAIL_ASK}</Ask>
-      {C.incoming.map((m) => (
-        <MailItem key={m.id} m={m} />
-      ))}
-      <p className="text-sm text-ink2">{W.SIM_NOTE}</p>
-    </Layout>
   )
 }
 
@@ -285,165 +203,307 @@ function MailItem({ m }: { m: (typeof C.incoming)[number] }) {
   )
 }
 
-// ---------------- 朝（1画面に1つ） ----------------
-function Morning({ step, picks, onPick }: { step: number; picks: MorningPicks; onPick: (p: MorningPicks) => void }) {
+// ---------------- チャット（はじまり・けさのメール・朝・昼を、現場AIとのやりとりで） ----------------
+// 現場AIの言葉は台本。答えはボタンで選ぶ（判定はコードがするので、毎回同じ結果になる）
+type Who = 'nova' | 'boss' | 'me'
+type Msg = { id: number; who: Who; text?: string; sub?: string; mail?: boolean; card?: { conf: string; to?: string; content?: string; tool?: string; emp: string }; log?: string }
+type Want =
+  | { k: 'read' }
+  | { k: 'field'; i: number }
+  | { k: 'tool'; i: number }
+  | { k: 'order' }
+  | { k: 'confirm'; conf: string }
+  | { k: 'done' }
+
+function ChatFlow({ speed, picks, setPicks, onDone, onProgress }: { speed: 'normal' | 'fast' | 'instant'; picks: MorningPicks; setPicks: (p: MorningPicks) => void; onDone: (a: Record<string, Answer>) => void; onProgress: (n: number, of: number, label: string) => void }) {
   const { W, lang, T } = useNW()
   const quote = (x: string) => (lang === 'en' ? `"${x}"` : `「${x}」`)
-  const lock = useRef(false)
-  useEffect(() => {
-    lock.current = false
-  }, [step])
-  const choose = (next: MorningPicks) => {
-    if (lock.current) return
-    lock.current = true
-    sfx.ui()
-    onPick(next)
-  }
-  const nf = MORNING_FIELDS.length
-  if (step < nf) {
-    const f = MORNING_FIELDS[step]
-    const doc = C.documents.find((d) => d.id === f.doc)!
-    const field = doc.fields.find((x) => x.label === f.field)!
-    const cur = picks.fields[fieldKey(f)]
-    return (
-      <Layout key={step} phoneFaceInBoard>
-        <Board face="face.nova" label={`${W.MORNING} ${step + 1}`}>{W.fieldBoard(T(doc.title), T(field.label), T(field.value))}</Board>
-        <Ask>{W.FIELD_ASK}</Ask>
-        <div className="mt-auto grid gap-3 pt-2 lg:mt-0 lg:pt-0">
-          {W.FIELD_CHOICES.map((c, i) => (
-            <Pick key={c.id} n={i + 1} label={c.label} sub={c.sub} chosen={cur === c.id} onClick={() => choose({ ...picks, fields: { ...picks.fields, [fieldKey(f)]: c.id as FieldChoice } })} />
-          ))}
-        </div>
-      </Layout>
-    )
-  }
-  if (step < nf + MORNING_TOOLS.length) {
-    const id = MORNING_TOOLS[step - nf]
-    const cur = picks.tools[id]
-    return (
-      <Layout key={step} phoneFaceInBoard>
-        <Board face="face.nova" label={`${W.MORNING} ${step + 1}`}>{W.toolBoard(id)}</Board>
-        <Ask>{W.toolAsk(id)}</Ask>
-        <div className="mt-auto grid gap-3 pt-2 lg:mt-0 lg:pt-0">
-          {W.TOOL_CHOICES.map((c, i) => (
-            <Pick key={c.id} n={i + 1} label={c.label} sub={c.sub} chosen={cur === c.id} onClick={() => choose({ ...picks, tools: { ...picks.tools, [id]: c.id as Permission } })} />
-          ))}
-        </div>
-      </Layout>
-    )
-  }
-  const orders = C.instructions.filter((o) => o.employeeId === 'nova')
-  return (
-    <Layout key={step} face="face.nova" phoneFaceInBoard>
-      <Board face="face.nova" label={`${W.MORNING} ${step + 1}`}>{W.ORDER_BOARD}</Board>
-      <Ask>{W.ORDER_ASK}</Ask>
-      <div className="mt-auto grid gap-3 pt-2 lg:mt-0 lg:pt-0">
-        {orders.map((o, i) => (
-          <Pick key={o.id} n={i + 1} label={quote(T(o.text))} chosen={picks.nova === o.id} onClick={() => choose({ ...picks, nova: o.id })} />
-        ))}
-      </div>
-    </Layout>
-  )
-}
-
-// ---------------- 昼（確認のカード。わけは出さない） ----------------
-function Noon({ picks, onDone }: { picks: MorningPicks; onDone: (a: Record<string, Answer>) => void }) {
-  const { W, lang, T } = useNW()
-  const sep = lang === 'en' ? ': ' : '：'
-  const steps = useMemo(() => noonSteps(picks), [picks])
+  const nova = T(C.employees.find((e) => e.id === 'nova')!.name)
+  const [msgs, setMsgs] = useState<Msg[]>([])
+  const [want, setWant] = useState<Want | null>(null)
+  const [typingWho, setTypingWho] = useState<Who | null>(null)
   const [answers, setAnswers] = useState<Record<string, Answer>>({})
-  const cur = steps.findIndex((s) => s.mode === 'ask' && !answers[s.conf.id])
-  const done = cur < 0
-  const shown = done ? steps : steps.slice(0, cur)
-  const [openLog, setOpenLog] = useState(false)
+  const queue = useRef<{ m: Omit<Msg, 'id'>; then?: Want }[]>([])
+  const busy = useRef(false)
+  const idRef = useRef(0)
   const shownAt = useRef(0)
   const endRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    shownAt.current = performance.now()
-    endRef.current?.scrollIntoView({ block: 'end' })
-  }, [cur])
-  const emp = (id: string) => ({ name: T(C.employees.find((e) => e.id === id)!.name) })
-  const tool = (id?: string) => T(C.tools.find((t) => t.id === id)?.label ?? '')
-  const answer = (a: Answer) => {
-    if (done || performance.now() - shownAt.current < FRESH_MS) return
-    sfx.ui()
-    setAnswers((x) => ({ ...x, [steps[cur].conf.id]: a }))
+  const picksRef = useRef(picks)
+  picksRef.current = picks
+  const nf = MORNING_FIELDS.length
+  const morningSteps = nf + MORNING_TOOLS.length + 1
+
+  /** 現場AI（や宮下さん）の言葉を、入力中…のあとに1つずつ出す */
+  const pump = () => {
+    if (busy.current) return
+    const next = queue.current.shift()
+    if (!next) return
+    busy.current = true
+    setWant(null)
+    const len = (next.m.text ?? '').length
+    const wait = speed === 'instant' ? 0 : speed === 'fast' ? 220 : Math.min(1500, 450 + len * 18)
+    if (next.m.who !== 'me' && wait > 0) setTypingWho(next.m.who)
+    window.setTimeout(() => {
+      setTypingWho(null)
+      setMsgs((xs) => [...xs, { ...next.m, id: ++idRef.current }])
+      if (next.then) {
+        setWant(next.then)
+        shownAt.current = performance.now()
+      }
+      busy.current = false
+      pump()
+    }, wait)
   }
-  const card = done ? null : steps[cur]
+  const say = (m: Omit<Msg, 'id'>, then?: Want) => {
+    queue.current.push({ m, then })
+    pump()
+  }
+  const me = (text: string, sub?: string) => setMsgs((xs) => [...xs, { id: ++idRef.current, who: 'me', text, sub }])
+
+  // はじまり：宮下さんと現場AIのあいさつ → けさのメール
+  useEffect(() => {
+    const intro = lang === 'en' ? WEN.INTRO : WJA.INTRO
+    intro.forEach((l) => say({ who: l.who === 'BOSS' ? 'boss' : 'nova', text: l.text }))
+    say({ who: 'nova', text: W.CHAT_MAIL })
+    say({ who: 'nova', mail: true }, { k: 'read' })
+    onProgress(0, morningSteps, W.MORNING)
+    return () => {
+      queue.current = []
+    }
+    // 最初の1回だけ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'end', behavior: speed === 'normal' ? 'smooth' : 'auto' })
+  }, [msgs.length, typingWho, want, speed])
+
+  const askField = (i: number) => {
+    const f = MORNING_FIELDS[i]
+    const doc = C.documents.find((d) => d.id === f.doc)!
+    const field = doc.fields.find((x) => x.label === f.field)!
+    say({ who: 'nova', text: W.CHAT_FIELD(T(doc.title), T(field.label), T(field.value)) }, { k: 'field', i })
+  }
+  const askTool = (i: number) => say({ who: 'nova', text: W.CHAT_TOOL(MORNING_TOOLS[i]) }, { k: 'tool', i })
+  const startNoon = (p: MorningPicks) => {
+    say({ who: 'nova', text: W.CHAT_START })
+    runNoon(p, {})
+  }
+  /** 昼：確認のいらない動きは短い報告、確認がいるものはカードで聞く */
+  const runNoon = (p: MorningPicks, got: Record<string, Answer>) => {
+    const steps = noonSteps(p)
+    const emp = (id: string) => T(C.employees.find((e) => e.id === id)!.name)
+    const tool = (id?: string) => T(C.tools.find((t) => t.id === id)?.label ?? '')
+    for (const st of steps) {
+      if (got[st.conf.id] || reported.current.has(st.conf.id)) continue
+      if (st.mode === 'ask') {
+        const askedBy = emp(st.conf.employeeId)
+        say({ who: 'nova', card: { conf: T(st.conf.text), to: st.to, content: T(st.content ?? ''), tool: tool(st.conf.call?.tool), emp: askedBy } }, { k: 'confirm', conf: st.conf.id })
+        return
+      }
+      reported.current.add(st.conf.id)
+      say({ who: 'nova', log: st.mode === 'blocked' ? W.blockedLine(emp(st.conf.employeeId), tool(st.conf.call?.tool)) : W.autoLine(emp(st.conf.employeeId), tool(st.conf.call?.tool), T(st.content ?? ''), st.to) })
+    }
+    say({ who: 'nova', text: W.CHAT_DONE }, { k: 'done' })
+  }
+  const reported = useRef(new Set<string>())
+
+  const fresh = () => performance.now() - shownAt.current >= FRESH_MS
+  const answer = (w: Want, label: string, sub: string | undefined, apply: () => void) => {
+    if (!fresh() || busy.current || want !== w) return
+    sfx.ui()
+    setWant(null)
+    me(label, sub)
+    apply()
+  }
+
+  const step = want?.k === 'field' ? want.i : want?.k === 'tool' ? nf + want.i : want?.k === 'order' ? nf + MORNING_TOOLS.length : null
+  useEffect(() => {
+    if (step !== null) onProgress(step, morningSteps, W.MORNING)
+    else if (want?.k === 'confirm' || want?.k === 'done') onProgress(1, 1, W.NOON)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [want])
+
+  const composer = (() => {
+    if (!want) return <p className="py-3 text-center text-base text-ink2">{typingWho ? W.typing(typingWho === 'boss' ? W.BOSS_NAME : nova) : '…'}</p>
+    if (want.k === 'read')
+      return (
+        <button data-next className="btn-main w-full text-xl" onClick={() => answer(want, W.CHAT_READ, undefined, () => askField(0))}>
+          {W.CHAT_READ}
+        </button>
+      )
+    if (want.k === 'field') {
+      const f = MORNING_FIELDS[want.i]
+      return (
+        <div className="grid gap-2.5">
+          {W.FIELD_CHOICES.map((c, i) => (
+            <Pick
+              key={c.id}
+              n={i + 1}
+              label={c.label}
+              sub={c.sub}
+              onClick={() =>
+                answer(want, c.label, undefined, () => {
+                  const np = { ...picksRef.current, fields: { ...picksRef.current.fields, [fieldKey(f)]: c.id as FieldChoice } }
+                  setPicks(np)
+                  if (want.i + 1 < nf) askField(want.i + 1)
+                  else askTool(0)
+                })
+              }
+            />
+          ))}
+        </div>
+      )
+    }
+    if (want.k === 'tool') {
+      const id = MORNING_TOOLS[want.i]
+      return (
+        <div className="grid gap-2.5">
+          {W.TOOL_CHOICES.map((c, i) => (
+            <Pick
+              key={c.id}
+              n={i + 1}
+              label={c.label}
+              sub={c.sub}
+              onClick={() =>
+                answer(want, c.label, undefined, () => {
+                  const np = { ...picksRef.current, tools: { ...picksRef.current.tools, [id]: c.id as Permission } }
+                  setPicks(np)
+                  if (want.i + 1 < MORNING_TOOLS.length) askTool(want.i + 1)
+                  else say({ who: 'nova', text: W.CHAT_ORDER }, { k: 'order' })
+                })
+              }
+            />
+          ))}
+        </div>
+      )
+    }
+    if (want.k === 'order') {
+      const orders = C.instructions.filter((o) => o.employeeId === 'nova')
+      return (
+        <div className="grid gap-2.5">
+          {orders.map((o, i) => (
+            <Pick
+              key={o.id}
+              n={i + 1}
+              label={quote(T(o.text))}
+              onClick={() =>
+                answer(want, quote(T(o.text)), undefined, () => {
+                  const np = { ...picksRef.current, nova: o.id }
+                  setPicks(np)
+                  startNoon(np)
+                })
+              }
+            />
+          ))}
+        </div>
+      )
+    }
+    if (want.k === 'confirm')
+      return (
+        <div className="grid grid-cols-2 gap-3">
+          <button data-stop className="btn text-xl" onClick={() => answer(want, W.STOP, undefined, () => { const got = { ...answers, [want.conf]: 'stop' as Answer }; setAnswers(got); runNoon(picksRef.current, got) })}>
+            {W.STOP}
+          </button>
+          <button data-allow className="btn-main text-xl" onClick={() => answer(want, W.ALLOW, undefined, () => { const got = { ...answers, [want.conf]: 'allow' as Answer }; setAnswers(got); runNoon(picksRef.current, got) })}>
+            {W.ALLOW}
+          </button>
+        </div>
+      )
+    return (
+      <button data-next className="btn-main w-full text-xl" onClick={() => (sfx.ui(), onDone(answers))}>
+        {W.TO_EVENING}
+      </button>
+    )
+  })()
 
   return (
     <>
-      <main className="min-h-0 flex-1 overflow-y-auto">
-        <div className={`${wrap} grid gap-3 pb-6 pt-3 lg:max-w-3xl lg:pt-8`}>
-          <p className="text-base text-ink2">{W.NOON_INTRO}</p>
-          {/* これまでの動きは1行にまとめ、押すと開く（確認のカードを下に押しやらないように） */}
-          {shown.length > 0 && (
-            <button data-log aria-expanded={openLog} className="btn-quiet min-h-11 justify-start border-2 border-hair px-3 text-left text-base text-ink2" onClick={() => (sfx.ui(), setOpenLog((v) => !v))}>
-              {W.logCount(shown.length)}
-              <span aria-hidden className={`ml-auto inline-block transition-transform ${openLog ? 'rotate-180' : ''}`}>
-                ▾
+      <main className="min-h-0 flex-1 overflow-y-auto" aria-live="polite">
+        <div className="mx-auto grid w-full max-w-2xl gap-3 px-3 pb-6 pt-3 sm:px-4 lg:pt-6">
+          <p className="text-center text-sm text-ink2">{W.SIM_NOTE}</p>
+          {msgs.map((m) => (
+            <Bubble key={m.id} m={m} nova={nova} />
+          ))}
+          {typingWho && (
+            <div data-typing className="flex items-end gap-2">
+              <Face who={typingWho} />
+              <span className="rounded-2xl rounded-bl-sm border-2 border-hair bg-surface px-3 py-2 text-ink2" aria-label={W.typing(typingWho === 'boss' ? W.BOSS_NAME : nova)}>
+                <span className="typing-dots" aria-hidden>
+                  <span>●</span>
+                  <span>●</span>
+                  <span>●</span>
+                </span>
               </span>
-            </button>
+            </div>
           )}
-          {openLog && (
-            <ol className="grid gap-1.5" aria-label={W.NOON}>
-              {shown.map((s) => (
-                <li key={s.conf.id} className="rounded-md bg-surface2 px-3 py-1.5 text-sm text-ink2">
-                  {s.mode === 'blocked' ? W.blockedLine(emp(s.conf.employeeId).name, tool(s.conf.call?.tool)) : s.mode === 'auto' ? W.autoLine(emp(s.conf.employeeId).name, tool(s.conf.call?.tool), T(s.content ?? ''), s.to) : `${emp(s.conf.employeeId).name}${sep}${T(s.conf.text)}${lang === 'en' ? '  → ' : '　→ '}${answers[s.conf.id] === 'allow' ? W.ALLOW : W.STOP}`}
-                </li>
-              ))}
-            </ol>
-          )}
-          {card && (
-            <section key={card.conf.id} className="rise panel grid gap-3 p-4 lg:p-6" aria-live="polite">
-              <div className="flex items-center gap-3">
-                <div className="overflow-hidden rounded-lg border-2 border-line bg-surface2">
-                  <Art id="face.nova" scale={1.5} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-base font-bold">{emp(card.conf.employeeId).name}</p>
-                  <p className="text-sm text-ink2">{tool(card.conf.call?.tool)}</p>
-                </div>
-              </div>
-              <h2 className="text-xl leading-snug lg:text-2xl">{phrase(T(card.conf.text))}</h2>
-              <dl className="grid gap-1 rounded-md border-2 border-hair p-3 text-base">
-                {card.to && (
-                  <div className="flex gap-3">
-                    <dt className="w-20 shrink-0 text-ink2">{W.TO}</dt>
-                    <dd className="min-w-0 break-all">{card.to}</dd>
-                  </div>
-                )}
-                <div className="flex gap-3">
-                  <dt className="w-20 shrink-0 text-ink2">{W.CONTENT}</dt>
-                  <dd className="min-w-0 [overflow-wrap:anywhere]">{T(card.content ?? '')}</dd>
-                </div>
-              </dl>
-            </section>
-          )}
-          {done && <p className="panel p-4 text-lg font-bold">{W.NOON_DONE}</p>}
           <div ref={endRef} />
         </div>
       </main>
-      {/* 「止める」「許可」は毎回同じ場所に出す */}
-      <footer className="border-t-2 border-hair bg-bg px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
-        <div className="mx-auto w-full max-w-xl lg:max-w-3xl">
-          {done ? (
-            <button data-next autoFocus className="btn-main w-full text-xl" onClick={() => (sfx.ui(), onDone(answers))}>
-              {W.TO_EVENING}
-            </button>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <button data-stop className="btn text-xl" onClick={() => answer('stop')}>
-                {W.STOP}
-              </button>
-              <button data-allow className="btn-main text-xl" onClick={() => answer('allow')}>
-                {W.ALLOW}
-              </button>
-            </div>
-          )}
-        </div>
+      <footer className="border-t-2 border-hair bg-bg px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-4">
+        <div className="mx-auto w-full max-w-2xl">{composer}</div>
       </footer>
     </>
+  )
+}
+
+function Face({ who }: { who: Who }) {
+  if (who === 'me') return null
+  return (
+    <span className="shrink-0 overflow-hidden rounded-lg border-2 border-line bg-surface2" aria-hidden>
+      <Art id={who === 'boss' ? 'face.boss' : 'face.nova'} scale={1} />
+    </span>
+  )
+}
+
+function Bubble({ m, nova }: { m: Msg; nova: string }) {
+  const { W } = useNW()
+  if (m.who === 'me')
+    return (
+      <div data-me className="rise flex justify-end">
+        <p className="max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-sm bg-ink px-3.5 py-2 text-base text-surface lg:text-lg">{phrase(m.text ?? '')}</p>
+      </div>
+    )
+  const name = m.who === 'boss' ? W.BOSS_NAME : (m.card?.emp ?? nova)
+  if (m.log)
+    return (
+      <p data-log className="rise mx-auto max-w-[92%] rounded-md bg-surface2 px-3 py-1.5 text-sm text-ink2">
+        {m.log}
+      </p>
+    )
+  return (
+    <div data-bot={m.who} className="rise flex items-start gap-2">
+      <Face who={m.who} />
+      <div className={`min-w-0 ${m.mail ? 'flex-1' : 'max-w-[85%]'}`}>
+        <p className="mb-0.5 text-sm font-bold text-ink2">{name}</p>
+        {m.mail ? (
+          <div className="grid gap-2">
+            {C.incoming.map((x) => (
+              <MailItem key={x.id} m={x} />
+            ))}
+          </div>
+        ) : m.card ? (
+          <div data-card-confirm className="grid gap-2 rounded-2xl rounded-tl-sm border-2 border-line bg-surface px-3.5 py-3">
+            <p className="text-sm text-ink2">{m.card.tool}</p>
+            <h2 className="text-lg font-bold leading-snug lg:text-xl">{phrase(m.card.conf)}</h2>
+            <dl className="grid gap-1 rounded-md border-2 border-hair p-2.5 text-base">
+              {m.card.to && (
+                <div className="flex gap-3">
+                  <dt className="w-16 shrink-0 text-ink2">{W.TO}</dt>
+                  <dd className="min-w-0 break-all">{m.card.to}</dd>
+                </div>
+              )}
+              <div className="flex gap-3">
+                <dt className="w-16 shrink-0 text-ink2">{W.CONTENT}</dt>
+                <dd className="min-w-0 [overflow-wrap:anywhere]">{m.card.content}</dd>
+              </div>
+            </dl>
+          </div>
+        ) : (
+          <p className="whitespace-pre-line rounded-2xl rounded-tl-sm border-2 border-hair bg-surface px-3.5 py-2 text-base leading-relaxed lg:text-lg">{phrase(m.text ?? '')}</p>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -715,6 +775,7 @@ function Takeaway({ today, facts, onAgain, onHome }: { today: Today; facts: DayF
             </p>
           )}
           <p className="text-sm text-ink2">{one.note}</p>
+          <AskSiteAI facts={facts} />
           <JobAsk today={today} one={one} />
           <div className="grid grid-cols-2 gap-3">
             <button className="btn text-lg" onClick={onAgain}>
@@ -743,6 +804,130 @@ function useSample(): SampleFn | null | undefined {
     }
   }, [])
   return ai
+}
+
+// ---------------- 現場AIに自由に聞く（本物のAI。使える所だけ出す） ----------------
+function AskSiteAI({ facts }: { facts: DayFacts }) {
+  const { W, lang } = useNW()
+  const ai = useSample()
+  const [screen] = useState(() => `day:site:${Date.now()}`)
+  const budget = useAiBudget(screen)
+  const [turns, setTurns] = useState<ChatTurn[]>([])
+  const [draft, setDraft] = useState('')
+  const [live, setLive] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [off, setOff] = useState(aiOff)
+  const ctl = useRef<AbortController | null>(null)
+  const endRef = useRef<HTMLDivElement>(null)
+  useEffect(() => () => ctl.current?.abort(), [])
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [turns.length, live])
+  if (!ai) return null
+  const nova = tr(C.employees.find((e) => e.id === 'nova')!.name, lang)
+  const spent = budget.left.left === 0
+  const send = async () => {
+    const q = draft.trim().slice(0, 200)
+    if (!q || busy || spent || off) return
+    if (aiOff()) return setOff(true)
+    if (!budget.spend()) return
+    sfx.ui()
+    const history: ChatTurn[] = [...turns, { role: 'user', content: q }]
+    setTurns(history)
+    setDraft('')
+    setErr(null)
+    setLive('')
+    setBusy(true)
+    ctl.current = new AbortController()
+    try {
+      const { text } = await ai(siteChatTurns(facts, history, lang), { modelTier: 'quick', cache: false, signal: ctl.current.signal, onText: ({ text: t }) => setLive(t) })
+      const clean = cleanSiteReply(text, lang)
+      if (clean) setTurns([...history, { role: 'assistant', content: clean }])
+      else {
+        setTurns(history.slice(0, -1))
+        setErr(S.aiFailed[lang])
+      }
+    } catch (e) {
+      const k = errorKind(e)
+      if (k === 'off') setOff(true)
+      setTurns(history.slice(0, -1))
+      if (k !== 'cancelled') setErr(k === 'off' ? S.aiNotAllowed[lang] : k === 'busy' ? S.aiBusy[lang] : S.aiFailed[lang])
+    } finally {
+      setBusy(false)
+      setLive('')
+    }
+  }
+  return (
+    <section data-site-chat className="grid gap-3 rounded-xl border-2 border-line bg-surface p-3 lg:p-4">
+      <div className="flex items-start gap-3">
+        <Face who="nova" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-bold">{W.CHAT_FREE_HEAD}</h2>
+            <span data-ai-left={budget.left.left} className={`shrink-0 rounded-full border-2 px-2 py-0.5 text-sm font-bold ${spent ? 'border-ng text-ng' : 'border-hair text-ink2'}`}>
+              {S.aiLeftN(budget.left.left)[lang]}
+            </span>
+          </div>
+          <p className="text-base text-ink2">{W.CHAT_FREE_SUB}</p>
+        </div>
+      </div>
+      {(turns.length > 0 || busy) && (
+        <div className="grid max-h-[22rem] gap-2 overflow-y-auto rounded-lg bg-surface2 p-2.5" aria-live="polite">
+          {turns.map((t, i) =>
+            t.role === 'user' ? (
+              <div key={i} className="flex justify-end">
+                <p className="max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-sm bg-ink px-3 py-1.5 text-base text-surface">{t.content}</p>
+              </div>
+            ) : (
+              <div key={i} className="max-w-[90%]">
+                <p className="mb-0.5 text-sm font-bold text-ink2">{nova}</p>
+                <p className="whitespace-pre-line rounded-2xl rounded-tl-sm border-2 border-hair bg-surface px-3 py-1.5 text-base leading-relaxed">{t.content}</p>
+              </div>
+            ),
+          )}
+          {busy && (
+            <div className="max-w-[90%]">
+              <p className="mb-0.5 text-sm font-bold text-ink2">{nova}</p>
+              <p className="whitespace-pre-line rounded-2xl rounded-tl-sm border-2 border-hair bg-surface px-3 py-1.5 text-base leading-relaxed">
+                {live || (
+                  <span className="typing-dots text-ink2" aria-label={W.typing(nova)}>
+                    <span>●</span>
+                    <span>●</span>
+                    <span>●</span>
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
+          <div ref={endRef} />
+        </div>
+      )}
+      {err && <p className="rounded-lg border-2 border-ng bg-ngBg px-3 py-2 text-base">{err}</p>}
+      {spent && !busy ? (
+        <p data-ai-limit className="rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base">
+          {budget.left.reason === 'day' ? S.aiLimitDay[lang] : W.JOB_LIMIT}
+        </p>
+      ) : (
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void send()
+          }}
+        >
+          <label className="sr-only" htmlFor="site-ask">
+            {W.CHAT_FREE_HEAD}
+          </label>
+          <input id="site-ask" data-site-input value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={200} placeholder={W.CHAT_FREE_HINT} disabled={busy || off} className="min-h-12 min-w-0 flex-1 rounded-lg border-2 border-edge bg-surface px-3 text-base text-ink placeholder:text-ink2 disabled:opacity-60" />
+          <button type="submit" data-site-send className="btn-main min-h-12 shrink-0 px-4 text-base disabled:opacity-60" disabled={busy || off || !draft.trim()}>
+            {W.CHAT_SEND}
+          </button>
+        </form>
+      )}
+      <p className="text-sm text-ink2">{W.CHAT_FREE_NOTE}</p>
+    </section>
+  )
 }
 
 function JobAsk({ today, one }: { today: Today; one: ReturnType<typeof takeHome> }) {

@@ -24,20 +24,94 @@ export const onClaudeAi = (): boolean => {
   }
 }
 
+/**
+ * 作るときに入れた鍵（GitHub Pages の版だけ。GitHub Actions の秘密の値から、build のときに入る）。
+ * リポジトリには書かない。ハッカソンの期間だけ使い、終わったら作者が鍵を消す。
+ * ページの中に入るので、見る人はだれでも取り出せる：使用量の上限を低くした、この練習だけの鍵にする
+ */
+const BUILD_KEY: string = (import.meta.env.VITE_ANTHROPIC_API_KEY as string | undefined) ?? ''
+/** この版で、鍵を使ってAIと話せるか（claude.ai の外でも宮下さんに聞ける） */
+export const hasBuildKey = () => BUILD_KEY.length > 0
+
 let pending: Promise<SampleFn | null> | null = null
-/** 使えれば関数、使えなければ null（10秒ほどで決まる） */
+/**
+ * 使えれば関数、使えなければ null（10秒ほどで決まる）。
+ * 1) claude.ai の画面の中：見る人の Claude（sample）
+ * 2) それ以外（GitHub Pages や、Artifact を単独のページで開いた時）：作るときに入れた鍵があれば、それで Claude を呼ぶ
+ */
 export function getAI(): Promise<SampleFn | null> {
   if (!pending)
     pending = (async () => {
       try {
         const c = (window as unknown as { claude?: { use?: (n: string) => Promise<unknown> } }).claude
-        if (!c?.use) return null
-        return ((await c.use('sample')) as SampleFn | null) ?? null
+        if (c?.use) {
+          const s = (await c.use('sample')) as SampleFn | null
+          if (s) return s
+        }
+      } catch {
+        // claude.ai の外。下の鍵へ
+      }
+      if (!hasBuildKey()) return null
+      try {
+        return await keySample(BUILD_KEY)
       } catch {
         return null
       }
     })()
   return pending
+}
+
+/** 鍵で Claude を呼ぶ。sample と同じ形（文字を少しずつ返す・止められる・json）にそろえる */
+export async function keySample(apiKey: string, fetchImpl?: typeof fetch): Promise<SampleFn> {
+  const { default: Anthropic } = await import('@anthropic-ai/sdk')
+  // 見る人のブラウザから直接呼ぶ（中継のサーバーがない GitHub Pages のため）。fetchImpl はテストのため
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true, maxRetries: 1, ...(fetchImpl ? { fetch: fetchImpl } : {}) })
+  const call = async (input: string | Turn[], opts: SampleOpts = {}): Promise<{ text: string; truncated: boolean }> => {
+    const messages = typeof input === 'string' ? [{ role: 'user' as const, content: input }] : input
+    try {
+      const stream = client.beta.messages.stream(
+        {
+          model: 'claude-opus-5-5',
+          max_tokens: opts.modelTier === 'quick' ? 4000 : 16000,
+          output_config: { effort: opts.modelTier === 'quick' ? 'low' : 'medium' },
+          // 断られた時は、別のモデルで続ける（サーバー側の切り替え）
+          betas: ['server-side-fallback-2026-07-01'],
+          fallbacks: 'default',
+          messages,
+        } as Parameters<typeof client.beta.messages.stream>[0],
+        { signal: opts.signal },
+      )
+      let text = ''
+      for await (const ev of stream) {
+        if (ev.type === 'content_block_delta' && ev.delta.type === 'text_delta') {
+          text += ev.delta.text
+          opts.onText?.({ text, delta: ev.delta.text })
+        }
+      }
+      const fin = await stream.finalMessage()
+      if (fin.stop_reason === 'refusal') throw { code: 'upstream_error' }
+      return { text, truncated: fin.stop_reason === 'max_tokens' }
+    } catch (e) {
+      throw toSampleError(e, Anthropic)
+    }
+  }
+  const json = async <T,>(input: string | Turn[], opts?: SampleOpts): Promise<T> => {
+    const { text } = await call(input, opts)
+    const s = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim()
+    const a = Math.min(...['[', '{'].map((c) => s.indexOf(c)).filter((i) => i >= 0))
+    return JSON.parse(Number.isFinite(a) ? s.slice(a) : s) as T
+  }
+  return Object.assign(call, { json }) as SampleFn
+}
+
+/** SDK のエラーを、sample と同じ印（code）にそろえる。errorKind がそのまま使えるように */
+function toSampleError(e: unknown, A: typeof import('@anthropic-ai/sdk').default): { code: string; message?: string } {
+  if ((e as { code?: string })?.code) return e as { code: string }
+  if (e instanceof A.APIUserAbortError || (e as { name?: string })?.name === 'AbortError') return { code: 'cancelled' }
+  if (e instanceof A.RateLimitError) return { code: 'rate_limited' }
+  if (e instanceof A.AuthenticationError || e instanceof A.PermissionDeniedError) return { code: 'not_granted' }
+  if (e instanceof A.APIError && (e.status === 529 || (e.status ?? 0) >= 500)) return { code: 'rate_limited' }
+  return { code: 'upstream_error', message: (e as Error)?.message }
 }
 
 /** この見ている間、もう使えないと決まった（許可されなかった等） */
