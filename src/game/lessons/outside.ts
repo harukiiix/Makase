@@ -176,7 +176,7 @@ export const LESSON: Lesson = {
       topic: 'outside',
       kind: 'mc',
       who: 'STRANGER',
-      pic: 'pic.mail_phone_number',
+      pic: 'pic.unknown_call_home',
       place: { ja: '自宅', en: 'At home' },
       situation: {
         ja: '休みの日、自分のスマホに知らない番号から電話が来た。「本社の設備の者です。点検の準備で、銀行の金庫がどの辺りか確かめたくて」',

@@ -154,8 +154,8 @@ export const LESSON: Lesson = {
       },
       answer: true,
       why: {
-        ja: '工事の写真は、施主さんに渡す大事な記録なんだ。会社のフォルダにまとめておけば、なくさないし、だれが見るかも会社で決められるよ。',
-        en: 'Site photos are important records we hand over to the client. Kept together in the company folder, none of them get lost, and the company decides who can see them.',
+        ja: '工事の写真は、施主さんに渡す大事な記録なんだ。会社のフォルダにまとめておけば、なくしにくいし、だれが見るかも会社で決められるよ。',
+        en: 'Site photos are important records we hand over to the client. Kept together in the company folder, they are harder to lose, and the company decides who can see them.',
       },
       wrongWhy: {
         ja: '記録写真を撮るのも、仕事のうちだよ。気をつけるのは、撮った写真をどこに置くかなんだ。会社のタブレットなら、自分のスマホには残らないね。',
@@ -182,8 +182,8 @@ export const LESSON: Lesson = {
       ],
       correct: 0,
       why: {
-        ja: 'この現場の図面は、会社のタブレットで開けるよ。自分のスマホに図面の写真を入れると、なくしたときに、図面ごと人の手に渡ってしまうんだ。',
-        en: "You can open this site's drawings on the company tablet. Put a photo of a drawing on your own phone, and if you lose the phone, the drawing ends up in someone else's hands too.",
+        ja: 'この現場の図面は、会社のタブレットで開けるよ。自分のスマホに図面の写真を入れると、なくしたときに、図面まで人の手に渡ってしまうこともあるんだ。',
+        en: "You can open this site's drawings on the company tablet. Put a photo of a drawing on your own phone, and if you lose the phone, the drawing could end up in someone else's hands too.",
       },
       wrongWhy: [
         null,

@@ -67,7 +67,7 @@ export const LESSON: Lesson = {
           en: "Visitors are not the only ones who come in. Workers and delivery people do too. You can't know ahead of time who will see it.",
         },
       ],
-      tip: { ja: 'パスワードは、紙に書いて貼らない', en: 'Never put a password on a sticky note' },
+      tip: { ja: 'パスワードは、紙に書いて貼らない', en: 'Never write a password down and stick it up' },
       real: 'nexco-usb',
     },
     // 2. 席を立つときの画面ロック（「すぐ戻るから」）
@@ -87,7 +87,7 @@ export const LESSON: Lesson = {
       },
       answer: true,
       why: {
-        ja: 'ロックしないと、のぞかれるだけでなく、図面をUSBメモリにコピーされることもあるんだ。席を立つたびにロックしよう。Mac なら Control＋Command＋Q だよ。',
+        ja: 'ロックしないと、のぞかれるだけでなく、図面をUSBにコピーされることもあるよ。すぐできるから、席を立つたびにロックしよう。Mac なら Control＋Command＋Q だよ。',
         en: 'If the screen is not locked, someone can do more than look. They could copy the drawing onto a USB stick. Locking takes a second, so do it every time you get up. On a Mac, press Control + Command + Q.',
       },
       wrongWhy: {

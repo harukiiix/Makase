@@ -32,7 +32,7 @@ export const LESSON: Lesson = {
       },
     },
   ],
-  motto: { ja: 'あやしい連絡は、自分で調べて確かめる', en: 'Check suspicious messages yourself' },
+  motto: { ja: 'あやしい連絡は、自分で調べて確かめる', en: 'Check suspicious messages by looking them up yourself' },
   icon: 'pic.mail_odd_address',
   questions: [
     {
@@ -54,8 +54,8 @@ export const LESSON: Lesson = {
       ],
       correct: 1,
       why: {
-        ja: '荷物を待っていても、SMSのリンクからは確かめないでおこう。宅配会社の公式のアプリや、自分で調べたページなら、本物かすぐわかるよ。',
-        en: "Even if you're expecting a parcel, don't check through the link in a text. The delivery company's own app, or a page you looked up yourself, will tell you quickly.",
+        ja: '荷物を待っていても、SMSのリンクからは確かめないでおこう。宅配会社の公式のアプリや、自分で調べたページで、本当に荷物があるか確かめられるよ。',
+        en: "Even if you're expecting a parcel, don't check through the link in a text. Use the delivery company's own app, or a page you looked up yourself, to see if there really is a parcel.",
       },
       wrongWhy: [
         {
@@ -83,8 +83,8 @@ export const LESSON: Lesson = {
       ask: { ja: '同じパスワードにする。これでいい？', en: 'Use the same password. Is that OK?' },
       answer: false,
       why: {
-        ja: 'どこか1つのサービスからパスワードがもれると、同じパスワードのほかのサービスにも入られてしまうんだ。サービスごとに変えて、覚えきれないときは会社に相談しよう。',
-        en: 'If one service leaks your password, someone can get into every other service that uses it. Use a different one for each, and ask the company if you cannot remember them all.',
+        ja: 'どこか1つのサービスからパスワードがもれると、同じパスワードを使っているほかのサービスにも入られることがあるんだ。サービスごとに変えて、覚えきれないときは会社に相談しよう。',
+        en: 'If one service leaks your password, someone may use it to get into other services where you use the same one. Use a different one for each, and ask the company if you cannot remember them all.',
       },
       wrongWhy: {
         ja: '覚えやすいのは、助かるよね。でも、買い物のサイトからもれたパスワードで、会社のシステムにまで入られることがあるんだ。',
@@ -233,8 +233,8 @@ export const LESSON: Lesson = {
         },
         null,
         {
-          ja: '再起動すると、ウイルスが広がったり、何が起きたかの手がかりが消えたりすることがあるよ。さわる前に、知らせよう。',
-          en: 'Restarting can spread the virus or wipe clues about what happened. Report it before touching anything.',
+          ja: '再起動すると、何が起きたかの手がかりが消えたり、ファイルを開けなくする動きが続いたりすることがあるよ。ネットから切ったら、電源はそのままで、それ以上さわらずに知らせよう。',
+          en: 'Restarting can wipe clues about what happened, or let the file-locking carry on. Once it is off the network, leave the power on, touch nothing else, and report it.',
         },
       ],
       tip: { ja: '画面がおかしくなったら、ネットから切って知らせる', en: 'If the screen acts strange, disconnect and report' },

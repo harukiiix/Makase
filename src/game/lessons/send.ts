@@ -236,7 +236,7 @@ export const LESSON: Lesson = {
         },
         null,
       ],
-      tip: { ja: '仕事の書類は、無料のAIに貼らない', en: 'Never paste work papers into a free AI' },
+      tip: { ja: '仕事の書類は、会社が決めたAIにだけ入れる', en: 'Put work papers only into the AI your company has approved' },
     },
   ],
 }

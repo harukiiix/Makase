@@ -108,8 +108,8 @@ export const LESSON: Lesson = {
       ],
       correct: 2,
       why: {
-        ja: '古い図面でも、金庫室やカメラの場所は、今とほとんど同じだよ。名簿のコピーにも、みんなの名前や住所がそのまま載っているんだ。',
-        en: "Even on old drawings, the vault room and the cameras are in almost the same place as now. And copies of the list still have everyone's names and addresses.",
+        ja: '古い図面でも、金庫室やカメラがどこにあるか、建物の中のようすがわかってしまうよ。名簿のコピーにも、みんなの名前や住所がそのまま載っているんだ。',
+        en: "Even old drawings show where the vault room and the cameras are, and what the inside of the building is like. And copies of the list still have everyone's names and addresses.",
       },
       wrongWhy: [
         {
@@ -178,7 +178,7 @@ export const LESSON: Lesson = {
       topic: 'gate',
       kind: 'mc',
       who: 'YOU',
-      pic: 'pic.crew_photo_for_sns',
+      pic: 'pic.friend_asks_vault_dm',
       place: { ja: '休憩所', en: 'Site break room' },
       situation: {
         ja: '休み時間。SNSで、前に仕事の話をした友だちから「銀行の工事なんでしょ。金庫ってどのへんにできるの？」とメッセージが来た。',
