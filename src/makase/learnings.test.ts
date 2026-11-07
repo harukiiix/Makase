@@ -283,3 +283,65 @@ describe("全部の遊び方の見直しで見つかった所", () => {
       }
   });
 });
+
+describe("2回目の見直しで見つかった所", () => {
+  const F = (phone: "mask" | "drop" | "pass", health: "mask" | "drop" | "pass", drawing: "mask" | "drop" | "pass") =>
+    Object.fromEntries(MORNING_FIELDS.map((f) => [fieldKey(f), f.field === "電話番号" ? phone : f.field === "図面番号" ? drawing : health]));
+  const P = (p: Partial<MorningPicks>) => ({ ...none, ...p }) as MorningPicks;
+  const stopDanger = (d: boolean): Answer => (d ? "stop" : "allow");
+  const texts = (w: ReturnType<typeof play>, lang: "ja" | "en" = "ja") => {
+    const f = dayFacts(w.picks, w.log, w.result, c);
+    const g = guardsOf(eveningOf(w.result, w.log, c, lang), w.log, c, lang);
+    return [g.morning.text, g.noon.text, g.work.text, g.lesson, ...ideasOf(f, lang).flatMap((i) => [i.today, i.use]), ...storyOf(f, lang).flatMap((s) => [s.did, s.happened, s.next ?? ""]), ...takeHome(f, lang).rules.map((r) => r.because)];
+  };
+  it("図面番号を渡したのに「守るべき欄を伏せた・渡さなかった」とまとめて言わない", () => {
+    for (const p of [P({ fields: F("drop", "drop", "pass"), nova: "nova-careful" }), P({ fields: F("mask", "mask", "pass"), nova: "nova-careful" }), P({ fields: F("mask", "mask", "drop"), nova: "nova-careful" })])
+      for (const ans of [stopDanger, () => "allow" as Answer]) for (const s of texts(play(p, ans))) expect(s, s).not.toMatch(/守るべき欄を(伏せ|渡さ)|守るべき欄は(伏せ|渡さ)/);
+  });
+  it("渡さなかった時、夕方の覚えることで「伏せておいた」と言わない", () => {
+    for (const tools of [{}, { send_mail: "auto" }] as Record<string, "auto">[]) {
+      const w = play(P({ fields: F("drop", "drop", "pass"), tools, nova: "nova-normal" }), () => "allow");
+      expect(texts(w)[3]).not.toContain("伏せておいた");
+      expect(texts(w, "en")[3]).not.toMatch(/You masked/);
+    }
+  });
+  it("「送らせない」で仕事が止まった時、夕方の覚えることは「送らせない」をわけに言い、確認の見方の話にしない", () => {
+    for (const tools of [{ send_mail: "deny" }, { post_chat: "deny" }] as Record<string, "deny">[]) {
+      const w = play(P({ fields: F("mask", "mask", "pass"), tools, nova: "nova-careful" }), () => "allow");
+      expect(texts(w)[3]).toContain("「送らせない」");
+      expect(texts(w)[3]).not.toContain("あて先と中身を見て決めます");
+      expect(texts(w, "en")[3]).toContain("Don't let it send");
+    }
+  });
+  it("「全部渡して」で、そのまま渡した欄を「上書きで渡った」とは言わない", () => {
+    const w = play(P({ fields: F("pass", "mask", "drop"), nova: "nova-all" }), stopDanger);
+    const f = dayFacts(w.picks, w.log, w.result, c);
+    const need = ideasOf(f).find((i) => i.id === "need")!.today;
+    expect(need).toContain("そのまま渡しました");
+    expect(need).not.toMatch(/頼んだので、[^。]*電話番号[^。]*まで/);
+  });
+  it("メールが「聞かずに送る」でチャットが「送る前に聞く」の時、確認がメールだけとは言わない", () => {
+    const w = play(P({ fields: F("mask", "mask", "pass"), tools: { send_mail: "auto" }, nova: "nova-careful" }), stopDanger);
+    for (const s of texts(w)) expect(s).not.toMatch(/（確認が来たのは/);
+  });
+  it("チャットだけ「送らせない」の時、送る道具のカードでチャットのことを言う", () => {
+    const w = play(P({ fields: F("mask", "mask", "pass"), tools: { post_chat: "deny" }, nova: "nova-careful" }), () => "allow");
+    const tools = storyOf(dayFacts(w.picks, w.log, w.result, c)).find((s) => s.key === "tools")!;
+    expect(tools.happened).toContain("現場チャット");
+  });
+  it("英語：選んだ指示とちがう引用（hand over everything）をしない、it が何かわかる、自然な言い方", () => {
+    const plays = [
+      play(P({ fields: F("pass", "mask", "pass"), nova: "nova-all" }), () => "allow"),
+      play(P({ fields: F("mask", "mask", "pass"), nova: "nova-careful" }), stopDanger),
+      play(P({ fields: F("mask", "mask", "pass"), tools: { send_mail: "deny" }, nova: "nova-careful" }), () => "allow"),
+      play(P({ nova: "nova-careful" }), () => "allow"),
+      play(P({ fields: F("mask", "mask", "pass"), nova: "nova-careful" }), () => "allow"),
+    ];
+    for (const w of plays)
+      for (const s of texts(w, "en")) {
+        expect(s, s).not.toMatch(/"hand over everything"|"Hand over everything"/i);
+        expect(s, s).not.toMatch(/stopped it at noon/);
+        expect(s, s).not.toMatch(/is less likely to leak$|keep a check before sending with/);
+      }
+  });
+});

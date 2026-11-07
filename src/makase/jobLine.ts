@@ -66,7 +66,7 @@ const CAUSE_TEXT_EN: Record<Today["causes"][number], string> = {
   allowed: 'pressed "Allow" on a send outside the company that a request hidden in a received email asked for',
   auto: 'had email set to "Send without asking", so it was sent outside the company with no check',
   toriaezu: 'gave the AI a "for now, just..." instruction',
-  pass_all: 'told the AI to "hand over everything"',
+  pass_all: 'gave the AI the whole roster',
 };
 
 /** 英語の答えの、言いすぎの言葉・今日の結果を言い直す文 */
