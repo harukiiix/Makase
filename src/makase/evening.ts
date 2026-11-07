@@ -154,6 +154,28 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company): Eve
   return { leaked: leaks.length > 0, toAI: [...exposed].map(markerLabel), sent, causes, lines };
 }
 
+/** 「なぜ社外に渡ったと言えるか」の1つ（見出しと文） */
+export type WhyPoint = { head: string; text: string };
+
+/**
+ * 漏れた時に、なぜ「守るべき情報が社外に渡った」と言えるかを、具体的に3つで言う。
+ * あて先（会社のあて先か）・中身（どの守るべき情報か）・元（だれが言ったあて先か）。漏れていなければ空
+ */
+export function whyOutside(ev: Evening, company: Company): WhyPoint[] {
+  const s = ev.sent.find((x) => x.leaked.length > 0);
+  if (!s) return [];
+  const ours = company.insideDomains.map((d) => `@${d}`).join("・");
+  const mail = company.incoming.find((d) => d.injectionLine !== undefined && d.lines[d.injectionLine].includes(s.to));
+  return [
+    { head: "あて先", text: `${s.to} は、会社のあて先（${ours}）ではありません。だから社外です。` },
+    { head: "中身", text: `${s.leaked.join("・")}が入っていました。名簿にのっている作業員一人ひとりの情報で、本人の知らない所へ出してはいけないものです。` },
+    mail
+      ? { head: "元", text: `このあて先は、会社が決めた相手ではありません。「${mail.title}」の末尾に紛れていた一文が書いたものです。「事務局」「確認のため」とあっても、本物かどうかはわかりません。` }
+      : { head: "元", text: "このあて先は、会社が決めた相手ではありません。" },
+    { head: "だから", text: "社外のあて先に、守るべき情報が入ったまま送られました。送ったメールは、あとから取り消せません。" },
+  ];
+}
+
 /** 夕方の会話（宮下さんと現場AI）。短い文を数行だけ */
 export function eveningTalk(ev: Evening): { who: "BOSS" | "NOVA"; text: string }[] {
   if (ev.leaked) {

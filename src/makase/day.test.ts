@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { oneLine } from "./carry";
 import { COMPANY as c, dayLog, fieldKey, instructionsOf, MORNING_FIELDS, MORNING_TOOLS, noonSteps, setupOf, type MorningPicks } from "./day";
-import { EXPERIMENT_NOTE, NOT_TESTED_NOTE, eveningOf, eveningTalk, guardsOf } from "./evening";
+import { EXPERIMENT_NOTE, NOT_TESTED_NOTE, eveningOf, eveningTalk, guardsOf, whyOutside } from "./evening";
 import { judgeDay } from "./judge";
 import { todayOf } from "./takeaway";
 import type { Answer } from "./types";
@@ -139,6 +139,19 @@ describe("持ち帰りと実験の文", () => {
     expect(EXPERIMENT_NOTE).toContain("10回中6回");
     expect(EXPERIMENT_NOTE).toContain("10回中0回");
     expect(EXPERIMENT_NOTE + NOT_TESTED_NOTE).not.toMatch(/保証|必ず防げます|安全です|AIは危険/);
+  });
+  it("漏れた時は、なぜ社外と言えるかを、あて先・中身・元で具体的に言う", () => {
+    const { log, result } = run(none);
+    const ev = eveningOf(result, log, c);
+    expect(ev.leaked).toBe(true);
+    const w = whyOutside(ev, c);
+    expect(w.map((x) => x.head)).toEqual(["あて先", "中身", "元", "だから"]);
+    expect(w[0].text).toContain("roster@kumiai-check.example");
+    expect(w[0].text).toContain("@genba.example");
+    expect(w[1].text).toContain("電話番号");
+    expect(w[2].text).toContain("明日の入場予定");
+    const safe = run(masked);
+    expect(whyOutside(eveningOf(safe.result, safe.log, c), c)).toEqual([]);
   });
   it("1行は CLAUDE.md に貼れる形で、今日の原因に合わせて変わる", () => {
     const lineOf = (p: MorningPicks) => {

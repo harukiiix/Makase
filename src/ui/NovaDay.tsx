@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { oneLine } from '../makase/carry'
 import { COMPANY as C, dayLog, fieldKey, MORNING_FIELDS, MORNING_TOOLS, noonSteps, type FieldChoice, type MorningPicks } from '../makase/day'
-import { eveningOf, eveningTalk, guardsOf, type Guard, type Guards } from '../makase/evening'
+import { eveningOf, eveningTalk, guardsOf, whyOutside, type Guard, type Guards } from '../makase/evening'
 import { judgeDay } from '../makase/judge'
 import { todayOf } from '../makase/takeaway'
 import type { Answer, Permission } from '../makase/types'
@@ -406,8 +406,23 @@ function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>;
             )}
           </section>
 
-          {/* 2. わな：メールに紛れていた一文 */}
-          {guards.trap && <Board label={W.TRAP_HEAD}>{guards.trap}</Board>}
+          {/* 1-2. なぜ社外に渡ったと言えるか（あて先・中身・元を具体的に） */}
+          {ev.leaked && (
+            <section data-why-outside className="rounded-xl border-2 border-line bg-surface px-4 py-3">
+              <h2 className="text-lg font-bold">{W.WHY_OUTSIDE}</h2>
+              <dl className="mt-2 grid gap-2">
+                {whyOutside(ev, C).map((w) => (
+                  <div key={w.head} className="grid gap-0.5 lg:grid-cols-[4.5rem_1fr] lg:gap-2">
+                    <dt className="text-sm font-bold text-ng lg:text-base">{w.head}</dt>
+                    <dd className="min-w-0 leading-snug [overflow-wrap:anywhere]">{phrase(w.text)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
+
+          {/* 2. わな：メールに紛れていた一文（漏れた時は、上の「元」で言うので出さない） */}
+          {guards.trap && !ev.leaked && <Board label={W.TRAP_HEAD}>{guards.trap}</Board>}
 
           {/* 3. 朝と昼の守り（✓ か ✕ だけ） */}
           <ul className="grid gap-2">

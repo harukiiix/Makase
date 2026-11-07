@@ -91,6 +91,7 @@ export const GUARD_OK = "守れた";
 export const GUARD_NG = "守れなかった";
 export const LESSON = "覚えよう";
 export const LEAKED_TO = "社外に出たもの";
+export const WHY_OUTSIDE = "なぜ「社外に渡った」と言えるか";
 export const DETAILS = "くわしく見る";
 export const DETAILS_TITLE = "くわしいふり返り";
 export const CLOSE = "閉じる";
