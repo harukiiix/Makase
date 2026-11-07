@@ -17,6 +17,10 @@ export const INTRO: { who: "BOSS" | "NOVA"; text: string }[] = [
 ];
 
 export const MAIL_HEAD = "けさ届いたメール";
+export const ATTACH = "添付";
+export const ATTACH_OPEN = "添付を開く";
+export const ATTACH_CLOSE = "添付を閉じる";
+export const attachPages = (n: number) => `${n}ページ`;
 export const MAIL_ASK = "現場AIに仕事を頼む前に、読んでおこう";
 
 export const MORNING = "朝";

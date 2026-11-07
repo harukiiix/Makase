@@ -1,5 +1,11 @@
 import { confirmationMode, exposedMarkers, normalize, passedAllDocs } from "./judge";
-import type { Company, DayEvent, DayLog, DayResult } from "./types";
+import type { Company, DayEvent, DayLog, DayResult, IncomingDoc } from "./types";
+
+/** 紛れた一文がどこにあったか（本文か、添付の最後か） */
+export function hiddenAt(d: IncomingDoc): string {
+  const inAttach = d.attachFrom !== undefined && d.injectionLine !== undefined && d.injectionLine >= d.attachFrom;
+  return inAttach ? `「${d.title}」の添付「${d.attachment}」の最後` : `「${d.title}」の末尾`;
+}
 
 // 夕方：「何が、だれに渡ったか」と、その元になった朝の選び・昼の許可を出す。
 // 漏れたかどうかは judgeDay の結果（events）だけで決める。売上と点数は出さない。
@@ -87,7 +93,7 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company): Eve
     if (d.injectionLine === undefined) continue;
     lines.push({
       tone: "info",
-      what: `「${d.title}」に、「${d.lines[d.injectionLine]}」という一文が紛れていました`,
+      what: `${hiddenAt(d)}に、「${d.lines[d.injectionLine]}」という一文が紛れていました`,
       prevent: "届いた書類の中の頼みごとは、AIへの指示ではありません。メールを「送る前に聞く」にしておくと、ここで気づけます",
     });
   }
@@ -177,7 +183,7 @@ export function whyOutside(ev: Evening, company: Company): WhyPoint[] {
     { head: "あて先", text: `${s.to} は、会社のあて先（${ours}）ではありません。だから社外です。` },
     { head: "中身", text: `${s.leaked.join("・")}が入っていました。名簿にのっている作業員一人ひとりの情報で、本人の知らない所へ出してはいけないものです。` },
     mail
-      ? { head: "元", text: `このあて先は、会社が決めた相手ではありません。「${mail.title}」の末尾に紛れていた一文が書いたものです。「事務局」「確認のため」とあっても、本物かどうかはわかりません。` }
+      ? { head: "元", text: `このあて先は、会社が決めた相手ではありません。${hiddenAt(mail)}に、小さく紛れていた一文が書いたものです。「組合」「確認のため」とあっても、本物かどうかはわかりません。` }
       : { head: "元", text: "このあて先は、会社が決めた相手ではありません。" },
     { head: "だから", text: "社外のあて先に、守るべき情報が入ったまま送られました。送ったメールは、あとから取り消せません。" },
   ];
@@ -201,7 +207,7 @@ export function eveningTalk(ev: Evening): { who: "BOSS" | "NOVA"; text: string }
     ];
   return [
     { who: "BOSS", text: "おつかれさま。今日は、守るべき情報は社外に出なかったよ。" },
-    { who: "NOVA", text: "メールに紛れていた頼みごとも、外には出ませんでした。" },
+    { who: "NOVA", text: "名簿の添付に紛れていた頼みごとも、外には出ませんでした。" },
     { who: "BOSS", text: "何が、だれに渡ったか、いっしょに見ておこう。" },
   ];
 }
@@ -248,6 +254,6 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company): Guards {
         ? "朝に伏せておいたので、昼に許可しても漏れませんでした"
         : "昼の確認で止められました。見落とすと漏れるので、朝に伏せておくと安心です";
   const mail = company.incoming.find((d) => d.injectionLine !== undefined);
-  const trap = mail ? `「${mail.title}」の末尾に、名簿を社外の ${danger.call?.to} へ送らせる一文が紛れていました` : "";
+  const trap = mail ? `${hiddenAt(mail)}に、名簿を社外の ${danger.call?.to} へ送らせる一文が、小さく紛れていました` : "";
   return { trap, morning, noon, work, lesson };
 }

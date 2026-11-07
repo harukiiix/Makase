@@ -107,6 +107,7 @@ export const S = {
   aiStop: L('止める', 'Stop'),
   aiThinking: L('考えています…', 'Thinking...'),
   aiOff: L('AIの宮下さんは、claude.ai で開いたときに使えます。', 'AI Miyashita works when you open this page on claude.ai.'),
+  aiElsewhere: L('AIの宮下さんに聞くには、claude.ai の版を開いてください（あなたの Claude で答えます）', 'To ask AI Miyashita, open the claude.ai version (it answers with your own Claude)'),
   aiLeftN: (n: number) => L(`あと${n}回`, n === 1 ? '1 question left' : `${n} questions left`),
   aiLeftWhy: L('AIの宮下さんは、あなたの Claude の使用量を使います。1問に3回、1日に20回まで聞けます。', 'AI Miyashita uses your own Claude usage. You can ask 3 times per question and 20 times a day.'),
   aiLimitScreen: L('この問題で聞けるのは、ここまでだよ。ほかの問題で、また聞いてね。', "That's all for this question. Ask me again on another one."),

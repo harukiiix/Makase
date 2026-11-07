@@ -12,6 +12,9 @@ export type SampleFn = ((input: string | Turn[], opts?: SampleOpts) => Promise<{
   json: <T = unknown>(input: string | Turn[], opts?: SampleOpts) => Promise<T>
 }
 
+/** AIの宮下さんが使える版（claude.ai）。GitHub Pages など、AIが使えない所から案内する */
+export const CLAUDE_AI_URL = 'https://claude.ai/artifact/Xdew5eGhak1mpYjVpTFyDa'
+
 let pending: Promise<SampleFn | null> | null = null
 /** 使えれば関数、使えなければ null（10秒ほどで決まる） */
 export function getAI(): Promise<SampleFn | null> {

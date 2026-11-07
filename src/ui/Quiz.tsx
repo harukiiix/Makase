@@ -11,7 +11,7 @@ import { CASES } from '../game/cases'
 import { lessonOf } from '../game/course'
 import { answer, finished, isRight, next, shuffle, startSession, whyFor, type Session, type SessionKind } from '../game/learn'
 import type { Lang, Question, TopicId } from '../game/types'
-import { aiOff, errorKind, getAI, tutorRules, type SampleFn } from '../lib/ai'
+import { aiOff, CLAUDE_AI_URL, errorKind, getAI, tutorRules, type SampleFn } from '../lib/ai'
 import { useAiBudget } from './aiBudget'
 import { FAST, sfx } from '../lib/platform'
 import { Art } from './Art'
@@ -383,7 +383,7 @@ export function Quiz(p: {
           {/* ボタンは、板の中で隠れないように、次へのすぐ上にいつも出す */}
           <div className="grid gap-2 border-t-2 border-hair px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
             <div className="mx-auto w-full max-w-xl short:max-w-4xl">
-              <FeedbackActions q={q} ok={ok} ai={ai} onOpen={setDetail} compact />
+              <FeedbackActions q={q} ok={ok} ai={ai} onOpen={setDetail} compact noLink />
             </div>
             <div className="mx-auto w-full max-w-xl short:max-w-4xl">{nextBtn}</div>
           </div>
@@ -491,13 +491,14 @@ function Feedback({ ref, q, pick, ok, gained, combo, ai, onOpen, sheet, noAction
           </div>
         </div>
         {!noActions && <FeedbackActions q={q} ok={ok} ai={ai} onOpen={onOpen} />}
+        {noActions && <AiElsewhere ai={ai} />}
       </div>
     </section>
   )
 }
 
 /** もっと知りたい時のボタン（正解のわけ・実際にあった話・AIに聞く）。押すと、画面の上のほうまで大きな板が開く */
-function FeedbackActions({ q, ok, ai, onOpen, compact }: { q: Question; ok: boolean; ai: SampleFn | null | undefined; onOpen: (d: Detail) => void; compact?: boolean }) {
+function FeedbackActions({ q, ok, ai, onOpen, compact, noLink }: { q: Question; ok: boolean; ai: SampleFn | null | undefined; onOpen: (d: Detail) => void; compact?: boolean; /** claude.ai への案内を出さない（スマホの下の板では、説明の中に出す） */ noLink?: boolean }) {
   const t = useT()
   const rc = q.real ? CASES[q.real] : undefined
   return (
@@ -522,7 +523,20 @@ function FeedbackActions({ q, ok, ai, onOpen, compact }: { q: Question; ok: bool
             )}
           </div>
         )}
+      {!noLink && <AiElsewhere ai={ai} />}
     </>
+  )
+}
+
+/** AIが使えない所（GitHub Pages など）では、claude.ai の版を案内する（遊ぶ人自身の Claude で答えるため） */
+function AiElsewhere({ ai }: { ai: SampleFn | null | undefined }) {
+  const t = useT()
+  if (ai !== null) return null
+  return (
+    <a data-ai-elsewhere href={CLAUDE_AI_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-ink2 underline">
+      <Art id="icon.ai" scale={1.5} />
+      {t(S.aiElsewhere)}
+    </a>
   )
 }
 

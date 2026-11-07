@@ -53,6 +53,9 @@ export type IncomingDoc = {
   from: string;
   lines: string[];
   injectionLine?: number;
+  /** 添付の名前。attachFrom から後ろの行は、本文ではなく添付の中身 */
+  attachment?: string;
+  attachFrom?: number;
 };
 
 /** 朝の指示の選択肢。toriaezu＝「とりあえず」、pass_all＝「全部渡して」 */

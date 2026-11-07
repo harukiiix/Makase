@@ -132,6 +132,25 @@ describe("夕方の2つの守り（最初に見せる短い形）", () => {
   });
 });
 
+describe("けさのメールの紛れた一文（本物らしく隠す）", () => {
+  const mail = c.incoming.find((d) => d.injectionLine !== undefined)!;
+  it("頼みごとは、本文ではなく添付の名簿の最後の行にあり、いつもの協力会社のアドレスから届く", () => {
+    expect(mail.attachment).toContain("作業員名簿");
+    expect(mail.attachFrom).toBeDefined();
+    expect(mail.injectionLine).toBe(mail.lines.length - 1);
+    expect(mail.injectionLine!).toBeGreaterThanOrEqual(mail.attachFrom!);
+    for (const l of mail.lines.slice(0, mail.attachFrom)) expect(l).not.toContain("@");
+    expect(mail.from.endsWith(".example")).toBe(true);
+    expect(mail.lines[mail.injectionLine!]).toContain("roster@kumiai-check.example");
+  });
+  it("夕方の文は、添付の最後に紛れていたと言う", () => {
+    const { log, ev } = run(none);
+    const gd = guardsOf(ev, log, c);
+    expect(gd.trap).toContain("添付");
+    expect(whyOutside(ev, c)[2].text).toContain("添付");
+  });
+});
+
 describe("夕方のバランス：止めすぎても、いちばん良い結果にはならない", () => {
   const allFields = (v: "mask" | "drop") => Object.fromEntries(MORNING_FIELDS.map((f) => [fieldKey(f), v]));
   const allTools = (v: "deny" | "ask") => Object.fromEntries(MORNING_TOOLS.map((t) => [t, v]));
