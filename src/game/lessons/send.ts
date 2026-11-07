@@ -36,7 +36,7 @@ export const LESSON: Lesson = {
       pic: 'pic.mail_address_suggest',
       situation: {
         ja: '設備屋の佐藤さんに、図面をメールで送る。あて先に「佐藤」と打ったら、候補が出てきたので、いちばん上を選んだ。',
-        en: 'You\'re emailing drawings to Sato at the plumbing company. You typed "Sato" in the To box, some names came up, and you picked the top one.',
+        en: 'You\'re emailing drawings to Sato at the building services contractor. You typed "Sato" in the To box, some names came up, and you picked the top one.',
       },
       ask: { ja: 'このまま送信する。これでいい？', en: 'You send it as it is. Is that OK?' },
       answer: false,
@@ -108,7 +108,6 @@ export const LESSON: Lesson = {
         en: "A name you know is easy to trust. But if it's someone else, you'd be handing the vault room drawings straight to them.",
       },
       tip: { ja: '差出人は、名前ではなくアドレスを見る', en: "Check the sender's address, not the name" },
-      real: 'toda-access',
     },
     // 4. 本人か確かめる：メールの中の番号ではなく、前から知っている番号に電話する
     {

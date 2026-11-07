@@ -437,7 +437,7 @@ function EveningList({ ev, guards, onNext }: { ev: ReturnType<typeof eveningOf>;
             </span>
             <div className="min-w-0">
               <div className="text-sm font-bold text-rule">{W.LESSON}</div>
-              <div className="phrase text-lg font-bold leading-snug">{guards.lesson}</div>
+              <div className="phrase text-lg font-bold leading-snug">{phrase(guards.lesson)}</div>
             </div>
           </div>
 

@@ -99,10 +99,10 @@ export const LESSON: Lesson = {
       who: 'SAWA',
       pic: 'pic.send',
       situation: {
-        ja: '会社のメールに、パスワードに加えて、スマホに届く番号でも本人か確かめる設定がある。「二段階の確かめ」というそうだ。',
-        en: 'The company email has a setting that checks it is you with a code sent to your phone, on top of the password. It is called two-step checking.',
+        ja: '会社のメールに、パスワードに加えて、スマホに届く番号でも本人か確かめる設定がある。「二段階認証」（二段階の確かめ）というそうだ。',
+        en: 'The company email has a setting that checks it is you with a code sent to your phone, on top of the password. It is called two-step verification.',
       },
-      ask: { ja: '二段階の確かめを、オンにする。これでいい？', en: 'Turn on two-step checking. Is that OK?' },
+      ask: { ja: '二段階の確かめを、オンにする。これでいい？', en: 'Turn on two-step verification. Is that OK?' },
       answer: true,
       why: {
         ja: 'パスワードが知られても、あなたのスマホに届く番号がなければ、ほかの人は入りにくくなるよ。手間は少し増えるけど、乗っ取りを防ぐ大きな助けになるんだ。',
@@ -112,7 +112,7 @@ export const LESSON: Lesson = {
         ja: '毎回番号を入れるのは、面倒に思えるよね。でも、パスワードだけだと、もれたときにそのまま入られてしまうんだ。',
         en: 'Typing a code each time can feel like a chore. But with a password alone, a leak lets someone walk straight in.',
       },
-      tip: { ja: '二段階の確かめは、オンにしておく', en: 'Keep two-step checking turned on' },
+      tip: { ja: '二段階認証は、オンにしておく', en: 'Keep two-step verification turned on' },
     },
     {
       id: 'net-04',
@@ -138,7 +138,7 @@ export const LESSON: Lesson = {
       wrongWhy: [
         {
           ja: 'スマホに届く番号は、二段階の確かめのためのものだよ。教えると、パスワードを知っている相手に、そのまま入られてしまうんだ。',
-          en: 'That code is for two-step checking. If you read it out, someone who already has your password can get straight in.',
+          en: 'That code is for two-step verification. If you read it out, someone who already has your password can get straight in.',
         },
         {
           ja: '半分でも、残りを当てられたり、もう一度聞かれたりするよ。この番号は、だれにも教えないものなんだ。',
@@ -177,8 +177,8 @@ export const LESSON: Lesson = {
           en: "A network with the shop's name can still be a fake set up by someone nearby. The name alone doesn't tell you it is real.",
         },
         {
-          ja: 'さっと見るだけでも、つないでいる間は、まわりからのぞかれるおそれがあるよ。時間の長さは関係ないんだ。',
-          en: "Even a quick look means you're exposed while connected. How long you stay doesn't matter.",
+          ja: 'さっと見るだけでも、つないだ時点で、偽物のWi‑Fiやのぞき見の心配があるよ。短い時間でも同じなんだ。',
+          en: "Even a quick look exposes you as soon as you connect, to a fake network or to snooping. A short time is no safer.",
         },
       ],
       tip: { ja: '無料のWi‑Fiで、仕事の物を開かない', en: "Don't open work things on free Wi-Fi" },

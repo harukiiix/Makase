@@ -11,7 +11,7 @@ export const S = {
   // ---- タイトル・ホーム
   title: L('Makase', 'Makase'),
   subtitle: L('現場の情報を守る、5分の練習', 'A 5-minute practice to keep site information safe'),
-  fiction: L('物語に出てくる会社・人物・あて先は架空です。「実際にあった話」は、報道などにもとづく実際の出来事です。', 'The story\'s companies, people and addresses are made up. The "This really happened" cases are real and come from news reports.'),
+  fiction: L('物語に出てくる会社・人物・あて先は架空です。「実際にあった話」は、報道などにもとづく実際の出来事です。', 'The story\'s companies, people and addresses are made up. The "This really happened" cases are real and come from news reports and official announcements.'),
   todayJob: L('次にやること', 'Up next'),
   start: L('はじめる', 'Start'),
   startDay: (d: string) => L(`${d}をはじめる`, `Start ${d}'s lesson`),
