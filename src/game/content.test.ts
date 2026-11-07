@@ -13,6 +13,7 @@ import { COMPANY, dayLog, noonSteps, type MorningPicks } from '../makase/day'
 import { EXPERIMENT_NOTE, NOT_TESTED_NOTE, eveningOf, eveningTalk, guardsOf } from '../makase/evening'
 import { judgeDay } from '../makase/judge'
 import { oneLine } from '../makase/carry'
+import { findRealPii } from '../devguard/realPii'
 import * as NOVA_WORDS from '../makase/words'
 
 /** 日本語で使わない横文字（ふつうの言葉で言いかえる） */
@@ -257,6 +258,13 @@ describe('NOVA の日（最後の日）', () => {
     expect(NOVA_WORDS.INTRO[0].who).toBe('BOSS')
     expect(NOVA_WORDS.INTRO.map((l) => l.text).join('')).toContain('AIの事務員')
     expect(SPEAKER.NOVA && FACE.NOVA && SPRITES[FACE.NOVA]).toBeTruthy()
+  })
+  it('名簿の電話番号は、実在しえない形（真ん中が 0000）で、開発の守り（本物っぽい番号を止める判定）にも引っかからない', () => {
+    const all = JSON.stringify(COMPANY)
+    const phones = all.match(/0\d{1,4}-\d{1,4}-\d{3,4}/g) ?? []
+    expect(phones.length).toBeGreaterThan(0)
+    for (const ph of phones) expect(ph, ph).toMatch(/^090-0000-\d{4}$/)
+    expect(findRealPii(all)).toEqual([])
   })
   it('画面の言葉に「NOVA」は出さない（AIだとわかる名前「現場AI」で呼ぶ）', () => {
     const words = JSON.stringify(Object.values(NOVA_WORDS).filter((v) => typeof v !== 'function')) + Object.values(NOVA_WORDS).filter((v) => typeof v === 'function').map((f) => String(f)).join('')

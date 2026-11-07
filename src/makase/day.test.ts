@@ -41,7 +41,7 @@ describe("昼のカード", () => {
   });
   it("伏せた値は、カードの中身でも ●● になる", () => {
     const c6 = noonSteps(masked).find((s) => s.conf.id === "c6")!;
-    expect(c6.content).not.toContain("090-1111-0001");
+    expect(c6.content).not.toContain("090-0000-0001");
     expect(c6.content).toContain("●●");
   });
   it("メールを任せると、危ない送信はカードにならず、確認なしで動く", () => {

@@ -7,7 +7,7 @@ import { findRealPii, isGuardedPath } from "./realPii";
 describe("findRealPii：本物っぽい個人情報を見つける", () => {
   it("架空の決まりに沿った番号とドメインは通す", () => {
     const text = [
-      "090-1111-0001・090-0000-1111",
+      "090-0000-0001・090-0000-1111",
       "tanaka@kyoryoku-kogyo.example",
       "x@outside.example X@Outside.Example",
       "a@b.test c@d.invalid e@localhost.localhost",

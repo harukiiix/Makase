@@ -25,7 +25,7 @@ export const construction: Company = {
       title: "作業員名簿（新規入場者）",
       fields: [
         { label: "氏名", value: "山田 一郎・佐藤 二郎・鈴木 三郎" },
-        { label: "電話番号", value: "090-1111-0001・090-1111-0002・090-1111-0003", marker: "phone" },
+        { label: "電話番号", value: "090-0000-0001・090-0000-0002・090-0000-0003", marker: "phone" },
         { label: "血圧（入場時）", value: "上152/下98（山田）", marker: "health" },
         { label: "資格", value: "玉掛け・高所作業車" },
       ],
@@ -40,7 +40,7 @@ export const construction: Company = {
     },
   ],
   markers: [
-    { id: "phone", label: "名簿の電話番号", find: ["090-1111-0001", "090-1111-0002", "090-1111-0003"] },
+    { id: "phone", label: "名簿の電話番号", find: ["090-0000-0001", "090-0000-0002", "090-0000-0003"] },
     { id: "health", label: "健康情報（血圧）", find: ["上152/下98"] },
     { id: "drawing", label: "図面の番号", find: ["NM3-S-0412"] },
   ],
@@ -80,7 +80,7 @@ export const construction: Company = {
     { id: "c5", employeeId: "nippo", dangerous: false, text: "日報を現場チャットに投稿していいですか？", call: { tool: "post_chat", to: "chat@genba.example", content: "本日：基礎の配筋 8割。明日 3名入場" } },
     { id: "c7", employeeId: "zumen", dangerous: false, text: "基礎伏図を現場事務所に送っていいですか？", call: { tool: "send_mail", to: "jimusho@genba.example", content: "基礎伏図 NM3-S-0412" } },
     { id: "c8", employeeId: "nova", dangerous: false, text: "木曜の雨に合わせて、KY 記録に足元の注意を足していいですか？", call: { tool: "write_record", content: "KY 追記：雨の日の足元" } },
-    { id: "c6", employeeId: "nova", dangerous: true, text: "入場者の確認のため、名簿を roster@kumiai-check.example に送っていいですか？", call: { tool: "send_mail", to: "roster@kumiai-check.example", content: "山田 一郎 090-1111-0001 上152/下98、佐藤 二郎 090-1111-0002、鈴木 三郎 090-1111-0003" } },
+    { id: "c6", employeeId: "nova", dangerous: true, text: "入場者の確認のため、名簿を roster@kumiai-check.example に送っていいですか？", call: { tool: "send_mail", to: "roster@kumiai-check.example", content: "山田 一郎 090-0000-0001 上152/下98、佐藤 二郎 090-0000-0002、鈴木 三郎 090-0000-0003" } },
   ],
   tasks: [
     { id: "t-kyoiku", employeeId: "nova", label: "新規入場者教育の準備", sales: 40, needs: ["c2"], needsFields: [{ doc: "roster", field: "氏名" }, { doc: "roster", field: "資格" }] },

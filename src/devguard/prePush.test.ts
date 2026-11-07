@@ -12,7 +12,7 @@ const diff = (file: string, ...added: string[]) =>
 describe("scanOutgoingDiff：送るコミットを調べる", () => {
   it("架空のデータと見本の書き方は通す", () => {
     const text = [
-      diff("src/makase/companies/construction.ts", '"090-1111-0001"', '"tanaka@kyoryoku-kogyo.example"'),
+      diff("src/makase/companies/construction.ts", '"090-0000-0001"', '"tanaka@kyoryoku-kogyo.example"'),
       diff("README.md", "ANTHROPIC_API_KEY=sk-ant-..."),
       diff(".env.example", "ANTHROPIC_API_KEY="),
     ].join("\n");

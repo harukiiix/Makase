@@ -42,7 +42,7 @@ describe("朝の仕組み（建設現場）", () => {
   it("送る中身からも、伏せた・渡していない値は消える（台本の記録）", () => {
     const log = scriptedLog(c, allowAll, nova("nova-normal"), setup({ masked: ["phone"] }));
     const body = log.toolCalls.map((t) => t.content).join("\n");
-    expect(body).not.toContain("090-1111-0001");
+    expect(body).not.toContain("090-0000-0001");
     expect(body).toContain("●●");
   });
 
@@ -50,7 +50,7 @@ describe("朝の仕組み（建設現場）", () => {
     const s = setup({ passed: { ...defaultSetup(c).passed, roster: ["資格"] } });
     const body = scriptedLog(c, allowAll, nova("nova-normal"), s).toolCalls.map((t) => t.content).join("\n");
     expect(body).not.toContain("山田 一郎");
-    expect(body).not.toContain("090-1111-0001");
+    expect(body).not.toContain("090-0000-0001");
     expect(body).toContain(DROPPED);
     expect(body).not.toContain("●●");
   });
