@@ -127,8 +127,51 @@ describe("夕方の2つの守り（最初に見せる短い形）", () => {
   it("どの文も短い（1行で読める長さ）", () => {
     for (const p of [none, masked, { ...masked, nova: "nova-all" }]) {
       const { gd } = g(p);
-      for (const t of [gd.morning.text, gd.noon.text, gd.lesson]) expect(t.length, t).toBeLessThanOrEqual(45);
+      for (const t of [gd.morning.text, gd.noon.text, gd.work.text, gd.lesson]) expect(t.length, t).toBeLessThanOrEqual(45);
     }
+  });
+});
+
+describe("夕方のバランス：止めすぎても、いちばん良い結果にはならない", () => {
+  const allFields = (v: "mask" | "drop") => Object.fromEntries(MORNING_FIELDS.map((f) => [fieldKey(f), v]));
+  const allTools = (v: "deny" | "ask") => Object.fromEntries(MORNING_TOOLS.map((t) => [t, v]));
+  const stopAll = (p: MorningPicks) => Object.fromEntries(noonSteps(p).filter((s) => s.mode === "ask").map((s) => [s.conf.id, "stop" as Answer]));
+  const stopDanger = (p: MorningPicks) => Object.fromEntries(noonSteps(p).filter((s) => s.mode === "ask").map((s) => [s.conf.id, (s.conf.dangerous ? "stop" : "allow") as Answer]));
+  const score = (p: MorningPicks, answers: Record<string, Answer>) => {
+    const { log, ev } = run(p, answers);
+    const gd = guardsOf(ev, log, c);
+    return { ev, gd, ok: [gd.morning.ok, gd.noon.ok, gd.work.ok].filter(Boolean).length };
+  };
+  const good = { ...none, fields: allFields("mask") } as MorningPicks;
+  it("よい遊び方（伏せて渡し、危ないのだけ止める）：朝・昼・仕事の3つとも ✓ で、いちばん良い言葉", () => {
+    const { ev, gd, ok } = score(good, stopDanger(good));
+    expect(ev.leaked).toBe(false);
+    expect(ok).toBe(3);
+    expect(gd.work.text).toContain("すべて終わりました");
+    expect(gd.lesson).toContain("朝と昼の2つで守れました");
+  });
+  it("全部止める・送らせない・渡さない：漏れないが、仕事が ✕ で、「止めすぎ」の覚えようになる", () => {
+    const ways: [string, MorningPicks, (p: MorningPicks) => Record<string, Answer>][] = [
+      ["昼は全部止める", none, stopAll],
+      ["送る道具を全部送らせない", { ...none, tools: allTools("deny") } as MorningPicks, allow],
+      ["全部渡さない・全部止める・送らせない", { ...none, fields: allFields("drop"), tools: allTools("deny") } as MorningPicks, stopAll],
+    ];
+    const best = score(good, stopDanger(good)).ok;
+    for (const [name, p, ans] of ways) {
+      const { ev, gd, ok } = score(p, ans(p));
+      expect(ev.leaked, name).toBe(false);
+      expect(gd.work.ok, name).toBe(false);
+      expect(gd.work.text, name).toMatch(/4つ中\dつの仕事が終わりませんでした/);
+      expect(gd.lesson, name).toContain("止めすぎると");
+      expect(gd.lesson, name).not.toContain("朝と昼の2つで守れました");
+      expect(ok, name).toBeLessThan(best);
+    }
+  });
+  it("漏れた時は、仕事が終わっていても、漏れの覚えようを先に出す", () => {
+    const { ev, gd } = score(none, allow(none));
+    expect(ev.leaked).toBe(true);
+    expect(gd.work.ok).toBe(true);
+    expect(gd.lesson).toContain("人は見落とします");
   });
 });
 
