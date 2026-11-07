@@ -1,6 +1,7 @@
 // ブラウザ依存：保存・設定・サウンド（WebAudioで合成。音声ファイル不要）
 import { newProgress, type Progress, type Session } from '../game/learn'
 import type { L10n, Lang, TopicId } from '../game/types'
+import type { AiUse } from './aiLimit'
 
 const KEY = 'sit.v5'
 
@@ -53,6 +54,27 @@ export function writeResume(r: Resume | null) {
   try {
     if (r) localStorage.setItem(RKEY, JSON.stringify(r))
     else localStorage.removeItem(RKEY)
+  } catch {
+    /* noop */
+  }
+}
+
+/** AIの宮下さんに聞いた回数（このブラウザの中だけ。保存できない時は、開いている間だけ覚える） */
+const AKEY = 'sit.aiUse'
+let aiMem: AiUse | null = null
+export function loadAiUse(): AiUse | null {
+  try {
+    const raw = localStorage.getItem(AKEY)
+    if (raw) return JSON.parse(raw) as AiUse
+  } catch {
+    /* プライベートモード等 */
+  }
+  return aiMem
+}
+export function writeAiUse(u: AiUse) {
+  aiMem = u
+  try {
+    localStorage.setItem(AKEY, JSON.stringify(u))
   } catch {
     /* noop */
   }

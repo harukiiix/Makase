@@ -10,6 +10,10 @@ import { COMPANY as C, dayLog, fieldKey, MORNING_FIELDS, MORNING_TOOLS, noonStep
 import { eveningOf, eveningTalk, guardsOf, whyOutside, type Guard, type Guards } from '../makase/evening'
 import { judgeDay } from '../makase/judge'
 import { todayOf } from '../makase/takeaway'
+import { JOBS, JOB_NOTE, cleanJobLine, jobPrompt, type Job } from '../makase/jobLine'
+import { errorKind, getAI, type SampleFn } from '../lib/ai'
+import { S } from './strings'
+import { useAiBudget } from './aiBudget'
 import type { Answer, Permission } from '../makase/types'
 import * as W from '../makase/words'
 import type { Lang } from '../game/types'
@@ -595,6 +599,7 @@ function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine
             </p>
           )}
           <p className="text-sm text-ink2">{one.note}</p>
+          <JobAsk today={today} one={one} />
           <div className="grid grid-cols-2 gap-3">
             <button className="btn text-lg" onClick={onAgain}>
               {W.AGAIN}
@@ -606,5 +611,110 @@ function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine
         </div>
       </main>
     </>
+  )
+}
+
+// ---------------- あなたの仕事に合わせる（AIの宮下さん） ----------------
+// claude.ai で開いた時だけ出す（GitHub Pages など、AIが使えない所では、この部分ごと出さない）。
+// 押した時だけ呼ぶ。答えは文字として出すだけ。漏れたかどうかは、コードの判定（today）をそのまま渡す
+function useSample(): SampleFn | null {
+  const [ai, setAi] = useState<SampleFn | null>(null)
+  useEffect(() => {
+    let alive = true
+    void getAI().then((a) => alive && setAi(() => a))
+    return () => {
+      alive = false
+    }
+  }, [])
+  return ai
+}
+
+function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: ReturnType<typeof oneLine> }) {
+  const ai = useSample()
+  // 回数の限度（この画面で3回・1日に20回）。宮下さんは、遊んでいる人の Claude の使用量を使うため。
+  // 画面は1回遊ぶごとに別に数える（もう一度遊べば、また3回。1日の20回は変わらない）
+  const [screen] = useState(() => `day:take:${Date.now()}`)
+  const budget = useAiBudget(screen)
+  const [job, setJob] = useState<Job['id'] | null>(null)
+  const [line, setLine] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const ctl = useRef<AbortController | null>(null)
+  useEffect(() => () => ctl.current?.abort(), [])
+  if (!ai) return null
+  const spent = budget.left.left === 0
+
+  const ask = async (j: Job) => {
+    if (busy || spent) return
+    if (!budget.spend()) return
+    sfx.ui()
+    setJob(j.id)
+    setLine(null)
+    setErr(null)
+    setBusy(true)
+    ctl.current = new AbortController()
+    try {
+      const { text } = await ai(jobPrompt(j, today, one), { modelTier: 'quick', cache: false, signal: ctl.current.signal })
+      const l = cleanJobLine(text)
+      if (l) setLine(l)
+      else setErr(W.JOB_RETRY)
+    } catch (e) {
+      const k = errorKind(e)
+      if (k !== 'cancelled') setErr(k === 'off' ? S.aiNotAllowed.ja : k === 'busy' ? S.aiBusy.ja : S.aiFailed.ja)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section data-job className="grid gap-3 rounded-xl border-2 border-line bg-surface p-3 lg:p-4">
+      <div className="flex items-start gap-3">
+        <span className="shrink-0 overflow-hidden rounded-lg border-2 border-line bg-surface2">
+          <Art id="face.boss" scale={1.5} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-bold">{W.JOB_HEAD}</h2>
+          <p className="text-base text-ink2">{phrase(W.JOB_SUB)}</p>
+        </div>
+      </div>
+      <fieldset className="grid gap-2" disabled={busy || spent}>
+        <legend className="sr-only">{W.JOB_ASK}</legend>
+        <div className="flex items-center justify-between gap-2" aria-hidden>
+          <span className="text-sm font-bold text-ink2">{W.JOB_ASK}</span>
+          <span data-ai-left={budget.left.left} title={S.aiLeftWhy.ja} className={`shrink-0 rounded-full border-2 px-2 py-0.5 text-sm font-bold ${spent ? 'border-ng text-ng' : 'border-hair text-ink2'}`}>
+            {S.aiLeftN(budget.left.left).ja}
+          </span>
+        </div>
+        <p className="sr-only">{`${S.aiLeftN(budget.left.left).ja}。${S.aiLeftWhy.ja}`}</p>
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          {JOBS.map((j) => (
+            <button key={j.id} data-job-pick={j.id} aria-pressed={job === j.id} className={`btn min-h-12 text-base disabled:opacity-60 ${job === j.id ? 'border-act bg-actBg' : ''}`} onClick={() => void ask(j)}>
+              {j.label}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+      {busy && (
+        <p className="blink rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base" aria-live="polite">
+          {W.JOB_THINKING}
+        </p>
+      )}
+      {line && !busy && (
+        <div data-job-line className="grid gap-1" aria-live="polite">
+          <p className="select-text rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base leading-relaxed [line-break:strict] [word-break:normal]">{line}</p>
+          <p className="text-sm text-ink2">{JOB_NOTE}</p>
+        </div>
+      )}
+      {err && !busy && (
+        <p className="rounded-lg border-2 border-ng bg-ngBg px-3 py-2 text-base" role="status">
+          {err}
+        </p>
+      )}
+      {spent && !busy && (
+        <p data-ai-limit={budget.left.reason ?? 'screen'} role="status" className="rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base">
+          {budget.left.reason === 'day' ? S.aiLimitDay.ja : W.JOB_LIMIT}
+        </p>
+      )}
+    </section>
   )
 }

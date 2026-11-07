@@ -77,6 +77,13 @@ export const COPY = "まとめてコピーする";
 export const COPIED = "コピーしました";
 export const COPY_FAIL = "コピーできませんでした。文を長押しして選んでください";
 export const AGAIN = "もう一度やる";
+/** 持ち帰り：あなたの仕事に合わせる（AIの宮下さん。claude.ai で開いた時だけ出る） */
+export const JOB_HEAD = "あなたの仕事に合わせる";
+export const JOB_SUB = "仕事を選ぶと、AIの宮下さんが、今日の1つをその仕事向けの1行に書き直します。";
+export const JOB_ASK = "あなたの仕事は？";
+export const JOB_THINKING = "宮下さんが考えています…";
+export const JOB_LIMIT = "この画面で聞けるのは、ここまでだよ。もう一度遊んだ時に、また聞いてね。";
+export const JOB_RETRY = "うまく1行にできませんでした。もう一度押してください。";
 export const HOME = "ホームへ";
 
 export const QUIT_SURE = "最後の日の練習をやめますか？";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PER_DAY, PER_SCREEN, aiLeft, dayKey, countAiUse } from './aiLimit'
+import { PER_DAY, PER_SCREEN, aiLeft, countAiUse, dayKey, type AiUse } from './aiLimit'
 
 // AIの宮下さんは、遊んでいる人自身の Claude の使用量を使う。使いすぎないように回数に限度をつける
 describe('AIの宮下さんの回数の限度', () => {
@@ -15,34 +15,34 @@ describe('AIの宮下さんの回数の限度', () => {
   })
 
   it('1問につき3回聞くと、その問題ではもう聞けない（ほかの問題では聞ける）', () => {
-    let u = null as ReturnType<typeof countAiUse>
+    let u = null as unknown as AiUse
     for (let i = 0; i < 3; i++) u = countAiUse(u, day, 'q:see-01')
     expect(aiLeft(u, day, 'q:see-01')).toEqual({ screen: 0, day: 17, left: 0, reason: 'screen' })
     expect(aiLeft(u, day, 'q:see-02').left).toBe(3)
   })
 
   it('1日に合わせて20回聞くと、どの画面でも聞けない', () => {
-    let u = null as ReturnType<typeof countAiUse>
+    let u = null as unknown as AiUse
     for (let i = 0; i < 20; i++) u = countAiUse(u, day, `q:${Math.floor(i / 3)}`)
     expect(u.total).toBe(20)
     expect(aiLeft(u, day, 'q:new')).toEqual({ screen: 3, day: 0, left: 0, reason: 'day' })
   })
 
   it('残りは、画面の残りと日の残りの少ないほう', () => {
-    let u = null as ReturnType<typeof countAiUse>
+    let u = null as unknown as AiUse
     for (let i = 0; i < 19; i++) u = countAiUse(u, day, `q:${i}`)
     expect(aiLeft(u, day, 'q:new')).toEqual({ screen: 3, day: 1, left: 1, reason: null })
   })
 
   it('両方の限度に同時に来た時は、日の限度を言う（明日まで聞けないので）', () => {
-    let u = null as ReturnType<typeof countAiUse>
+    let u = null as unknown as AiUse
     for (let i = 0; i < 17; i++) u = countAiUse(u, day, `q:${i}`)
     for (let i = 0; i < 3; i++) u = countAiUse(u, day, 'q:last')
     expect(aiLeft(u, day, 'q:last').reason).toBe('day')
   })
 
   it('日付が変わったら、回数は元に戻る（前の日の記録は残さない）', () => {
-    let u = null as ReturnType<typeof countAiUse>
+    let u = null as unknown as AiUse
     for (let i = 0; i < 20; i++) u = countAiUse(u, day, 'q:a')
     expect(aiLeft(u, '2026-11-08', 'q:a')).toEqual({ screen: 3, day: 20, left: 3, reason: null })
     const next = countAiUse(u, '2026-11-08', 'q:a')
@@ -50,7 +50,7 @@ describe('AIの宮下さんの回数の限度', () => {
   })
 
   it('限度に来たあとに数えても、限度より増えない', () => {
-    let u = null as ReturnType<typeof countAiUse>
+    let u = null as unknown as AiUse
     for (let i = 0; i < 5; i++) u = countAiUse(u, day, 'q:a')
     expect(u.screens['q:a']).toBe(3)
     expect(u.total).toBe(3)

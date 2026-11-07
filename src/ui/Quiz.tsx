@@ -12,6 +12,7 @@ import { lessonOf } from '../game/course'
 import { answer, finished, isRight, next, shuffle, startSession, whyFor, type Session, type SessionKind } from '../game/learn'
 import type { Lang, Question, TopicId } from '../game/types'
 import { errorKind, getAI, tutorRules, type SampleFn } from '../lib/ai'
+import { useAiBudget } from './aiBudget'
 import { FAST, sfx } from '../lib/platform'
 import { Art } from './Art'
 import { BackButton, Panel, Sheet, useMedia } from './Common'
@@ -557,6 +558,27 @@ function BackToAnswer({ onClick }: { onClick: () => void }) {
 }
 
 // ------------------------------------------------------------
+/** 宮下さんに、あと何回聞けるか（小さく出す。押すと、なぜ限度があるかがわかる） */
+export function AiLeftPill({ n }: { n: number }) {
+  const t = useT()
+  return (
+    <span data-ai-left={n} title={t.attr(S.aiLeftWhy)} aria-label={`${t.attr(S.aiLeftN(n))}。${t.attr(S.aiLeftWhy)}`} className={`shrink-0 rounded-full border-2 px-2 py-0.5 text-sm font-bold ${n === 0 ? 'border-ng text-ng' : 'border-hair text-ink2'}`}>
+      {t(S.aiLeftN(n))}
+    </span>
+  )
+}
+
+/** 限度に来た時の、宮下さんの言葉 */
+export function AiLimitNote({ reason, bubble }: { reason: 'screen' | 'day' | null; bubble: string }) {
+  const t = useT()
+  return (
+    <div data-ai-limit={reason ?? 'screen'} role="status" className={`${bubble} justify-self-start border-2 border-hair bg-surface2`}>
+      {t(reason === 'day' ? S.aiLimitDay : S.aiLimitScreen)}
+    </div>
+  )
+}
+
+// ------------------------------------------------------------
 // AIの宮下さん：その問題について、何でも聞ける（短く答える）。自分の考えを言って、見てもらうこともできる
 function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: number; lang: Lang; ai: SampleFn; onAsked: () => void; onClose: () => void }) {
   const t = useT()
@@ -567,6 +589,9 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
   const [off, setOff] = useState(false)
   const [text, setText] = useState('')
   const [explain, setExplain] = useState(false)
+  // 回数の限度（1問に3回・1日に20回）。宮下さんは、遊んでいる人の Claude の使用量を使うため
+  const budget = useAiBudget(`q:${q.id}`)
+  const spent = budget.left.left === 0
   const input = useRef<HTMLInputElement>(null)
   const ctl = useRef<AbortController | null>(null)
   const end = useRef<HTMLDivElement>(null)
@@ -577,7 +602,8 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
 
   const ask = async (msg: string) => {
     const m = msg.trim()
-    if (!m || busy || off) return
+    if (!m || busy || off || spent) return
+    if (!budget.spend()) return
     const history = [...turns, { role: 'user' as const, content: m }].slice(-8)
     setTurns(history)
     setText('')
@@ -633,13 +659,13 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
               void ask(text)
             }}
           >
-            <input ref={input} value={text} onChange={(e) => setText(e.target.value)} maxLength={300} placeholder={t.attr(explain && turns.length === 0 ? S.aiExplainHint : S.aiPlaceholder)} className="min-h-12 min-w-0 flex-1 rounded-lg border-2 border-edge bg-surface px-3 text-lg text-ink placeholder:text-ink2" aria-label={t.attr(S.aiPlaceholder)} disabled={busy} />
+            <input ref={input} value={text} onChange={(e) => setText(e.target.value)} maxLength={300} placeholder={t.attr(explain && turns.length === 0 ? S.aiExplainHint : S.aiPlaceholder)} className="min-h-12 min-w-0 flex-1 rounded-lg border-2 border-edge bg-surface px-3 text-lg text-ink placeholder:text-ink2 disabled:opacity-60" aria-label={t.attr(S.aiPlaceholder)} disabled={busy || spent} />
             {busy ? (
               <button type="button" className="btn text-base" onClick={() => ctl.current?.abort()}>
                 {t(S.aiStop)}
               </button>
             ) : (
-              <button type="submit" className="btn-main min-h-12 text-base" disabled={!text.trim()}>
+              <button type="submit" className="btn-main min-h-12 text-base" disabled={!text.trim() || spent}>
                 {t(S.aiSend)}
               </button>
             )}
@@ -648,7 +674,10 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
       }
     >
       <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
-        <p className="text-sm text-ink2">{t(S.aiNote)}</p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm text-ink2">{t(S.aiNote)}</p>
+          <AiLeftPill n={budget.left.left} />
+        </div>
         {turns.map((m, i) => (
           <div key={i} className={`${bubble} ${m.role === 'user' ? 'justify-self-end bg-ink text-surface [word-break:normal]' : 'justify-self-start border-2 border-hair bg-surface2'}`}>
             {m.role === 'user' ? m.content : t(m.content)}
@@ -660,7 +689,8 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
           </div>
         )}
         {err && <p className="rounded-lg border-2 border-ng bg-ngBg px-3 py-2 text-base">{err}</p>}
-        {!off && turns.length === 0 && !busy && (
+        {spent && !busy && <AiLimitNote reason={budget.left.reason} bubble={bubble} />}
+        {!off && !spent && turns.length === 0 && !busy && (
           <div className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-2">
             {/* 自分でわけを言ってみる（自己説明）。送るのは自分の言葉だけ */}
             <button
@@ -682,7 +712,7 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
             ))}
           </div>
         )}
-        {!off && explain && turns.length === 0 && !busy && <p className="rounded-lg bg-ruleBg px-3 py-2 text-base">{t(S.aiExplainHow)}</p>}
+        {!off && !spent && explain && turns.length === 0 && !busy && <p className="rounded-lg bg-ruleBg px-3 py-2 text-base">{t(S.aiExplainHow)}</p>}
         <div ref={end} />
       </div>
     </Panel>
