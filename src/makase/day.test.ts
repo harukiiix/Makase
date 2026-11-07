@@ -157,5 +157,14 @@ describe("持ち帰りと実験の文", () => {
     expect(allowed.line).toContain("頼みごと");
     expect(auto.line).toContain("確認");
     expect(new Set([allowed.line, auto.line]).size).toBe(2);
+    // 貼る指示は数行。今日の1行が、はじめの1文のすぐ後（決まりの先頭）に来て、決まりは重ならない
+    for (const x of [allowed, auto, safe]) {
+      const rules = x.lines.filter((l) => l.startsWith("- "));
+      expect(rules.length).toBeGreaterThanOrEqual(3);
+      expect(rules[0]).toBe(x.line);
+      expect(new Set(rules).size).toBe(rules.length);
+      expect(x.text).toBe(x.lines.join("\n"));
+      expect(x.text).not.toContain("宛先");
+    }
   });
 });

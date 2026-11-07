@@ -523,20 +523,20 @@ function Details({ ev, onClose }: { ev: ReturnType<typeof eveningOf>; onClose: (
   )
 }
 
-// ---------------- 持ち帰る1行 ----------------
+// ---------------- 持ち帰る指示（数行。今日の1つを先頭に） ----------------
 function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine>[0]; onAgain: () => void; onHome: () => void }) {
   const one = oneLine(today)
   const [copied, setCopied] = useState<'ok' | 'fail' | null>(null)
   const copy = async () => {
     sfx.ui()
     try {
-      await navigator.clipboard.writeText(one.line)
+      await navigator.clipboard.writeText(one.text)
       setCopied('ok')
     } catch {
       // 埋めこまれたページなどで使えない時は、昔のやり方で
       try {
         const ta = document.createElement('textarea')
-        ta.value = one.line
+        ta.value = one.text
         document.body.appendChild(ta)
         ta.select()
         const ok = document.execCommand('copy')
@@ -556,9 +556,21 @@ function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine
             <p className="mt-1 text-base text-ink2">{W.TAKE_SUB}</p>
           </div>
           <p className="text-base">{one.why}</p>
-          <pre data-line className="select-text whitespace-pre-wrap break-all rounded-xl border-2 border-line bg-surface p-4 font-mono text-base leading-relaxed">
-            {one.line}
-          </pre>
+          {/* 貼る指示の全部。今日いちばん効いた1行に「今日の1つ」の印をつける */}
+          <div data-line className="select-text rounded-xl border-2 border-line bg-surface p-3 text-[0.95rem] leading-relaxed [line-break:strict] [word-break:normal] lg:p-4 lg:text-base">
+            {one.lines.map((l, i) =>
+              l === one.line ? (
+                <p key={i} data-today className="-mx-2 my-1 rounded-lg bg-actBg text-actInk px-2 py-1">
+                  <span className="mb-1 block w-fit rounded-md bg-ink px-2 text-sm font-bold text-surface">{W.TAKE_TODAY}</span>
+                  {l}
+                </p>
+              ) : (
+                <p key={i} className={l.startsWith('- ') ? 'py-1' : 'pb-1 text-ink2'}>
+                  {l}
+                </p>
+              ),
+            )}
+          </div>
           <button data-copy className="btn-main w-full text-xl lg:w-[22rem]" onClick={() => void copy()}>
             {copied === 'ok' ? W.COPIED : W.COPY}
           </button>

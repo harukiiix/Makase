@@ -23,7 +23,7 @@ export const MORNING = "朝";
 export const NOON = "昼";
 export const NEXT = "次へ";
 export const TO_EVENING = "夕方へ";
-export const TO_TAKEAWAY = "持ち帰る1行へ";
+export const TO_TAKEAWAY = "持ち帰る指示へ";
 
 export const FIELD_ASK = "この欄、現場AIにどう渡す？";
 export const FIELD_CHOICES: { id: FieldChoice; label: string; sub: string }[] = [
@@ -70,9 +70,10 @@ export const CAUSE_NOON = "昼";
 export const LOOK_BACK = "ふり返り";
 export const HOW_TO_PREVENT = "防ぐには";
 
-export const TAKE_HEAD = "持ち帰る1行";
+export const TAKE_HEAD = "持ち帰る指示";
 export const TAKE_SUB = "いつも使う AI への指示（CLAUDE.md など）に、そのまま貼れます";
-export const COPY = "コピーする";
+export const TAKE_TODAY = "今日の1つ";
+export const COPY = "まとめてコピーする";
 export const COPIED = "コピーしました";
 export const COPY_FAIL = "コピーできませんでした。文を長押しして選んでください";
 export const AGAIN = "もう一度やる";

@@ -246,7 +246,7 @@ describe('NOVA の日（最後の日）', () => {
       const today = i === 0 ? { leaked: true, causes: ['passed', 'allowed'] } : i === 1 ? { leaked: true, causes: ['passed', 'auto'] } : i === 2 ? { leaked: false, causes: ['toriaezu'] } : { leaked: false, causes: [] }
       return oneLine(today as Parameters<typeof oneLine>[0])
     })
-    const all: [string, string][] = [...texts(), ...lines.flatMap((l, i): [string, string][] => [[`oneLine ${i}`, l.line + l.why + l.note]])]
+    const all: [string, string][] = [...texts(), ...lines.flatMap((l, i): [string, string][] => [[`oneLine ${i}`, l.text + l.why + l.note]])]
     for (const [where, ja] of all) expect(OVER.test(ja), `${where}: ${ja}`).toBe(false)
   })
   it('売上・信用・点数は出さない', () => {
