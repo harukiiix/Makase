@@ -575,7 +575,7 @@ function Takeaway({ today, onAgain, onHome }: { today: Parameters<typeof oneLine
           <div data-line className="select-text rounded-xl border-2 border-line bg-surface p-3 text-[0.95rem] leading-relaxed [line-break:strict] [word-break:normal] lg:p-4 lg:text-base">
             {one.lines.map((l, i) =>
               l === one.line ? (
-                <p key={i} data-today className="-mx-2 my-1 rounded-lg bg-actBg text-actInk px-2 py-1">
+                <p key={i} data-today className="-mx-2 my-1 rounded-lg bg-actBg px-2 py-1 text-ink">
                   <span className="mb-1 block w-fit rounded-md bg-ink px-2 text-sm font-bold text-surface">{W.TAKE_TODAY}</span>
                   {l}
                 </p>
