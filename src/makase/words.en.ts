@@ -40,9 +40,9 @@ export const toolBoard = (id: string) =>
   id === "send_mail"
     ? "Set the rule for when the AI clerks send email. Recipients can be inside or outside the company."
     : "Set the rule for when the AI clerks post to the site chat.";
-export const toolAsk = (id: string) => `When they send ${TOOL_NAME[id] ?? id}, what happens?`;
+export const toolAsk = (id: string) => (id === "post_chat" ? "When they post to the site chat, what happens?" : `When they send ${TOOL_NAME[id] ?? id}, what happens?`);
 export const TOOL_CHOICES: { id: Permission; label: string; sub: string }[] = [
-  { id: "ask", label: "Ask before sending", sub: "You get a check for each one" },
+  { id: "ask", label: "Ask before sending", sub: "It asks you about each one first" },
   { id: "auto", label: "Send without asking", sub: "The AI sends with no check" },
   { id: "deny", label: "Don't let it send", sub: "That work stops too" },
 ];
@@ -56,7 +56,7 @@ export const ALLOW = "Allow";
 export const TO = "To";
 export const CONTENT = "Contents";
 export const NOON_DONE = "Today's work is done.";
-export const autoLine = (who: string, tool: string, content: string, to?: string) => `${who}: ${tool}${to ? ` (${to})` : ""}  ${content}`;
+export const autoLine = (who: string, tool: string, content: string, to?: string) => `${who}: ${tool}${to ? ` (${to})` : ""} — ${content}`;
 export const blockedLine = (who: string, tool: string) => `${who}: "${tool}" stopped, because it isn't allowed to send`;
 
 export const EVENING = "Evening";

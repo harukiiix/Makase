@@ -131,3 +131,21 @@ describe("持ち帰る指示（遊んだ人の選びから組み立てる）", (
     expect(rules(WAYS.auto).rules[0].because).toContain("聞かずに送る");
   });
 });
+
+describe("渡さなすぎて終わらなかった時は、止めすぎとは言わない", () => {
+  const dropOnly = play({ ...none, fields: allF("drop") } as MorningPicks, () => "allow");
+  const f = dayFacts(dropOnly.picks, dropOnly.log, dropOnly.result, c);
+  it("理由は、渡さなかった欄", () => {
+    expect(f.onlyMissing).toBe(true);
+    expect(f.missing.length).toBeGreaterThan(0);
+    const bal = ideasOf(f).find((i) => i.id === "balance")!;
+    expect(bal.today).toContain("渡さなかった");
+    const t = takeHome(f, "ja");
+    expect(t.rules.map((r) => r.id)).toContain("missing");
+    expect(t.rules.map((r) => r.id)).not.toContain("balance");
+    for (const r of t.rules) expect(r.because).not.toContain("止めすぎ");
+  });
+  it("英語でも、仕事が1つだけの時は単数で言う", () => {
+    for (const s of [...ideasOf(f, "en").map((i) => i.today), ...storyOf(f, "en").map((x) => x.happened)]) expect(s).not.toMatch(/\b1 of \d+ jobs weren't/);
+  });
+});

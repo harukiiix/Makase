@@ -37,6 +37,8 @@ export type Evening = {
   lines: Line[];
   /** 終わらなかった仕事の名前（止めすぎ・渡さなすぎ） */
   unfinished: string[];
+  /** 終わらなかったのが、渡さなかった欄のためだけか（止めた・送らせなかったではない） */
+  onlyMissing: boolean;
   /** 仕事の数 */
   taskCount: number;
   /** 紛れた頼みごとが送らせようとしたあて先 */
@@ -47,6 +49,7 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company, lang
   const t = L(lang);
   const emp = (id: string) => tr(company.employees.find((e) => e.id === id)?.name ?? id, lang);
   const tool = (id: string) => tr(company.tools.find((x) => x.id === id)?.label ?? id, lang);
+  const cap = (x: string) => x.charAt(0).toUpperCase() + x.slice(1);
   const sendWord = (id: string) => (id === "post_chat" ? t("現場チャット", "the site chat") : id === "send_mail" ? t("メール", "email") : tool(id));
   const conf = (id: string) => company.confirmations.find((x) => x.id === id)!;
   const markerLabel = (id: string) => tr(company.markers.find((m) => m.id === id)?.label ?? id, lang);
@@ -91,7 +94,7 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company, lang
           )
         : t("伏せずに渡しました", "You handed it over without masking");
       const noon = autoOf(confId)
-        ? t(`${sendWord(e.tool)}を「聞かずに送る」にしていたので、確認が来ませんでした`, `${sendWord(e.tool)} was set to "Send without asking", so no check came`)
+        ? t(`${sendWord(e.tool)}を「聞かずに送る」にしていたので、確認が来ませんでした`, `${cap(sendWord(e.tool))} was set to "Send without asking", so no check came`)
         : t("確認で「許可」を押しました", 'You pressed "Allow" on the check');
       return { marker: markerLabel(m), morning, noon };
     });
@@ -126,7 +129,7 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company, lang
         ].filter(Boolean);
         return {
           tone: "bad",
-          what: t(`${emp(e.employeeId)}が「${tool(e.tool)}」で、${labels(e.markers)}を社外の ${e.to} に送りました`, `${emp(e.employeeId)} used "${tool(e.tool)}" to send ${labels(e.markers)} to ${e.to}, outside the company`),
+          what: t(`${emp(e.employeeId)}が「${tool(e.tool)}」で、${labels(e.markers)}を社外の ${e.to} に送りました`, `The ${emp(e.employeeId)} sent ${labels(e.markers)} to ${e.to}, outside the company, with "${tool(e.tool)}"`),
           prevent: fixes.join(t("。", ". ")),
         };
       }
@@ -135,10 +138,10 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company, lang
         const inCall = markersIn(c.call?.content ?? "").filter((m) => exposed.has(m));
         const what = t(`社外への危ない送信（${c.text}）を、あなたが止めました`, `You stopped a dangerous send outside the company ("${tr(c.text, lang)}")`);
         if (inCall.length === 0)
-          return { tone: "good", what, prevent: t("見張りが働きました。守るべき情報は朝に伏せる・渡さないにしてあったので、見落としても今日は漏れませんでした（二重に守れていました）", "Your watch worked. The protected information was masked or left out in the morning, so even if you had missed it, nothing would have leaked today (you had two guards)") };
+          return { tone: "good", what, prevent: t("見張りが働きました。守るべき情報は朝に伏せる・渡さないにしてあったので、見落としても今日は漏れませんでした（二重に守れていました）", "Your noon check worked. The protected information was masked or left out in the morning, so even if you had missed it, nothing would have leaked today (you had two guards)") };
         if (inCall.some(overridden))
-          return { tone: "good", what, prevent: t("見張りが働きました（最後の砦）。今日は「全部渡して」の指示で名簿ごと渡っていたので、見落としていたら漏れていました", 'Your watch worked (the last line of defense). Today the whole roster was handed over because of "hand over everything", so missing it would have caused a leak') };
-        return { tone: "good", what, prevent: t(`見張りが働きました（最後の砦）。朝に${labels(inCall)}を伏せるか渡さないにしていれば、見落としても漏れません`, `Your watch worked (the last line of defense). If you mask or leave out ${labels(inCall)} in the morning, missing it later won't cause a leak`) };
+          return { tone: "good", what, prevent: t("見張りが働きました（最後の砦）。今日は「全部渡して」の指示で名簿ごと渡っていたので、見落としていたら漏れていました", 'Your noon check worked (the last line of defense). Today the whole roster was handed over because of "hand over everything", so missing it would have caused a leak') };
+        return { tone: "good", what, prevent: t(`見張りが働きました（最後の砦）。朝に${labels(inCall)}を伏せるか渡さないにしていれば、見落としても漏れません`, `Your noon check worked (the last line of defense). If you mask or leave out ${labels(inCall)} in the morning, missing it later won't cause a leak`) };
       }
       case "danger_allowed": {
         if (leaks.some((l) => log.toolCalls[l.toolCallIndex]?.confirmationId === e.confirmationId)) return undefined;
@@ -154,7 +157,7 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company, lang
         return e.dangerous
           ? {
               tone: "good",
-              what: t(`${sendWord(e.tool)}を「送らせない」にしていたので、社外への送信は起きず、確認も来ませんでした`, `${sendWord(e.tool)} was set to "Don't let it send", so nothing was sent outside and no check came`),
+              what: t(`${sendWord(e.tool)}を「送らせない」にしていたので、社外への送信は起きず、確認も来ませんでした`, `${cap(sendWord(e.tool))} was set to "Don't let it send", so nothing was sent outside and no check came`),
               prevent: t("仕組みが止めました。ただし、同じ道具を使う仕事も止まります", "Your setup stopped it. But work that uses the same tool stops too"),
             }
           : undefined;
@@ -173,7 +176,7 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company, lang
         const why = [
           e.stopped.length ? t("確認を止めた", "you stopped a check") : "",
           e.blocked?.length ? t(`${sendWord(conf(e.blocked[0]).call!.tool)}を「送らせない」にした`, `${sendWord(conf(e.blocked[0]).call!.tool)} was set to "Don't let it send"`) : "",
-          e.missingFields?.length ? t(`${e.missingFields.join("・")}を渡していない`, `you didn't hand over ${e.missingFields.map((f) => tr(f, lang).toLowerCase()).join(" and ")}`) : "",
+          e.missingFields?.length ? t(`${e.missingFields.join("・")}を渡していない`, `you didn't hand over ${e.missingFields.map((f) => `the ${tr(f, lang).toLowerCase()}`).join(" and ")}`) : "",
         ].filter(Boolean);
         return {
           tone: "info",
@@ -187,7 +190,7 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company, lang
       case "instruction":
         return {
           tone: "info",
-          what: t(`${emp(e.employeeId)}への指示が「${e.instructionKind === "toriaezu" ? "とりあえず" : "全部渡して"}」でした`, `Your instruction to ${emp(e.employeeId)} was "${e.instructionKind === "toriaezu" ? "for now, just..." : "hand over everything"}"`),
+          what: t(`${emp(e.employeeId)}への指示が「${e.instructionKind === "toriaezu" ? "とりあえず" : "全部渡して"}」でした`, `Your instruction to the ${emp(e.employeeId)} was "${e.instructionKind === "toriaezu" ? "for now, just..." : "hand over everything"}"`),
           prevent:
             e.instructionKind === "toriaezu"
               ? t("何をして、何をしないかを先に言います（例：社外に送るときは必ず聞いて）", 'Say first what to do and what not to do (for example: "Always ask me before sending anything outside the company")')
@@ -200,11 +203,11 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company, lang
   const order = { bad: 0, good: 1, info: 2 } as const;
   lines.push(...result.events.map(line).filter((l): l is Line => !!l).sort((a, b) => order[a.tone] - order[b.tone]));
 
-  const unfinished = result.events
-    .filter((e): e is Extract<DayEvent, { kind: "task_unfinished" }> => e.kind === "task_unfinished")
-    .map((e) => tr(company.tasks.find((x) => x.id === e.taskId)?.label ?? e.taskId, lang));
+  const unEvents = result.events.filter((e): e is Extract<DayEvent, { kind: "task_unfinished" }> => e.kind === "task_unfinished");
+  const onlyMissing = unEvents.length > 0 && unEvents.every((e) => !e.stopped.length && !e.blocked?.length);
+  const unfinished = unEvents.map((e) => tr(company.tasks.find((x) => x.id === e.taskId)?.label ?? e.taskId, lang));
   const trapTo = company.confirmations.find((x) => x.dangerous)?.call?.to;
-  return { leaked: leaks.length > 0, toAI: [...exposed].map(markerLabel), sent, causes, lines, unfinished, taskCount: company.tasks.length, trapTo };
+  return { leaked: leaks.length > 0, toAI: [...exposed].map(markerLabel), sent, causes, lines, unfinished, onlyMissing, taskCount: company.tasks.length, trapTo };
 }
 
 /** 「なぜ社外に渡ったと言えるか」の1つ（見出しと文） */
@@ -256,8 +259,12 @@ export function eveningTalk(ev: Evening, lang: Lang = "ja"): { who: "BOSS" | "NO
   if (ev.unfinished.length)
     return [
       { who: "BOSS", text: t("おつかれさま。今日は、守るべき情報は社外に出なかったよ。", "Good work today. No protected information went outside the company.") },
-      { who: "NOVA", text: t(`ただ、${ev.unfinished.length}つの仕事が終わりませんでした。止められたり、送れなかったりしたためです。`, `But ${ev.unfinished.length} of the jobs weren't finished, because they were stopped or couldn't send.`) },
-      { who: "BOSS", text: t("止めすぎると、仕事が進まない。どこで止めればよかったか、いっしょに見よう。", "Stop too much, and the work doesn't move. Let's look at where you should have stopped.") },
+      ev.onlyMissing
+        ? { who: "NOVA", text: t(`ただ、${ev.unfinished.length}つの仕事が終わりませんでした。仕事に要る欄を、渡してもらえなかったためです。`, ev.unfinished.length === 1 ? "But one of the jobs wasn't finished, because I didn't get a field the job needed." : `But ${ev.unfinished.length} of the jobs weren't finished, because I didn't get fields the jobs needed.`) }
+        : { who: "NOVA", text: t(`ただ、${ev.unfinished.length}つの仕事が終わりませんでした。止められたり、送れなかったりしたためです。`, ev.unfinished.length === 1 ? "But one of the jobs wasn't finished, because it was stopped or couldn't be sent." : `But ${ev.unfinished.length} of the jobs weren't finished, because they were stopped or couldn't be sent.`) },
+      ev.onlyMissing
+        ? { who: "BOSS", text: t("渡さなすぎると、仕事が進まない。どの欄が要ったか、いっしょに見よう。", "Hold back too much, and the work doesn't move. Let's look at which fields were needed.") }
+        : { who: "BOSS", text: t("止めすぎると、仕事が進まない。どこで止めればよかったか、いっしょに見よう。", "Stop too much, and the work doesn't move. Let's look at where you should have stopped.") },
     ];
   // 頼みごとどおりに社外へ送られたが、守るべき欄は伏せてあった時（漏れてはいないが「外に出なかった」とは言わない）
   const sentOut = ev.sent.find((x) => !x.inside && x.leaked.length === 0 && x.to === ev.trapTo);
@@ -317,7 +324,7 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
           : { ok: false, text: t("社外への危ない確認に、「許可」を押しました", 'You pressed "Allow" on the dangerous check') };
   // 仕事：止めすぎ・送らせなさすぎ・渡さなさすぎで、終わらなかった仕事があれば ✕（漏れないだけでは、いちばん良い結果にしない）
   const work: Guard = ev.unfinished.length
-    ? { ok: false, text: t(`${ev.taskCount}つ中${ev.unfinished.length}つの仕事が終わりませんでした`, `${ev.unfinished.length} of ${ev.taskCount} jobs weren't finished`) }
+    ? { ok: false, text: t(`${ev.taskCount}つ中${ev.unfinished.length}つの仕事が終わりませんでした`, `${ev.unfinished.length} of ${ev.taskCount} jobs ${ev.unfinished.length === 1 ? "wasn't" : "weren't"} finished`) }
     : { ok: true, text: t(`${ev.taskCount}つの仕事が、すべて終わりました`, `All ${ev.taskCount} jobs were finished`) };
   const lesson = ev.leaked
     ? passAll && inDanger.some((m) => setup?.masked.includes(m))
@@ -326,10 +333,14 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
         ? t("「聞かずに送る」だと確認が来ません。社外へ送る道具は「送る前に聞く」にします", '"Send without asking" means no check comes. Set tools that send outside to "Ask before sending"')
         : t("人は見落とします。朝に守るべき欄を伏せておくと、昼に見落としても漏れにくくなります", "People miss things. Mask protected fields in the morning, and a miss at noon is less likely to leak")
     : !work.ok
-      ? t("止めすぎると、仕事が終わりません。あて先と中身を見て決めます", "Stop too much, and the work doesn't get done. Decide by the recipient and the contents")
+      ? ev.onlyMissing
+        ? t("仕事に要る欄まで渡さないと、仕事が終わりません。要らない欄だけを伏せます", "Leave out fields the work needs, and the work doesn't get done. Mask only the fields it doesn't need")
+        : t("止めすぎると、仕事が終わりません。あて先と中身を見て決めます", "Stop too much, and the work doesn't get done. Decide by the recipient and the contents")
       : morning.ok && noon.ok
         ? t("朝と昼の2つで守れました。どちらかを見落としても、もう一方で守れることがあります", "Morning and noon both held. If you miss one, the other can still protect you")
-        : morning.ok
+        : morning.ok && mode === "auto"
+          ? t("朝に伏せておいたので、確認が来ないまま送られても漏れませんでした。送る道具は「送る前に聞く」にします", 'You masked it in the morning, so nothing leaked even though it was sent with no check. Set tools that send to "Ask before sending"')
+          : morning.ok
           ? t("朝に伏せておいたので、昼に許可しても漏れませんでした", "You masked it in the morning, so allowing it at noon didn't leak anything")
           : t("昼の確認で止められました。見落とすと漏れるので、朝に伏せておくと安心です", "You stopped it at the noon check. A miss would have leaked, so mask it in the morning too");
   const mail = company.incoming.find((d) => d.injectionLine !== undefined);

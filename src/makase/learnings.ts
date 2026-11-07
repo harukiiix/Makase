@@ -28,6 +28,10 @@ export type DayFacts = {
   safeStopped: number;
   /** 終わらなかった仕事の名前 */
   unfinished: string[];
+  /** 仕事に要るのに渡さなかった欄 */
+  missing: string[];
+  /** 終わらなかったのが、渡さなかった欄のためだけか */
+  onlyMissing: boolean;
   taskCount: number;
 };
 
@@ -40,6 +44,7 @@ export function dayFacts(picks: MorningPicks, log: DayLog, result: DayResult, co
   const orderId = picks.nova ?? "nova-normal";
   const order = company.instructions.find((i) => i.id === orderId) ?? company.instructions.find((i) => i.employeeId === "nova")!;
   const leaks = result.events.filter((e) => e.kind === "leak");
+  const un = result.events.flatMap((e) => (e.kind === "task_unfinished" ? [e] : []));
   return {
     fields: MORNING_FIELDS.map((f) => ({ label: f.field, choice: picks.fields[fieldKey(f)] ?? "pass" })),
     exposed: exposed.map(marker),
@@ -51,7 +56,9 @@ export function dayFacts(picks: MorningPicks, log: DayLog, result: DayResult, co
     leakedLabels: [...new Set(leaks.flatMap((e) => (e.kind === "leak" ? e.markers.map(marker) : [])))],
     trapTo: danger.call?.to ?? "",
     safeStopped: result.events.filter((e) => e.kind === "safe_stopped").length,
-    unfinished: result.events.flatMap((e) => (e.kind === "task_unfinished" ? [company.tasks.find((t) => t.id === e.taskId)?.label ?? e.taskId] : [])),
+    unfinished: un.map((e) => company.tasks.find((t) => t.id === e.taskId)?.label ?? e.taskId),
+    missing: [...new Set(un.flatMap((e) => e.missingFields ?? []))],
+    onlyMissing: un.length > 0 && un.every((e) => !e.stopped.length && !e.blocked?.length),
     taskCount: company.tasks.length,
   };
 }
@@ -143,11 +150,15 @@ function idea(id: IdeaId, f: DayFacts, lang: Lang): Idea {
         id,
         title: t("止めすぎも、失敗", "Stopping too much is also a failure"),
         body: t(
-          "全部止めれば漏れませんが、仕事が進みません。そうなると、確認を面倒に思って、守りを外したくなります。あて先と中身を見て、通す物は通します。",
-          "Stop everything and nothing leaks, but the work doesn't move. Then people get tired of checks and want to turn the guards off. Look at the recipient and the contents, and let through what is fine.",
+          "全部止めたり、仕事に要る欄まで渡さなかったりすれば漏れませんが、仕事が進みません。そうなると、守りを面倒に思って外したくなります。要る物は渡し、通してよい物は通します。",
+          "Stop everything, or hold back fields the work needs, and nothing leaks, but the work doesn't move. Then people find the guards a nuisance and want to turn them off. Hand over what is needed, and let through what is fine.",
         ),
-        today: t(`今日は、${f.taskCount}つ中${f.unfinished.length}つの仕事が終わりませんでした。`, `Today ${f.unfinished.length} of ${f.taskCount} jobs weren't finished.`),
-        use: t("社内あてで、守るべき情報が入っていない連絡は、通してかまいません。", "A message to someone inside the company with no protected information in it is fine to let through."),
+        today: f.onlyMissing
+          ? t(`今日は、${list(f.missing, lang)}を渡さなかったので、${f.taskCount}つ中${f.unfinished.length}つの仕事が終わりませんでした。`, `Today you didn't hand over ${list(f.missing, lang).toLowerCase()}, so ${f.unfinished.length} of ${f.taskCount} jobs ${f.unfinished.length === 1 ? "wasn't" : "weren't"} finished.`)
+          : t(`今日は、${f.taskCount}つ中${f.unfinished.length}つの仕事が終わりませんでした。`, `Today ${f.unfinished.length} of ${f.taskCount} jobs ${f.unfinished.length === 1 ? "wasn't" : "weren't"} finished.`),
+        use: f.onlyMissing
+          ? t("伏せるのは、仕事に要らない欄だけにします。名前や資格のように仕事に要る欄は渡します。", "Mask only the fields the work doesn't need. Hand over fields it does need, like names and qualifications.")
+          : t("社内あてで、守るべき情報が入っていない連絡は、通してかまいません。", "A message to someone inside the company with no protected information in it is fine to let through."),
       };
     case "layers":
       return {
@@ -296,14 +307,18 @@ export function storyOf(f: DayFacts, lang: Lang = "ja"): StoryCard[] {
       when: noon,
       title: t("止めた安全な確認と、仕事", "Safe checks you stopped, and the work"),
       tone: f.unfinished.length ? "bad" : "info",
-      did: f.safeStopped
-        ? t(`安全な確認を${f.safeStopped}件、止めました。`, f.safeStopped === 1 ? "You stopped 1 safe check." : `You stopped ${f.safeStopped} safe checks.`)
-        : t("送る道具を止める設定や、渡さない欄がありました。", "Some tools were blocked or some fields were left out."),
+      did: [
+        f.safeStopped ? t(`安全な確認を${f.safeStopped}件、止めました。`, f.safeStopped === 1 ? "You stopped 1 safe check." : `You stopped ${f.safeStopped} safe checks.`) : "",
+        f.missing.length ? t(`仕事に要る${list(f.missing, lang)}を、渡しませんでした。`, `You didn't hand over ${list(f.missing, lang).toLowerCase()}, which the work needed.`) : "",
+        !f.safeStopped && !f.missing.length ? t("送る道具を「送らせない」にしました。", 'You set a sending tool to "Don\'t let it send".') : "",
+      ].filter(Boolean).join(t("", " ")),
       happened: f.unfinished.length
         ? t(`${list(f.unfinished, lang)}が終わりませんでした。`, `${list(f.unfinished, lang)} ${f.unfinished.length === 1 ? "wasn't" : "weren't"} finished.`)
         : t("仕事は終わりました。", "The work still got done."),
-      why: t("止めすぎると、仕事が進まず、確認を面倒に思うようになります。", "Stop too much and the work stalls, and people start to find checks a nuisance."),
-      next: t("社内あてで、守るべき情報が入っていない連絡は、通してかまいません。", "A message inside the company with no protected information is fine to let through."),
+      why: t("止めすぎたり渡さなすぎたりすると、仕事が進まず、守りを面倒に思うようになります。", "Stop or hold back too much and the work stalls, and people start to find the guards a nuisance."),
+      next: f.onlyMissing
+        ? t("伏せるのは、仕事に要らない欄だけにします。", "Mask only the fields the work doesn't need.")
+        : t("社内あてで、守るべき情報が入っていない連絡は、通してかまいません。", "A message inside the company with no protected information is fine to let through."),
     });
   cards.push({
     key: "result",
@@ -314,7 +329,7 @@ export function storyOf(f: DayFacts, lang: Lang = "ja"): StoryCard[] {
       ? t("守るべき情報が、社外に渡りました。", "Protected information went outside the company.")
       : t("守るべき情報は、社外に渡りませんでした。", "No protected information went outside the company."),
     happened: f.unfinished.length
-      ? t(`${f.taskCount}つ中${f.unfinished.length}つの仕事が終わりませんでした。`, `${f.unfinished.length} of ${f.taskCount} jobs weren't finished.`)
+      ? t(`${f.taskCount}つ中${f.unfinished.length}つの仕事が終わりませんでした。`, `${f.unfinished.length} of ${f.taskCount} jobs ${f.unfinished.length === 1 ? "wasn't" : "weren't"} finished.`)
       : t(`${f.taskCount}つの仕事は、すべて終わりました。`, `All ${f.taskCount} jobs were finished.`),
     why: t("漏らさないことと、仕事を終えることの両方ができて、はじめて使える守りになります。", "A guard is only usable when it both prevents leaks and lets the work get done."),
   });
@@ -323,7 +338,7 @@ export function storyOf(f: DayFacts, lang: Lang = "ja"): StoryCard[] {
 
 // ---------------- 持ち帰る指示（今日の選びから） ----------------
 
-export type RuleId = "mask" | "inject" | "ask" | "verify" | "scope" | "only" | "balance";
+export type RuleId = "mask" | "inject" | "ask" | "verify" | "scope" | "only" | "balance" | "missing";
 export type Rule = { id: RuleId; line: string; because: string };
 export type TakeHome = { head: string; rules: Rule[]; line: string; lines: string[]; text: string; why: string; note: string };
 
@@ -342,6 +357,7 @@ export function takeHome(f: DayFacts, lang: Lang = "ja"): TakeHome {
       "- Before sending to a new recipient or to an address outside the company domain, tell me who it is and why it should go there.",
     ),
     scope: t("- 頼まれていない作業や、頼んだ範囲より広い作業を始める前に、何をするかを先に教えてください。", "- Before doing any work I didn't ask for, or more than I asked for, tell me first what you are going to do."),
+    missing: t("- 仕事に要る情報が足りない時は、止まったままにせず、何が足りないかを私に聞いてください。", "- If you're missing information the job needs, don't just stop. Ask me what is missing."),
     balance: t(
       "- 社内あてで、守るべき情報が入っていない連絡は、まとめて1回の確認にしてかまいません。",
       "- Messages to people inside the company with no protected information in them can be grouped into one check.",
@@ -357,7 +373,8 @@ export function takeHome(f: DayFacts, lang: Lang = "ja"): TakeHome {
     add("inject", f.leaked ? t("今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため", "Because today the roster was sent outside, as the request hidden in the attachment said") : t("今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため（伏せた欄は入っていませんでした）", "Because today the roster was sent outside, as the hidden request said (the masked fields weren't in it)"));
   if (f.danger === "allowed") add("verify", t(`今日、会社が決めていないあて先（${f.trapTo}）への送信を許可したため`, `Because today you allowed a send to a recipient the company never chose (${f.trapTo})`));
   if (badOrder(f)) add("scope", t(`今日、${q(f.order.text, lang)}と頼んだため`, `Because today you asked: ${q(tr(f.order.text, lang), lang)}`));
-  if (f.unfinished.length) add("balance", t(`今日、止めすぎて、${f.taskCount}つ中${f.unfinished.length}つの仕事が終わらなかったため`, `Because today you stopped too much, and ${f.unfinished.length} of ${f.taskCount} jobs weren't finished`));
+  if (f.missing.length) add("missing", t(`今日、仕事に要る${list(f.missing, lang)}を渡さず、仕事が止まったため`, `Because today you didn't hand over ${list(f.missing, lang).toLowerCase()}, and the work stopped`));
+  if (f.unfinished.length && !f.onlyMissing) add("balance", t(`今日、止めすぎて、${f.taskCount}つ中${f.unfinished.length}つの仕事が終わらなかったため`, `Because today you stopped too much, and ${f.unfinished.length} of ${f.taskCount} jobs ${f.unfinished.length === 1 ? "wasn't" : "weren't"} finished`));
   // 今日守れた所も、いつものAIに頼んでおく
   add("inject", t("今日は止められました。AIの側でも従わないよう、頼んでおくため", "You stopped it today. This asks the AI not to follow such requests either"));
   add("ask", f.danger === "stopped" ? t("今日、危ない1枚を止められたのは、送る前の確認があったため", "You could stop the dangerous one today because there was a check before sending") : t("送る前の確認を、いつものAIにも残しておくため", "To keep a check before sending with the AI you use too"));

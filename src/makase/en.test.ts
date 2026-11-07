@@ -109,3 +109,30 @@ describe("英語の最後の日", () => {
     expect(cleanJobLines("- 名簿を貼る前に、電話番号を消してください。", "en")).toBeNull();
   });
 });
+
+describe("夕方の文の正しさ（見直しで見つかった所）", () => {
+  const none: MorningPicks = { fields: {}, tools: {}, nova: "nova-normal" };
+  const allF = (v: string) => Object.fromEntries(MORNING_FIELDS.map((f) => [fieldKey(f), v]));
+  const run = (p: MorningPicks, f: (d: boolean) => Answer) => {
+    const log = dayLog(p, Object.fromEntries(noonSteps(p).filter((s) => s.mode === "ask").map((s) => [s.conf.id, f(!!s.conf.dangerous)])));
+    return { log, ev: eveningOf(judgeDay(log, c), log, c, "en"), evJa: eveningOf(judgeDay(log, c), log, c, "ja") };
+  };
+  it("渡さなかった欄のためだけに終わらなかった時、「止めすぎ」とは言わない", () => {
+    const { log, ev, evJa } = run({ ...none, fields: allF("drop") } as MorningPicks, () => "allow");
+    expect(ev.onlyMissing).toBe(true);
+    for (const b of eveningTalk(evJa, "ja")) expect(b.text).not.toContain("止めすぎ");
+    expect(guardsOf(evJa, log, c, "ja").lesson).not.toContain("止めすぎ");
+    for (const b of eveningTalk(ev, "en")) expect(b.text).not.toMatch(/\b1 of the jobs weren't|Stop too much/);
+  });
+  it("聞かずに送る時、「昼に許可しても」とは言わない", () => {
+    const { log, evJa } = run({ ...none, fields: allF("mask"), tools: Object.fromEntries(MORNING_TOOLS.map((t) => [t, "auto"])) } as MorningPicks, () => "allow");
+    expect(guardsOf(evJa, log, c, "ja").lesson).not.toContain("昼に許可しても");
+  });
+  it("英語の文は大文字で始まり、現場チャットは post で言う", () => {
+    expect(WEN.toolAsk("post_chat")).toContain("post to the site chat");
+    for (const p of [{ ...none, tools: { send_mail: "deny" } }, { ...none, tools: { send_mail: "auto" } }] as MorningPicks[]) {
+      const { ev } = run(p, () => "allow");
+      for (const l of ev.lines) expect(l.what, l.what).toMatch(/^[A-Z"]/);
+    }
+  });
+});
