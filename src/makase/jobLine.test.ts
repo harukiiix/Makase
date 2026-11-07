@@ -28,7 +28,7 @@ describe("あなたの仕事に合わせた1行（AIの宮下さん）", () => {
   });
 
   it("宮下さんへの指示に、言いすぎの言葉を使わないことと、短い1行で答えることを書く", () => {
-    const p = jobPrompt(JOBS[3], leaked, oneLine(leaked));
+    const p = jobPrompt(JOBS[2], leaked, oneLine(leaked));
     for (const w of ["必ず防げる", "安全", "保証", "絶対", "違法", "確実", "大丈夫"]) expect(p).toContain(w);
     expect(p).toContain("安全書類");
     expect(p).toMatch(/2 to 3 lines/i);

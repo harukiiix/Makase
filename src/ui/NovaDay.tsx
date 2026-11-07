@@ -10,7 +10,7 @@ import { COMPANY as C, dayLog, fieldKey, MORNING_FIELDS, MORNING_TOOLS, noonStep
 import { eveningOf, eveningTalk, guardsOf, whyOutside, type Guard, type Guards } from '../makase/evening'
 import { judgeDay } from '../makase/judge'
 import { todayOf } from '../makase/takeaway'
-import { JOBS, JOB_NOTE, cleanJobLine, jobPrompt, type Job } from '../makase/jobLine'
+import { JOBS, JOB_NOTE, cleanJobLines, customJob, jobPrompt, type Job } from '../makase/jobLine'
 import { aiOff, errorKind, getAI, type SampleFn } from '../lib/ai'
 import { S } from './strings'
 import { useAiBudget } from './aiBudget'
@@ -636,7 +636,8 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
   const [screen] = useState(() => `day:take:${Date.now()}`)
   const budget = useAiBudget(screen)
   const [job, setJob] = useState<Job['id'] | null>(null)
-  const [line, setLine] = useState<string | null>(null)
+  const [lines, setLines] = useState<string[] | null>(null)
+  const [own, setOwn] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   // この見ている間に、AIを使う許可がないと決まったら、押せなくする（回数も数えない）
@@ -657,14 +658,14 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
     if (!budget.spend()) return
     sfx.ui()
     setJob(j.id)
-    setLine(null)
+    setLines(null)
     setErr(null)
     setBusy(true)
     ctl.current = new AbortController()
     try {
       const { text } = await ai(jobPrompt(j, today, one), { modelTier: 'quick', cache: false, signal: ctl.current.signal })
-      const l = cleanJobLine(text)
-      if (l) setLine(l)
+      const l = cleanJobLines(text)
+      if (l) setLines(l)
       else setErr(W.JOB_RETRY)
     } catch (e) {
       const k = errorKind(e)
@@ -697,21 +698,43 @@ function JobAsk({ today, one }: { today: Parameters<typeof oneLine>[0]; one: Ret
           </span>
         </div>
         <p className="sr-only">{S.aiLeftN(budget.left.left).ja}</p>
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <div className="grid grid-cols-3 gap-2">
           {JOBS.map((j) => (
             <button key={j.id} data-job-pick={j.id} aria-pressed={job === j.id} aria-disabled={busy || undefined} className={`btn min-h-12 text-base disabled:opacity-60 ${job === j.id ? 'border-act bg-actBg' : ''}`} onClick={() => void ask(j)}>
               {j.label}
             </button>
           ))}
         </div>
+        <form
+          className="flex flex-wrap items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            const j = customJob(own)
+            if (j) void ask(j)
+          }}
+        >
+          <label className="w-full text-sm font-bold text-ink2" htmlFor="job-own">
+            {W.JOB_OWN}
+          </label>
+          <input id="job-own" data-job-own value={own} onChange={(e) => setOwn(e.target.value)} maxLength={30} placeholder={W.JOB_OWN_HINT} className="min-h-12 min-w-0 flex-1 rounded-lg border-2 border-edge bg-surface px-3 text-base text-ink placeholder:text-ink2 disabled:opacity-60" />
+          <button type="submit" data-job-own-go aria-pressed={job === 'custom'} className={`btn min-h-12 text-base disabled:opacity-60 ${job === 'custom' ? 'border-act bg-actBg' : ''}`} disabled={!customJob(own)}>
+            {W.JOB_OWN_GO}
+          </button>
+        </form>
         <p className="text-sm text-ink2">{W.JOB_LEFT_WHY}</p>
       </fieldset>
       {/* 答え・エラー・限度の文は、いつもある1つの場所に出す（読み上げで伝わるように） */}
       <div ref={out} tabIndex={-1} aria-live="polite" className="grid gap-2 outline-none empty:hidden">
         {busy && <p className="blink rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base">{W.JOB_THINKING}</p>}
-        {line && !busy && (
+        {lines && !busy && (
           <div data-job-line className="grid gap-1">
-            <p className="select-text rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base leading-relaxed [line-break:strict] [word-break:normal]">{line}</p>
+            <div className="select-text rounded-xl border-2 border-hair bg-surface2 px-3 py-2 text-base leading-relaxed [line-break:strict] [word-break:normal]">
+              {lines.map((l, n) => (
+                <p key={n} className="py-0.5">
+                  {l}
+                </p>
+              ))}
+            </div>
             <p className="text-sm text-ink2">{JOB_NOTE}</p>
           </div>
         )}
