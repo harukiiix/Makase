@@ -2,10 +2,13 @@
 
 **現場の情報を守る、5分の練習**
 
+**デモ動画**：（ここにリンク）
+
 <p>
-  <img src="docs/images/home.png" width="200" alt="ホーム：次にやることと、5日間の見回り">
-  <img src="docs/images/question.png" width="200" alt="問題の画面：月曜日の1問">
-  <img src="docs/images/evening.png" width="200" alt="最後の日の夕方：守るべき情報が、社外に渡りました">
+  <img src="docs/images/home.png" width="180" alt="ホーム：次にやることと、5日間の見回り">
+  <img src="docs/images/question.png" width="180" alt="問題の画面：月曜日の1問">
+  <img src="docs/images/ai.png" width="180" alt="AIの宮下さん：わからないところを聞く（claude.ai の版）">
+  <img src="docs/images/evening.png" width="180" alt="最後の日の夕方：守るべき情報が、社外に渡りました">
 </p>
 
 安全衛生を体で覚える現場のやり方で、情報もれと AI への任せ方を練習するアプリです。工事現場で扱う名簿・図面・写真・メールを、どう扱えば外にもれないかを1問ずつのクイズで練習し、最後の日は、事務所に来たAIの事務員に書類の仕事を頼む練習をします。
