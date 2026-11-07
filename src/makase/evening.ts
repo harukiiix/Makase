@@ -143,7 +143,7 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company, lang
         if (inCall.length === 0)
           return { tone: "good", what, prevent: t("見張りが働きました。守るべき情報は朝に伏せる・渡さないにしてあったので、見落としても今日は漏れませんでした（二重に守れていました）", "Your noon check worked. The protected information was masked or left out in the morning, so even if you had missed it, nothing would have leaked today (you had two guards)") };
         if (inCall.some(overridden))
-          return { tone: "good", what, prevent: t("見張りが働きました（最後の砦）。今日は「全部渡して」の指示で名簿ごと渡っていたので、見落としていたら漏れていました", 'Your noon check worked (the last line of defense). Today the whole roster was handed over because you gave it the whole roster, so missing it would have caused a leak') };
+          return { tone: "good", what, prevent: t("見張りが働きました（最後の砦）。今日は「全部渡して」の指示で名簿ごと渡っていたので、見落としていたら漏れていました", 'Your noon check worked (the last line of defense). Today the whole roster was handed over because you gave the Site AI the whole roster, so missing it would have caused a leak') };
         return { tone: "good", what, prevent: t(`見張りが働きました（最後の砦）。朝に${labels(inCall)}を伏せるか渡さないにしていれば、見落としても漏れません`, `Your noon check worked (the last line of defense). If you mask or leave out ${labels(inCall)} in the morning, missing it later won't cause a leak`) };
       }
       case "danger_allowed": {
@@ -343,7 +343,9 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
     : { ok: true, text: t(`${ev.taskCount}つの仕事が、すべて終わりました`, `All ${ev.taskCount} jobs were finished`) };
   const lesson = ev.leaked
     ? overridden
-      ? t(`「全部渡して」と頼むと、${overWord}欄まで渡ります。仕事に要る物だけを渡す頼み方にします`, `Giving it the whole roster sends even the fields you ${overWord}. Hand over only what the work needs instead`)
+      ? t(`「全部渡して」と頼むと、${overWord}欄まで渡ります。仕事に要る物だけを渡す頼み方にします`, `Giving the Site AI the whole roster sends even the fields you ${overWord}. Hand over only what the work needs instead`)
+      : passAll
+        ? t("「全部渡して」と頼むと、伏せても名簿ごと渡ります。要らない欄を伏せたうえで、仕事に要る物だけを渡す頼み方にします", "Giving the Site AI the whole roster sends the fields even when masked. Mask what isn't needed, and hand over only what the work needs")
       : mode === "auto"
         ? t("「聞かずに送る」だと確認が来ません。社外へ送る道具は「送る前に聞く」にします", '"Send without asking" means no check comes. Set tools that send outside to "Ask before sending"')
         : t("人は見落とします。朝に守るべき欄を伏せておくと、昼に見落としても漏れにくくなります", "People miss things. If you mask protected fields in the morning, a miss at noon is less likely to cause a leak")
@@ -359,8 +361,10 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
           ? t(`朝に${label(inDanger)}を${hideTe}おいたので、確認が来ないまま送られても漏れませんでした。送る道具は「送る前に聞く」にします`, `You ${hideTe} ${label(inDanger)} in the morning, so nothing leaked even though the roster was sent with no check. Set tools that send to "Ask before sending"`)
           : morning.ok
           ? t(`朝に${label(inDanger)}を${hideTe}おいたので、昼に許可しても漏れませんでした`, `You ${hideTe} ${label(inDanger)} in the morning, so allowing the send at noon didn't leak anything`)
+          : passAll && !overridden
+            ? t("昼の確認で止められました。「全部渡して」と頼むと、伏せても名簿ごと渡るので、仕事に要る物だけを渡す頼み方にします", "You caught it at the noon check. Giving the Site AI the whole roster sends the fields even when masked, so hand over only what the work needs")
           : overridden
-            ? t(`昼の確認で止められました。「全部渡して」と頼むと${overWord}欄まで渡るので、仕事に要る物だけを渡す頼み方にします`, `You caught it at the noon check. Giving it the whole roster sent even the fields you ${overWord}, so hand over only what the work needs`)
+            ? t(`昼の確認で止められました。「全部渡して」と頼むと${overWord}欄まで渡るので、仕事に要る物だけを渡す頼み方にします`, `You caught it at the noon check. Giving the Site AI the whole roster sent even the fields you ${overWord}, so hand over only what the work needs`)
             : t(`昼の確認で止められました。見落とすと${label(open)}が漏れるので、朝に伏せておくと安心です`, `You caught it at the noon check. If you had missed it, ${label(open)} would have leaked, so mask ${label(open)} in the morning too`);
   const mail = company.incoming.find((d) => d.injectionLine !== undefined);
   const trap = mail

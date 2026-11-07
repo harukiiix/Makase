@@ -403,3 +403,30 @@ describe("4回目の見直しで見つかった所", () => {
       }
   });
 });
+
+describe("5回目の見直しで見つかった所", () => {
+  const P = (p: Partial<MorningPicks>) => ({ ...none, ...p }) as MorningPicks;
+  it("「全部渡して」でそのまま渡した時、「朝に伏せておけば」だけをすすめない（伏せても名簿ごと渡るため）", () => {
+    for (const ans of [() => "allow" as Answer, (d: boolean): Answer => (d ? "stop" : "allow")]) {
+      const w = play(P({ nova: "nova-all" }), ans);
+      const f = dayFacts(w.picks, w.log, w.result, c);
+      for (const lang of ["ja", "en"] as const) {
+        const l = guardsOf(eveningOf(w.result, w.log, c, lang), w.log, c, lang).lesson;
+        expect(l, l).toMatch(lang === "ja" ? /全部渡して/ : /whole roster/);
+        expect(l, l).not.toMatch(/伏せた欄まで|fields you masked/);
+        const next = storyOf(f, lang).find((x) => x.key === "fields")!.next ?? "";
+        expect(next, next).toMatch(lang === "ja" ? /全部渡して/ : /whole roster/);
+      }
+    }
+  });
+  it("英語：貼る指示と理由で、it が何を指すかわかる", () => {
+    const w = play(P({ nova: "nova-all", fields: Object.fromEntries(MORNING_FIELDS.map((f) => [fieldKey(f), "mask"])) }), () => "allow");
+    const t = takeHome(dayFacts(w.picks, w.log, w.result, c), "en");
+    for (const r of t.rules) {
+      expect(r.line, r.line).not.toMatch(/^- If it contains/);
+      expect(r.because, r.because).not.toMatch(/gave it the whole roster/);
+    }
+    const g = guardsOf(eveningOf(w.result, w.log, c, "en"), w.log, c, "en");
+    expect(g.lesson).not.toMatch(/Giving it the whole roster/);
+  });
+});
