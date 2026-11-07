@@ -209,7 +209,7 @@ export const SPEAKER: Record<string, L10n> = {
   SAWA: L('沢口さん（事務）', 'Sawaguchi (office)'),
   STRANGER: L('点検の人', 'Inspector'),
   CLIENT: L('支店長', 'Branch manager'),
-  NOVA: L('NOVA（AIの相棒）', 'NOVA (AI partner)'),
+  NOVA: L('現場AI（AIの事務員）', 'Site AI (AI clerk)'),
   SYS: L('', ''),
 }
 

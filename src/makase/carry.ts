@@ -1,6 +1,6 @@
 import { REFERENCE_NOTE, takeaway, type Today } from "./takeaway";
 
-// 持ち帰り：今日の結果に合わせて、NOVA への指示を1行だけ選ぶ（CLAUDE.md にそのまま貼れる「- 」で始まる形）。
+// 持ち帰り：今日の結果に合わせて、現場AIへの指示を1行だけ選ぶ（CLAUDE.md にそのまま貼れる「- 」で始まる形）。
 // 文は takeaway() の指示文の行から選ぶ。表記だけ DESIGN.md に合わせる（宛先 → あて先）
 
 export type OneLine = { line: string; why: string; note: string };

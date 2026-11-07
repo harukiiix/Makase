@@ -4,10 +4,15 @@ import { confirmationMode } from "./judge";
 import type { Answer, Company, Confirmation, ConfirmationMode, DayLog, Permission, Setup } from "./types";
 
 // 最後の日「AIの事務員に頼む練習」の流れを決める純粋関数。画面は、ここで決めたものを出すだけにする
-// 朝は6画面：守るべき情報の目印がある3項目（渡す・伏せる・渡さない）、送る道具2つ（使わせない・聞いてから・任せる）、NOVA への指示。
-// 目印のない項目（氏名・資格・工程）は、仕事に要るので「渡す」に決めておく。日報係と図面係への指示は、ふつうの指示に決めておく
+// 朝は6画面：守るべき情報の目印がある3項目（渡す・伏せる・渡さない）、送る道具2つ（使わせない・聞いてから・任せる）、現場AIへの指示。
+// 目印のない項目（氏名・資格・工程）は、仕事に要るので「渡す」に決めておく。日報AIと図面AIへの指示は、ふつうの指示に決めておく
 
-export const COMPANY: Company = construction;
+/** 画面で呼ぶ名前。中身（construction.ts）とそのテストは変えずに、名前だけ「AI」とわかる呼び名にする */
+export const AI_NAMES: Record<string, string> = { nova: "現場AI", nippo: "日報AI", zumen: "図面AI" };
+export const COMPANY: Company = {
+  ...construction,
+  employees: construction.employees.map((e) => ({ ...e, name: AI_NAMES[e.id] ?? e.name })),
+};
 
 export type FieldChoice = "pass" | "mask" | "drop";
 
@@ -27,7 +32,7 @@ export type MorningPicks = {
   fields: Record<string, FieldChoice>;
   /** 道具 id → 権限 */
   tools: Record<string, Permission>;
-  /** NOVA への指示（選択肢の id） */
+  /** 現場AIへの指示（選択肢の id） */
   nova?: string;
 };
 

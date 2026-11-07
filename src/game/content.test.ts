@@ -258,6 +258,13 @@ describe('NOVA の日（最後の日）', () => {
     expect(NOVA_WORDS.INTRO.map((l) => l.text).join('')).toContain('AIの事務員')
     expect(SPEAKER.NOVA && FACE.NOVA && SPRITES[FACE.NOVA]).toBeTruthy()
   })
+  it('画面の言葉に「NOVA」は出さない（AIだとわかる名前「現場AI」で呼ぶ）', () => {
+    const words = JSON.stringify(Object.values(NOVA_WORDS).filter((v) => typeof v !== 'function')) + Object.values(NOVA_WORDS).filter((v) => typeof v === 'function').map((f) => String(f)).join('')
+    // who: 'NOVA' は話す人の id（画面には出ない）なので、のぞいて確かめる
+    expect(words.replaceAll('"who":"NOVA"', '')).not.toMatch(/NOVA/)
+    expect(JSON.stringify(SPEAKER.NOVA)).toContain('現場AI')
+    for (const e of COMPANY.employees) expect(e.name, e.id).toMatch(/AI/)
+  })
 })
 
 describe('答えたあとの「わけ」', () => {

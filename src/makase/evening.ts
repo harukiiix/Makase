@@ -22,7 +22,7 @@ export type Line = { tone: Tone; what: string; prevent: string };
 
 export type Evening = {
   leaked: boolean;
-  /** NOVA たち（AI）に伏せずに渡った、守るべき情報 */
+  /** 現場AIたち（AI）に伏せずに渡った、守るべき情報 */
   toAI: string[];
   sent: Sent[];
   causes: Cause[];
@@ -154,7 +154,7 @@ export function eveningOf(result: DayResult, log: DayLog, company: Company): Eve
   return { leaked: leaks.length > 0, toAI: [...exposed].map(markerLabel), sent, causes, lines };
 }
 
-/** 夕方の会話（宮下さんと NOVA）。短い文を数行だけ */
+/** 夕方の会話（宮下さんと現場AI）。短い文を数行だけ */
 export function eveningTalk(ev: Evening): { who: "BOSS" | "NOVA"; text: string }[] {
   if (ev.leaked) {
     const outside = ev.sent.find((s) => s.leaked.length > 0)!;

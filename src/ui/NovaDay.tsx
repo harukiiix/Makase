@@ -115,7 +115,7 @@ export function NovaDay(p: { lang: Lang; setLang: (l: Lang) => void; speed: 'nor
   )
 }
 
-/** 人の絵（NOVA の顔）。PCでは左に大きく */
+/** 人の絵（現場AIの顔）。PCでは左に大きく */
 function Stage({ face = 'face.nova', phoneHidden }: { face?: string; phoneHidden?: boolean }) {
   const pc = useMedia('(min-width: 1024px)')
   return (

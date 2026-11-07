@@ -1,4 +1,4 @@
-// NOVA（AIの相棒）：黄色いヘルメットをかぶった、白くて丸いロボット。顔は暗い画面で、目と口が光る。胸に黄色い名札
+// 現場AI（AIの事務員。コードの中の id は nova）：黄色いヘルメットをかぶった、白くて丸いロボット。顔は暗い画面で、目と口が光る。胸に黄色い名札
 import type { Sprite } from '../raster'
 
 export const SPRITES: Record<string, Sprite> = {

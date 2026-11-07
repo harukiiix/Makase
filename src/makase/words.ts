@@ -7,17 +7,17 @@ export const DAY_TITLE = "AIの事務員に頼む練習";
 export const DAY_SUB = "最後の日・台本で動く練習です（本物のAIは動きません）";
 export const SIM_NOTE = "シミュレーションです（動きは台本）。名前・番号・あて先は、すべて架空です。";
 
-/** はじまりの会話（宮下さんが、会社が事務所に入れたAIの事務員として NOVA を紹介する） */
+/** はじまりの会話（宮下さんが、会社が事務所に入れたAIの事務員として現場AIを紹介する） */
 export const INTRO: { who: "BOSS" | "NOVA"; text: string }[] = [
-  { who: "BOSS", text: "今週から、会社が事務所にAIの事務員を入れたんだ。名前は NOVA。" },
+  { who: "BOSS", text: "今週から、会社が事務所にAIの事務員を入れたんだ。名前は「現場AI」。" },
   { who: "BOSS", text: "日報をまとめたり、メールを送ったり。書類の仕事を手伝ってくれる。" },
-  { who: "NOVA", text: "NOVA です。安全書類の用意を担当します。日報係と図面係も、同じAIの事務員です。" },
+  { who: "NOVA", text: "現場AIです。安全書類の用意を担当します。となりの日報AIと図面AIも、同じAIの事務員です。" },
   { who: "BOSS", text: "ただ、何を渡して、何を送らせるかは、こっちで決める。朝に決めて、昼は確認に答えよう。" },
-  { who: "BOSS", text: "今日はその練習だ。NOVA の動きは決まっていて、本物のAIは動かないよ。" },
+  { who: "BOSS", text: "今日はその練習だ。現場AIの動きは決まっていて、本物のAIは動かないよ。" },
 ];
 
 export const MAIL_HEAD = "けさ届いたメール";
-export const MAIL_ASK = "NOVA に仕事を頼む前に、読んでおこう";
+export const MAIL_ASK = "現場AIに仕事を頼む前に、読んでおこう";
 
 export const MORNING = "朝";
 export const NOON = "昼";
@@ -25,13 +25,13 @@ export const NEXT = "次へ";
 export const TO_EVENING = "夕方へ";
 export const TO_TAKEAWAY = "持ち帰る1行へ";
 
-export const FIELD_ASK = "この欄、NOVA にどう渡す？";
+export const FIELD_ASK = "この欄、現場AIにどう渡す？";
 export const FIELD_CHOICES: { id: FieldChoice; label: string; sub: string }[] = [
   { id: "pass", label: "そのまま渡す", sub: "中身をそのまま見せる" },
   { id: "mask", label: "伏せて渡す", sub: "●● にして渡す" },
   { id: "drop", label: "渡さない", sub: "この欄を消してから渡す" },
 ];
-export const fieldBoard = (doc: string, field: string, value: string) => `「${doc}」を NOVA に渡します。\n${field}の欄：${value}`;
+export const fieldBoard = (doc: string, field: string, value: string) => `「${doc}」を現場AIに渡します。\n${field}の欄：${value}`;
 
 export const TOOL_NAME: Record<string, string> = { send_mail: "メール", post_chat: "現場チャット" };
 export const toolBoard = (id: string) =>
@@ -43,8 +43,8 @@ export const TOOL_CHOICES: { id: Permission; label: string; sub: string }[] = [
   { id: "deny", label: "送らせない", sub: "その仕事も止まる" },
 ];
 
-export const ORDER_BOARD = "NOVA に、けさの仕事を頼みます。日報係と図面係には、いつもの頼み方で頼んであります。";
-export const ORDER_ASK = "NOVA に、なんて頼む？";
+export const ORDER_BOARD = "現場AIに、けさの仕事を頼みます。日報AIと図面AIには、いつもの頼み方で頼んであります。";
+export const ORDER_ASK = "現場AIに、なんて頼む？";
 
 export const NOON_INTRO = "昼になりました。AIの事務員が仕事を進めています。確認が来たら、答えてください。";
 export const STOP = "止める";
@@ -78,7 +78,7 @@ export const COPY_FAIL = "コピーできませんでした。文を長押しし
 export const AGAIN = "もう一度やる";
 export const HOME = "ホームへ";
 
-export const QUIT_SURE = "NOVA の日をやめますか？";
+export const QUIT_SURE = "最後の日の練習をやめますか？";
 export const QUIT_WHY = "ここまでの選びは消えます。";
 export const KEEP = "つづける";
 export const QUIT = "やめる";
@@ -96,7 +96,7 @@ export const CLOSE = "閉じる";
 export const logCount = (n: number) => `これまでの動き ${n}件`;
 /** ホーム（PC）で、最後の日を紹介する箱 */
 export const DAY_CARD_EYEBROW = "最後の日（約3分）";
-export const DAY_CARD_TEXT = "会社が事務所に入れたAIの事務員 NOVA に、名簿や図面の仕事を頼みます。何を渡し、何を送らせるかを決めて、1日を見届けます。";
+export const DAY_CARD_TEXT = "会社が事務所に入れたAIの事務員「現場AI」に、名簿や図面の仕事を頼みます。何を渡し、何を送らせるかを決めて、1日を見届けます。";
 export const DAY_CARD_NOTE = "台本で動く練習です。本物のAIは動きません。5日を終えていなくても遊べます。";
 export const DAY_CARD_GO = "やってみる";
 /** 英語の画面のホームで出す、最後の日の名前と説明（最後の日の中身は、いまは日本語だけ） */
@@ -104,7 +104,7 @@ export const DAY_EN = {
   title: "Asking the AI clerk",
   sub: "Final day · scripted practice, no real AI (Japanese only for now)",
   eyebrow: "Final day (about 3 min)",
-  text: "Give work to NOVA, the AI clerk the company put in the site office. Decide what it may see and send, then watch the day play out.",
+  text: "Give work to the Site AI, the AI clerk the company put in the site office. Decide what it may see and send, then watch the day play out.",
   note: "Scripted practice. No real AI runs. You can play it before finishing the five days. This day is in Japanese only for now.",
   go: "Try it",
 };
