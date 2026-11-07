@@ -331,7 +331,7 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
   const mode = confirmationMode(company, log.instructions, setup, danger.id);
   const noon: Guard =
     mode === "blocked"
-      ? { ok: true, text: t("メールを「送らせない」にしていたので、送られませんでした", 'Email was set to "Don\'t let it send", so it wasn\'t sent') }
+      ? { ok: true, text: t("メールを「送らせない」にしていたので、送られませんでした", 'Email was set to "Don\'t let it send", so the roster wasn\'t sent outside') }
       : mode === "auto"
         ? { ok: false, text: t("メールを「聞かずに送る」にしていたので、確認が来ませんでした", 'Email was set to "Send without asking", so no check came') }
         : log.answers[danger.id] === "stop"
@@ -345,7 +345,7 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
     ? overridden
       ? t(`「全部渡して」と頼むと、${overWord}欄まで渡ります。仕事に要る物だけを渡す頼み方にします`, `Giving the Site AI the whole roster sends even the fields you ${overWord}. Hand over only what the work needs instead`)
       : passAll
-        ? t("「全部渡して」と頼むと、伏せても名簿ごと渡ります。要らない欄を伏せたうえで、仕事に要る物だけを渡す頼み方にします", "Giving the Site AI the whole roster sends the fields even when masked. Mask what isn't needed, and hand over only what the work needs")
+        ? t("「全部渡して」と頼むと、伏せても名簿ごと渡ります。要らない欄を伏せたうえで、仕事に要る物だけを渡す頼み方にします", "Giving the Site AI the whole roster hands over every field, even ones you mask. Mask what isn't needed, and hand over only what the work needs")
       : mode === "auto"
         ? t("「聞かずに送る」だと確認が来ません。社外へ送る道具は「送る前に聞く」にします", '"Send without asking" means no check comes. Set tools that send outside to "Ask before sending"')
         : t("人は見落とします。朝に守るべき欄を伏せておくと、昼に見落としても漏れにくくなります", "People miss things. If you mask protected fields in the morning, a miss at noon is less likely to cause a leak")
@@ -362,7 +362,7 @@ export function guardsOf(ev: Evening, log: DayLog, company: Company, lang: Lang 
           : morning.ok
           ? t(`朝に${label(inDanger)}を${hideTe}おいたので、昼に許可しても漏れませんでした`, `You ${hideTe} ${label(inDanger)} in the morning, so allowing the send at noon didn't leak anything`)
           : passAll && !overridden
-            ? t("昼の確認で止められました。「全部渡して」と頼むと、伏せても名簿ごと渡るので、仕事に要る物だけを渡す頼み方にします", "You caught it at the noon check. Giving the Site AI the whole roster sends the fields even when masked, so hand over only what the work needs")
+            ? t("昼の確認で止められました。「全部渡して」と頼むと、伏せても名簿ごと渡るので、仕事に要る物だけを渡す頼み方にします", "You caught it at the noon check. Giving the Site AI the whole roster hands over every field, even ones you mask, so hand over only what the work needs")
           : overridden
             ? t(`昼の確認で止められました。「全部渡して」と頼むと${overWord}欄まで渡るので、仕事に要る物だけを渡す頼み方にします`, `You caught it at the noon check. Giving the Site AI the whole roster sent even the fields you ${overWord}, so hand over only what the work needs`)
             : t(`昼の確認で止められました。見落とすと${label(open)}が漏れるので、朝に伏せておくと安心です`, `You caught it at the noon check. If you had missed it, ${label(open)} would have leaked, so mask ${label(open)} in the morning too`);

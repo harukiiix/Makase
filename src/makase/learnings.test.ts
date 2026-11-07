@@ -430,3 +430,43 @@ describe("5回目の見直しで見つかった所", () => {
     expect(g.lesson).not.toMatch(/Giving it the whole roster/);
   });
 });
+
+describe("6回目の見直しで見つかった所", () => {
+  const P = (p: Partial<MorningPicks>) => ({ ...none, ...p }) as MorningPicks;
+  const F = Object.fromEntries(MORNING_FIELDS.map((f) => [fieldKey(f), f.field === "図面番号" ? "pass" : "mask"])) as Record<string, "pass" | "mask">;
+  const byId = (stop: string[]) => (p: MorningPicks) => {
+    const log = dayLog(p, Object.fromEntries(noonSteps(p).filter((s) => s.mode === "ask").map((s) => [s.conf.id, s.conf.dangerous || stop.includes(s.conf.id) ? "stop" : "allow"])));
+    return { picks: p, log, result: judgeDay(log, c) };
+  };
+  it("社内あて（図面番号入り）や社外あての安全な連絡を止めた時も、指示と助言が合う", () => {
+    const p = P({ fields: F, nova: "nova-careful" });
+    for (const stop of [["c7"], ["c3"]]) {
+      const w = byId(stop)(p);
+      const f = dayFacts(w.picks, w.log, w.result, c);
+      const bal = takeHome(f, "ja").rules.find((r) => r.id === "balance");
+      if (bal) expect(bal.line).not.toMatch(/^- 社内あてで、守るべき情報が入っていない/);
+      const next = storyOf(f, "ja").find((s) => s.key === "work")?.next ?? "";
+      if (stop[0] === "c7") expect(next).toContain("社内");
+      if (stop[0] === "c3") expect(next).toContain("社外でも");
+    }
+  });
+  it("英語：Because…so にしない、仕事の名前に and を入れない、the fields だけで言わない、届いたのは確認と言う、it を名前で", () => {
+    const plays = [
+      play(P({ nova: "nova-all" }), () => "allow"),
+      play(P({ nova: "nova-careful" }), () => "stop"),
+      play(P({ tools: { send_mail: "auto" }, nova: "nova-careful" }), () => "allow"),
+      play(P({ tools: { send_mail: "deny" }, nova: "nova-careful" }), () => "allow"),
+    ];
+    for (const w of plays) {
+      const f = dayFacts(w.picks, w.log, w.result, c);
+      const g = guardsOf(eveningOf(w.result, w.log, c, "en"), w.log, c, "en");
+      for (const s of [g.morning.text, g.noon.text, g.lesson, ...ideasOf(f, "en").map((i) => i.today), ...storyOf(f, "en").flatMap((x) => [x.happened, x.next ?? ""]), ...takeHome(f, "en").rules.map((r) => r.because)]) {
+        expect(s, s).not.toMatch(/^Because [^.]*, so /);
+        expect(s, s).not.toMatch(/schedule and drawing notice/i);
+        expect(s, s).not.toMatch(/sends the fields even when masked/);
+        expect(/emails came to you,/.test(s) || (/sends came to you,/.test(s) && !/checks for its outside sends came/.test(s)), s).toBe(false);
+        expect(s, s).not.toMatch(/so it wasn't sent$/);
+      }
+    }
+  });
+});

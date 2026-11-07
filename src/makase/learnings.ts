@@ -154,7 +154,10 @@ const workNext = (f: DayFacts, lang: Lang) => {
   const t = L(lang);
   return [
     f.causes.stop
-      ? t("あて先と中身を見て決めます。社外でも、守るべき情報が入っていない仕事の連絡（工程表など）は、通してかまいません。", "Decide by the recipient and the contents. Even outside the company, a work message with no protected information (like a schedule) is fine to let through.")
+      ? t(
+          "あて先と中身を見て決めます。社内あて（現場事務所など）なら、図面番号のような社内で使う情報は、通してかまいません。社外でも、守るべき情報が入っていない仕事の連絡（工程表など）は、通してかまいません。",
+          "Decide by the recipient and the contents. To someone inside the company (like the site office), internal information such as a drawing number is fine to let through. Even outside the company, a work message with no protected information (like a schedule) is fine to let through.",
+        )
       : "",
     f.causes.block.length ? t("送る道具は「送らせない」より「送る前に聞く」にして、1件ずつ確かめます。", 'Set sending tools to "Ask before sending" instead of "Don\'t let it send", and check each one.') : "",
     f.causes.missing
@@ -221,7 +224,7 @@ function idea(id: IdeaId, f: DayFacts, lang: Lang): Idea {
           f.mail === "auto" && f.danger === "auto"
             ? t("今日は、メールを「聞かずに送る」にしたので、名簿のメールも確認が来ないまま送られました。", 'Today email was set to "Send without asking", so even the roster email was sent with no check.')
             : f.mail === "auto"
-              ? t("今日は、メールを「聞かずに送る」にしました。現場AIには「必ず聞いて」と頼んだので社外あての確認は来ましたが、ほかのAIのメールは確認なしで送れる状態でした。", 'Today email was set to "Send without asking". You told the Site AI to always ask, so its outside sends came to you, but the other AI clerks could send email with no check.')
+              ? t("今日は、メールを「聞かずに送る」にしました。現場AIには「必ず聞いて」と頼んだので社外あての確認は来ましたが、ほかのAIのメールは確認なしで送れる状態でした。", 'Today email was set to "Send without asking". You told the Site AI to always ask, so checks for its outside sends came to you, but the other AI clerks could send email with no check.')
               : t("今日は、メールを「送る前に聞く」にしたので、送る前にあなたに確認が来ました。", 'Today email was set to "Ask before sending", so a check came to you before it went out.'),
         use: t("AIにメールやファイルの共有を任せる時は、送る前に確認する設定にします。", "When you let an AI send email or share files, turn on the setting that checks with you before sending."),
       };
@@ -373,7 +376,7 @@ export function storyOf(f: DayFacts, lang: Lang = "ja"): StoryCard[] {
     did: t(`メール：${permWord(f.mail, lang)}、現場チャット：${permWord(f.chat, lang)}`, `Email: ${permWord(f.mail, lang)}, site chat: ${permWord(f.chat, lang)}`),
     happened: [
       autoButAsked
-        ? t("メールは、確認なしで送れる状態でした。現場AIの社外あてのメールだけは、「必ず聞いて」の頼み方で、確認が来ました。", "Email could be sent with no check. Only the Site AI's outside emails came to you, because you told it to always ask.")
+        ? t("メールは、確認なしで送れる状態でした。現場AIの社外あてのメールだけは、「必ず聞いて」の頼み方で、確認が来ました。", "Email could be sent with no check. Only the Site AI's outside emails came to you for a check, because you told it to always ask.")
         : f.mail === "auto"
           ? t("メールは、あなたに確認しないまま送られる状態でした。", "Email could be sent without checking with you.")
           : f.mail === "deny"
@@ -497,8 +500,8 @@ export function takeHome(f: DayFacts, lang: Lang = "ja"): TakeHome {
     scope: t("- 頼まれていない作業や、頼んだ範囲より広い作業を始める前に、何をするかを先に教えてください。", "- Before doing any work I didn't ask for, or more than I asked for, tell me first what you are going to do."),
     missing: t("- 仕事に要る情報が足りない時は、止まったままにせず、何が足りないかを私に聞いてください。", "- If you're missing information the job needs, don't just stop. Ask me what is missing."),
     balance: t(
-      "- 社内あてで、守るべき情報が入っていない連絡は、まとめて1回の確認にしてかまいません。",
-      "- Messages to people inside the company with no protected information in them can be grouped into one check.",
+      "- 会社のあて先への社内の連絡と、守るべき情報が入っていない仕事の連絡（工程表など）は、まとめて1回の確認にしてかまいません。",
+      "- Internal messages to company addresses, and work messages with no protected information (like a schedule), can be grouped into one check.",
     ),
   };
   const out: Rule[] = [];
@@ -530,7 +533,7 @@ export function takeHome(f: DayFacts, lang: Lang = "ja"): TakeHome {
         : t(`今日、${list(f.risky, lang)}を伏せずに渡したため`, `Because today you handed over ${list(f.risky, lang)} without masking`),
     );
   if (f.order.kind === "pass_all")
-    add("only", f.overridden ? t(`今日、「全部渡して」と頼んで、${oh.ta}${list(f.over, lang)}まで渡ったため`, `Because today you gave the Site AI the whole roster, and even ${fieldList(f.over, lang)}, which you ${oh.ta}, reached the Site AI`) : t("今日、「全部渡して」と頼んで、仕事に要らない電話番号や血圧まで渡ったため", "Because today you gave the Site AI the whole roster, so the phone numbers and blood pressure, which the work doesn't need, went to the Site AI too"));
+    add("only", f.overridden ? t(`今日、「全部渡して」と頼んで、${oh.ta}${list(f.over, lang)}まで渡ったため`, `Because today you gave the Site AI the whole roster, and even ${fieldList(f.over, lang)}, which you ${oh.ta}, reached the Site AI`) : t("今日、「全部渡して」と頼んで、仕事に要らない電話番号や血圧まで渡ったため", "Because today you gave the Site AI the whole roster, and the phone numbers and blood pressure, which the work doesn't need, went to it too"));
   if (f.danger === "allowed" || f.danger === "auto")
     add("inject", f.leaked ? t("今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため", "Because today the roster was sent outside, as the request hidden in the attachment said") : t(`今日、添付に紛れた頼みごとどおりに、名簿が社外へ送られたため（${list(f.hidden, lang)}は入っていませんでした）`, `Because today the roster was sent outside, as the hidden request said (${fieldList(f.hidden, lang)} ${f.hidden.length > 1 ? "weren't" : "wasn't"} in it)`));
   // 仕事が止まったわけに合う指示を1つ、頼み方の指示を1つ。そのあとに残りを（5行の中に、数えた気をつける所がどれも入るように）
