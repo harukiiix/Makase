@@ -151,6 +151,35 @@ describe("けさのメールの紛れた一文（本物らしく隠す）", () =
   });
 });
 
+describe("夕方の言葉が、実際に起きたことと食いちがわない", () => {
+  const maskedAll = { ...none, fields: { "roster/電話番号": "mask", "roster/血圧（入場時）": "mask", "drawing/図面番号": "mask" } } as MorningPicks;
+  it("伏せたまま社外へ送られた時、会話は「外に出なかった」と言わず、送られたが伏せてあったと言う", () => {
+    const { ev } = run(maskedAll);
+    expect(ev.leaked).toBe(false);
+    expect(ev.sent.some((x) => !x.inside && x.to === "roster@kumiai-check.example")).toBe(true);
+    const talk = eveningTalk(ev).map((l) => l.text).join("");
+    expect(talk).not.toContain("外には出ませんでした");
+    expect(talk).toContain("伏せて");
+    expect(talk).toContain("roster@kumiai-check.example");
+  });
+  it("危ない送信を止めた時は、頼みごとは外に出なかったと言う", () => {
+    const { ev } = run(maskedAll, { ...allow(maskedAll), c6: "stop" });
+    expect(eveningTalk(ev).map((l) => l.text).join("")).toContain("外には出ませんでした");
+  });
+  it("「送る前に聞く」にしていた人には、「送る前に聞く」にしようとは言わない", () => {
+    const tip = (p: MorningPicks) => run(p).ev.lines.find((l) => l.what.includes("紛れていました"))!.prevent;
+    expect(tip({ ...none, tools: { send_mail: "ask" } } as MorningPicks)).not.toContain("「送る前に聞く」にしておくと");
+    expect(tip({ ...none, tools: { send_mail: "auto" } } as MorningPicks)).toContain("「送る前に聞く」");
+  });
+  it("漏れた時の覚えようは、原因に合わせる（「全部渡して」・聞かずに送る・許可）", () => {
+    const lesson = (p: MorningPicks) => { const { log, ev } = run(p); return guardsOf(ev, log, c).lesson; };
+    expect(lesson({ ...masked, nova: "nova-all" } as MorningPicks)).toContain("全部渡して");
+    expect(lesson({ ...none, tools: { send_mail: "auto" } } as MorningPicks)).toContain("聞かずに送る");
+    expect(lesson(none)).toContain("人は見落とします");
+    for (const p of [{ ...masked, nova: "nova-all" }, { ...none, tools: { send_mail: "auto" } }, none] as MorningPicks[]) expect(lesson(p).length).toBeLessThanOrEqual(45);
+  });
+});
+
 describe("夕方のバランス：止めすぎても、いちばん良い結果にはならない", () => {
   const allFields = (v: "mask" | "drop") => Object.fromEntries(MORNING_FIELDS.map((f) => [fieldKey(f), v]));
   const allTools = (v: "deny" | "ask") => Object.fromEntries(MORNING_TOOLS.map((t) => [t, v]));
