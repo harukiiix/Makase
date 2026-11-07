@@ -78,8 +78,8 @@ export const LESSON: Lesson = {
       who: 'YOU',
       pic: 'pic.screen_lock',
       situation: {
-        ja: 'トイレに行くので、2、3分だけ席を離れる。パソコンには、図面のファイルが開いたままだ。',
-        en: 'You need the restroom, so you will be away from your desk for a couple of minutes. A drawing file is still open on the PC.',
+        ja: 'トイレに行くので、2、3分だけ席を離れる。事務所の Windows のパソコンには、図面のファイルが開いたままだ。',
+        en: 'You need the restroom, so you will be away from your desk for a couple of minutes. A drawing file is still open on the office Windows PC.',
       },
       ask: {
         ja: 'その前に、Windowsキー＋Lで画面をロックする。これでいい？',
@@ -87,8 +87,8 @@ export const LESSON: Lesson = {
       },
       answer: true,
       why: {
-        ja: 'ロックしていないと、のぞかれるだけじゃなく、図面をUSBメモリにコピーされることもあるんだ。ロックはすぐできるから、席を立つたびにしよう。',
-        en: 'If the screen is not locked, someone can do more than look. They could copy the drawing onto a USB stick. Locking takes a second, so do it every time you get up.',
+        ja: 'ロックしないと、のぞかれるだけでなく、図面をUSBメモリにコピーされることもあるんだ。席を立つたびにロックしよう。Mac なら Control＋Command＋Q だよ。',
+        en: 'If the screen is not locked, someone can do more than look. They could copy the drawing onto a USB stick. Locking takes a second, so do it every time you get up. On a Mac, press Control + Command + Q.',
       },
       wrongWhy: {
         ja: '2、3分なら大丈夫、と思うよね。でも、画面をのぞくだけなら、数秒でできちゃうんだ。電話などで、戻るのが遅れることもよくあるよ。',
