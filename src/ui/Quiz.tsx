@@ -12,7 +12,9 @@ import { lessonOf } from '../game/course'
 import { answer, finished, isRight, next, shuffle, startSession, whyFor, type Session, type SessionKind } from '../game/learn'
 import type { Lang, Question, TopicId } from '../game/types'
 import { aiOff, errorKind, tutorRules, type SampleFn } from '../lib/ai'
-import { AiKeyBox, useAIState } from './AiKey'
+import { useAIState } from './AiKey'
+import { hasQuizPregen, quizPregen } from '../lib/pregen'
+import { PregenChat } from './PregenChat'
 import { useAiBudget } from './aiBudget'
 import { FAST, sfx } from '../lib/platform'
 import { Art } from './Art'
@@ -389,6 +391,7 @@ export function Quiz(p: {
         </div>
       )}
 
+      {s.answer && detail === 'ai' && ai === null && <PregenPanel q={q} lang={p.lang} onClose={closeDetail} />}
       {s.answer && detail === 'ai' && ai && <AiChat q={q} pick={picked!} lang={p.lang} ai={ai} onAsked={p.onAsked} onClose={closeDetail} />}
       {s.answer && detail === 'more' && <MorePanel q={q} order={order} onClose={closeDetail} />}
       {s.answer && detail === 'real' && q.real && CASES[q.real] && <RealPanel rc={CASES[q.real]} onClose={closeDetail} />}
@@ -482,19 +485,20 @@ function Feedback({ ref, q, pick, ok, gained, combo, ai, onOpen, sheet, noAction
           </div>
         </div>
         {!noActions && <FeedbackActions q={q} ok={ok} ai={ai} onOpen={onOpen} />}
-        {noActions && <AiElsewhere ai={ai} />}
       </div>
     </section>
   )
 }
 
 /** もっと知りたい時のボタン（正解のわけ・実際にあった話・AIに聞く）。押すと、画面の上のほうまで大きな板が開く */
-function FeedbackActions({ q, ok, ai, onOpen, compact, noLink }: { q: Question; ok: boolean; ai: SampleFn | null | undefined; onOpen: (d: Detail) => void; compact?: boolean; /** claude.ai への案内を出さない（スマホの下の板では、説明の中に出す） */ noLink?: boolean }) {
+function FeedbackActions({ q, ok, ai, onOpen, compact }: { q: Question; ok: boolean; ai: SampleFn | null | undefined; onOpen: (d: Detail) => void; compact?: boolean; /** claude.ai への案内を出さない（スマホの下の板では、説明の中に出す） */ noLink?: boolean }) {
   const t = useT()
   const rc = q.real ? CASES[q.real] : undefined
+  // AIが使えない所（GitHub Pages など）では、Claude が前もって作った答えを出す
+  const pre = ai === null && hasQuizPregen(q.id)
   return (
     <>
-      {(!ok || rc || ai) && (
+      {(!ok || rc || ai || pre) && (
           <div className="grid grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-2">
             {!ok && (
               <button data-more className={`btn px-3 ${compact ? 'min-h-11 py-1 text-base' : 'min-h-12 text-base'}`} onClick={() => (sfx.ui(), onOpen('more'))}>
@@ -506,7 +510,7 @@ function FeedbackActions({ q, ok, ai, onOpen, compact, noLink }: { q: Question; 
                 {t(S.realCase)}
               </button>
             )}
-            {ai && (
+            {(ai || pre) && (
               <button data-ask-ai className={`btn px-3 ${compact ? 'min-h-11 py-1 text-base' : 'min-h-12 text-base'}`} onClick={() => (sfx.ui(), onOpen('ai'))}>
                 <Art id="icon.ai" scale={1.5} />
                 {t(S.askAI)}
@@ -514,16 +518,10 @@ function FeedbackActions({ q, ok, ai, onOpen, compact, noLink }: { q: Question; 
             )}
           </div>
         )}
-      {!noLink && <AiElsewhere ai={ai} />}
     </>
   )
 }
 
-/** AIが使えない所（GitHub Pages など）では、遊ぶ人が自分の鍵を入れる欄を出す */
-function AiElsewhere({ ai }: { ai: SampleFn | null | undefined }) {
-  if (ai === undefined) return null
-  return <AiKeyBox ai={ai} />
-}
 
 /** 正解のわけ（まちがえた時）：正しい答えと、そのわけ */
 function MorePanel({ q, order, onClose }: { q: Question; order: number[]; onClose: () => void }) {
@@ -730,6 +728,35 @@ function AiChat({ q, pick, lang, ai, onAsked, onClose }: { q: Question; pick: nu
         {!off && !spent && explain && turns.length === 0 && !busy && <p className="rounded-lg bg-ruleBg px-3 py-2 text-base">{t(S.aiExplainHow)}</p>}
         <div ref={end} />
       </div>
+    </Panel>
+  )
+}
+
+/** AIの宮下さん（Claude が前もって作った答え）。質問のボタンを押すと、入力中…のあとに答えが出る */
+function PregenPanel({ q, lang, onClose }: { q: Question; lang: Lang; onClose: () => void }) {
+  const t = useT()
+  const bubble = 'max-w-[88%] whitespace-pre-wrap rounded-xl px-3 py-2 text-lg leading-relaxed [line-break:strict] [overflow-wrap:anywhere]'
+  return (
+    <Panel
+      title={t.attr(S.aiTitle)}
+      onClose={onClose}
+      tall
+      closeLabel={t.attr(S.close)}
+      icon={
+        <span className="shrink-0 overflow-hidden rounded-lg border-2 border-line bg-surface2">
+          <Art id="face.boss" scale={1.5} />
+        </span>
+      }
+      footer={<BackToAnswer onClick={onClose} />}
+    >
+      <PregenChat
+        pairs={quizPregen(q.id, lang)}
+        lang={lang}
+        who={t.attr(S.aiTitle)}
+        render={(x) => t(x)}
+        bubbleUser={`${bubble} bg-ink text-surface [word-break:normal]`}
+        bubbleAi={`${bubble} border-2 border-hair bg-surface2`}
+      />
     </Panel>
   )
 }

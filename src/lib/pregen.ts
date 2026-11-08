@@ -103,3 +103,6 @@ export function quizPregen(qid: string, lang: Lang): PregenPair[] {
 export function sitePregen(outcome: Outcome, lang: Lang): PregenPair[] {
   return pairs(SITE_ASKS[lang], D.site[outcome]?.[lang], lang)
 }
+
+/** その問題に、前もって作った答えがあるか（どちらかの言葉で） */
+export const hasQuizPregen = (qid: string) => quizPregen(qid, 'ja').length > 0 || quizPregen(qid, 'en').length > 0

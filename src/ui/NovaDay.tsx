@@ -13,7 +13,9 @@ import { todayOf, type Today } from '../makase/takeaway'
 import { JOBS, JOB_NOTE, JOB_NOTE_EN, cleanJobLines, customJob, jobLabel, jobPrompt, type Job } from '../makase/jobLine'
 import { cleanSiteReply, siteChatTurns, type ChatTurn } from '../makase/siteChat'
 import { aiOff, errorKind } from '../lib/ai'
-import { AiKeyBox, useAIState } from './AiKey'
+import { useAIState } from './AiKey'
+import { sitePregen } from '../lib/pregen'
+import { PregenChat } from './PregenChat'
 import { S } from './strings'
 import { useAiBudget } from './aiBudget'
 import type { Answer, Permission } from '../makase/types'
@@ -776,7 +778,6 @@ function Takeaway({ today, facts, onAgain, onHome }: { today: Today; facts: DayF
             </p>
           )}
           <p className="text-sm text-ink2">{one.note}</p>
-          <TakeKeyBox />
           <AskSiteAI facts={facts} />
           <JobAsk today={today} one={one} />
           <div className="grid grid-cols-2 gap-3">
@@ -798,11 +799,34 @@ function Takeaway({ today, facts, onAgain, onHome }: { today: Today; facts: DayF
 // 押した時だけ呼ぶ。答えは文字として出すだけ。漏れたかどうかは、コードの判定（today）をそのまま渡す
 const useSample = useAIState
 
-/** 持ち帰りの画面の、鍵の欄（AI が使えない公開ページでだけ出る） */
-function TakeKeyBox() {
-  const ai = useSample()
-  if (ai === undefined) return null
-  return <AiKeyBox ai={ai} />
+/** AI が使えない所（GitHub Pages など）：Claude が前もって作った答えを、質問のボタンで見る */
+function SitePregen({ facts }: { facts: DayFacts }) {
+  const { W, lang } = useNW()
+  const pairs = sitePregen(facts.leaked ? 'leaked' : 'safe', lang)
+  if (!pairs.length) return null
+  const nova = tr(C.employees.find((e) => e.id === 'nova')!.name, lang)
+  return (
+    <section data-site-chat data-site-pregen className="grid gap-3 rounded-xl border-2 border-line bg-surface p-3 lg:p-4">
+      <div className="flex items-start gap-3">
+        <Face who="nova" />
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-bold">{W.CHAT_FREE_HEAD}</h2>
+          <p className="text-base text-ink2">{lang === 'en' ? 'Tap a question about today.' : '今日のことで、聞きたい質問を押してください。'}</p>
+        </div>
+      </div>
+      <div className="rounded-lg bg-surface2 p-2.5">
+        <PregenChat
+          pairs={pairs}
+          lang={lang}
+          who={nova}
+          name={nova}
+          bubbleUser="max-w-[85%] whitespace-pre-line rounded-2xl rounded-br-sm bg-ink px-3 py-1.5 text-base text-surface"
+          bubbleAi="whitespace-pre-line rounded-2xl rounded-tl-sm border-2 border-hair bg-surface px-3 py-1.5 text-base leading-relaxed"
+        />
+      </div>
+      <p className="text-sm text-ink2">{lang === 'en' ? "Today's result (whether anything leaked) was decided by the game's code." : '今日の結果（漏れたかどうか）は、コードが決めたものです。'}</p>
+    </section>
+  )
 }
 
 // ---------------- 現場AIに自由に聞く（本物のAI。使える所だけ出す） ----------------
@@ -823,6 +847,7 @@ function AskSiteAI({ facts }: { facts: DayFacts }) {
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'nearest' })
   }, [turns.length, live])
+  if (ai === null) return <SitePregen facts={facts} />
   if (!ai) return null
   const nova = tr(C.employees.find((e) => e.id === 'nova')!.name, lang)
   const spent = budget.left.left === 0
