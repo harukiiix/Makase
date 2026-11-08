@@ -1,5 +1,5 @@
 import type { Lang, Question } from '../game/types'
-import { cleanSiteReply } from '../makase/siteChat'
+import { OVER_EN, OVER_JA } from '../makase/siteChat'
 import { tutorBase } from './ai'
 import data from './pregen.json'
 
@@ -67,12 +67,16 @@ export function sitePregenPrompt(outcome: Outcome, ask: string, lang: Lang): str
 /** 鍵らしい文字（答えに入っていたら使わない） */
 export const KEYLIKE = /sk-ant-[A-Za-z0-9_-]{8,}|(?:ghp|gho|ghs|ghu|ghr)_[A-Za-z0-9]{20,}|github_pat_|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY|AIza[0-9A-Za-z_-]{30,}|xox[abprs]-/
 
-/** 答えの点検。言いすぎ・鍵らしい文字・長すぎ・空 は使わない（null） */
+/** 答えの長さの上限（英語は日本語より文字が多いので、べつに決める） */
+export const PREGEN_MAX_CHARS: Record<Lang, number> = { ja: 220, en: 450 }
+
+/** 答えの点検。言いすぎ・鍵らしい文字・長すぎ・空 は使わない（null）。切って出すことはしない */
 export function checkPregen(raw: string, lang: Lang): string | null {
   if (KEYLIKE.test(raw)) return null
-  const s = cleanSiteReply(raw, lang)
-  if (!s || s.endsWith('…')) return null
-  return s
+  const s = raw.replace(/[*#`>]/g, '').replace(/\s+\n/g, '\n').trim()
+  if (!s) return null
+  if ((lang === 'ja' ? OVER_JA : OVER_EN).test(s)) return null
+  return s.length > PREGEN_MAX_CHARS[lang] ? null : s
 }
 
 type Data = {

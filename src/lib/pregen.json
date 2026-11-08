@@ -1,1 +1,548 @@
-{ "model": "", "createdAt": "", "quiz": {}, "site": {} }
+{
+ "model": "claude-opus-5-5",
+ "createdAt": "2026-11-08",
+ "quiz": {
+  "see-01": {
+   "ja": [
+    "ふせんが貼ってあった間に、お客さんや近くを通った人がもう見て覚えたかもしれないね。だから貼る場所を変えたり、来るときだけ隠したりしても、知られたパスワードはそのまま使えちゃうんだ。はがして新しいパスワードに変えて、これからは紙に書いて貼らないようにしよう。",
+    "現場事務所のいっしょに使うパソコンに、図面を開くパスワードのふせんが貼ってある、なんてことがあるんだ。打ち合わせに来た業者さんやお客さんに見られたら、金庫室の図面まで開けられちゃうかもしれないね。見つけたら、はがしてパスワードを変えておこう。",
+    null
+   ],
+   "en": [
+    "That note has been where visitors can see it, so someone may already have read the password, and just hiding the note now can't undo that. Tucking it under the keyboard or only taking it down sometimes still leaves it easy to find. So peel it off, change the password right away, and never write a password down and stick it up again.",
+    "It usually happens in the site office, where many of us share one PC and someone sticks the password on the screen to save time. But delivery drivers, inspectors and bank staff often sit at the table right beside it. If you spot a note like that, peel it off and tell me, and we'll change the password together.",
+    "Sure. Hiding the note under the keyboard or taking it down only when visitors come still leaves the password around, and anyone who already saw it could still get in, so changing it is the real fix. If you struggle to remember a password, don't write it anywhere, just ask the person in charge how our company wants it handled, and tell them whenever you spot a note like this."
+   ]
+  },
+  "see-03": {
+   "ja": [
+    "紙をかぶせてもずれることがあるし、「見ないで」と頼んでも目に入るのは止められないよね。金庫室の場所は一度見られたら取り消せないから、先にしまうのがいちばん確かなんだ。「少しお待ちください」は失礼じゃないから、安心して言っていいよ。",
+    "たとえば、消火器の点検や荷物の配達で、知らない人が急に事務所に来るときだね。打ち合わせで図面を広げているときほど起きやすいから、ドアが開いたら、まず図面をしまうくせをつけよう。本当に点検の人かどうかは、そのあと落ち着いて確かめればいいよ。",
+    "紙をかぶせてもすきまから見えることがあるし、「見ないで」と言っても目に入るのは止められないんだ。だから人が来たときは「少しお待ちください」と言って、図面を引き出しなどにしまってから話そう。点検の人でも、来る予定の人かどうか確かめるとなお安心だね。"
+   ],
+   "en": [
+    "Good question! Once someone has seen where the vault room is, you can't take that back, and a cover sheet can slip, while \"please don't look\" only works if he chooses not to. Saying \"Just a moment, please\" and putting the drawing away first isn't rude at all, so when someone comes in, drawings go away first.",
+    "It happens more often than you'd think, like when an inspector, a delivery driver, a salesperson, or a neighbor knocks on the site office door while you're working with drawings spread out. Even people who seem official might not be who they say, and you often can't tell right away. So whenever anyone walks in, just say \"One moment, please\" and put the drawings away first.",
+    "Even a real inspector doesn't need to see where the vault room is, and a sheet of paper can slip or get lifted, so putting the drawing away is the only sure way. Saying \"Just a moment, please\" is perfectly polite, and most visitors are happy to wait a few seconds. Once the drawing is safely put away, you can check who he is and greet him properly."
+   ]
+  },
+  "see-02": {
+   "ja": [
+    "2、3分でも、開いたままの画面はだれでも見られるし、図面をUSBにコピーされることもあるんだ。金庫室やカメラの位置がわかる図面は、泥棒にとって大事な手がかりになっちゃうからね。Windowsキー＋Lならすぐだから、席を立つたびにロックしよう。",
+    "たとえば、職人さんに呼ばれて現場へ行くときや、朝礼に出るとき、お客さんを迎えに行くときだね。事務所には業者さんも出入りするから、金庫室の図面を開いたままにしないこと。1分でも席を立つなら、Windowsキー＋Lでロックしよう。",
+    "2、3分でも、画面をのぞいたり、写真をとったり、USBにコピーしたりするには十分なんだ。この現場の図面には金庫室やカメラの場所がのっているから、外に出たら泥棒に使われるかもしれないよね。だから短いときでも、席を立つたびにWindowsキー＋Lでロックしよう。"
+   ],
+   "en": [
+    "Even a couple of minutes is enough for someone to walk up to an unlocked PC and copy that drawing onto a USB stick, and for a bank with a vault room, that's a big deal. Locking with Windows key + L takes just a second, so make it a habit every time you get up. If you're ever on a Mac, it's Control + Command + Q.",
+    "It happens more often than you'd think, like when you run to the restroom, someone calls you out to check a delivery, or the morning meeting starts. Our site office has subcontractors, drivers and visitors coming in and out all day, and nobody's watching your screen while you're gone. With the vault room drawings on there, make Windows key + L a habit every time you stand up.",
+    "Even two minutes is long enough for someone walking by to snap a photo of the vault room drawing on your screen, or copy the whole file onto a USB stick. Windows key + L takes one second, and you just type your password when you're back. Make it a habit every time you stand up, even if the office looks empty."
+   ]
+  },
+  "see-04": {
+   "ja": [
+    "名簿には、みんなの住所や生年月日、健康診断のことまで書いてあるんだ。裏返したり目立たない所に置いたりしても、だれでも手に取れるのは変わらないよね。だから使い終わったら、鍵のかかる書庫にしまおう。",
+    "よくあるのは、朝に新しく入る人の受付で名簿を出して、そのままお昼休みに入っちゃうときだね。事務所には業者さんやお客さんも出入りするから、だれかが見たり持っていったりしてもわからないんだ。書き終わったら、すぐ鍵のかかる書庫にしまおう。",
+    null
+   ],
+   "en": [
+    "Good question. That list has people's home addresses, birth dates, even their health check results, so face down or up on a shelf, anyone walking by the door could still grab it. When you're done with it, put it in the cabinet and lock it, every time.",
+    "It happens more than you'd think, like when someone pulls out the list for the morning sign-in or to add a new worker, then gets called out to the site and leaves it on the desk. The office door is busy with delivery drivers and visitors, so anyone could walk by and see it. That's why we lock it away the moment we're done.",
+    "Face down or on a high shelf, the list is still easy for anyone walking by the door to pick up, and it holds people's addresses, birthdays and health details. Only the lock really keeps it safe, so whenever you see it left out, even if someone else left it, put it back and lock the cabinet. If you're not sure where the key is kept, just ask me."
+   ]
+  },
+  "see-05": {
+   "ja": [
+    "あのコピー機は、ほかの会社の人も使うよね。図面には金庫室やカメラの場所がのっていることもあるから、だれかが見たり持っていったりしたら、施主さんの銀行がこまるんだ。だから見つけたときは、すぐ木村さんに渡しに行こうね。",
+    "現場事務所のコピー機は、ほかの会社の職人さんもいっしょに使うよね。そこに金庫室やカメラの位置が載った図面を置きっぱなしにすると、だれかの書類にまぎれて外に出てしまうかもしれないんだ。印刷したらすぐ取りに行って、人の分を見つけたら本人に渡そうね。",
+    "このコピー機はほかの会社の人も使うから、だれかが図面を見たり持っていったりしても、あとでわからないんだね。銀行の図面には金庫の部屋やカメラの場所ものっているから、泥棒の手に渡ったら大変だよ。見つけたら木村さんに直接渡すか、いなければ私にあずけてね。"
+   ],
+   "en": [
+    "Because people from other companies use that copier too, Kimura's drawing could easily get picked up by mistake with someone else's printouts, and on a bank job a drawing like that must never leave our hands. So it's best to take it straight to Kimura yourself. And when you print something, go get it right away.",
+    "It happens most in the busy morning before the meeting, when everyone is printing drawings at once, or when someone gets a phone call and forgets their pages. People from other companies use our office copier too, so a vault drawing can easily get mixed into someone else's stack. If you ever spot one, just take it straight to the person who printed it.",
+    "Since people from other companies use that copier, anyone could see the drawing or grab it by mistake with their own printouts, and on a bank job a drawing showing the vault room or cameras must never get out. So pick it up and hand it straight to Kimura, or tell Kimura you're holding it. And when you print something yourself, go get it right away."
+   ]
+  },
+  "see-06": {
+   "ja": [
+    "許可票は、外から見える所に出しておくことが法律で決まっているんだ。工事のお知らせや労災保険関係成立票もいっしょで、まわりの人に知らせるための物だよ。でも、金庫室やカメラの場所がわかる図面は、外から見えない所にしまおうね。",
+    "朝、入口のゲートを開けるときに、許可票や工事のお知らせが外から見える所にちゃんとかかっているか見てね。風で外れたり、資材や車でかくれていたら直そう。ただ、図面や作業員名簿は入口にはらないように気をつけようね。",
+    "許可票は、だれが責任を持って工事しているかを、近所の人や通る人にもわかるようにするための物なんだ。だから外に出しておくのが正しくて、かくす物じゃないんだね。でも、図面や作業員の名簿は入口のまわりに置かないように気をつけよう。"
+   ],
+   "en": [
+    "Good question. Some things on site are meant to be seen, and the law actually says the permit sign has to face outside, along with the notice to neighbors and the workers' insurance sign. So leave those up proudly, and save your worry for things like the vault drawings, which really must stay hidden.",
+    "You'll see this every day when you walk in through the front gate, because the permit sign, the notice to neighbors, and the insurance sign go up when work starts and stay until the job is done. It mostly comes up when you're tidying the entrance or someone worries the names are showing. Those signs are meant to be seen, so just leave them up and keep them clean.",
+    "Some things on site are meant to be seen, and the permit sign is one of them, so leaving it up is right. The law says it has to face the street, and the same goes for the notice to neighbors and the workers' accident insurance sign. What we protect are things like the drawings, especially the vault room and cameras, and the worker list, so those never get posted outside."
+   ]
+  },
+  "see-07": {
+   "ja": [
+    "パスワードを本体に貼るのは、家のカギを玄関のドアにぶら下げておくようなものなんだ。USBメモリは小さくてなくしやすいから、拾った人がそのまま開けて、金庫室やカメラの図面を見られてしまうよね。パスワードは本体と別にして、忘れそうなときは事務所に相談しよう。",
+    "たとえば、金庫室やカメラの位置が載った図面をUSBメモリに入れて、銀行との打ち合わせに持っていくときだね。途中で落として、パスワードのシールが貼ってあったら、拾った人がすぐ中を見られてしまうんだ。だから、パスワードは本体とは別にしておこう。",
+    "パスワードを本体に貼ると、なくしたときに拾った人や泥棒がそのまま開けられちゃうんだ。鍵をかけた箱に鍵をぶら下げておくのといっしょだね。金庫室の図面が入っているかもしれないから、覚えられないときは事務所に相談しよう。"
+   ],
+   "en": [
+    "USB sticks are tiny and easy to drop or leave behind, and if the password is stuck right on it, whoever picks it up can open our drawings, even the vault room and camera layout. That's why we keep the password somewhere separate from the stick. If you're worried you'll forget it, just ask the office, and they'll help you.",
+    "This can happen when you need to carry drawings to a meeting or to the site office, and you grab a USB stick so you don't forget the password. On a busy site that stick can easily drop out of a pocket or get left on a table, and with a label on it anyone could open our bank drawings, even the vault room. So keep the password apart from the stick, and if you're worried you'll forget it, just ask the office.",
+    "Think of it like taping the key to the lock. If that stick gets dropped in the parking lot, whoever finds it can open the vault room and camera drawings right away. Keep the password somewhere separate, and if you're worried about forgetting it, just ask the office how they'd like it handled."
+   ]
+  },
+  "gate-01": {
+   "ja": [
+    "作業服は誰でも着られるから、服だけでは本物かどうかわからないんだよね。点検の予定なら事務所が知っているはずだし、本物の人なら少し待っても困らないよ。銀行の現場だから、通してから確かめるのでは遅いんだ。",
+    "たとえば朝のゲートで「電気の点検です」とか「銀行の者です」と言って、入場証なしで来る人だね。金庫室やカメラの場所を見に来た泥棒かもしれないから、外で待ってもらって事務所に確かめよう。本物なら予定に入っているはずだよ。",
+    "作業服や「点検です」という言葉は、だれでも用意できるから、それだけでは本物かわからないんだ。ここは銀行の現場だから、金庫室やカメラの場所を知りたい人が来るかもしれないね。だから見た目で決めずに、外で待ってもらって事務所に確かめよう。"
+   ],
+   "en": [
+    "Work clothes are easy to get, and anyone can say \"inspection,\" so they don't prove who someone is, especially on a bank site where the vault and camera plans have to stay safe. The office knows which inspections are planned, so a quick call settles it. A real inspector won't mind waiting a minute, so you never need to feel rude asking.",
+    "It happens more often than you'd think, like early mornings when the gate is busy, during deliveries, or when someone says they're from the power company or head office. On a bank site, people might be curious about the vault room, so the work clothes alone don't tell you much. Whenever someone without a badge wants in, ask them to wait and call the office.",
+    "Work clothes and a confident voice are easy to fake, and someone who gets inside could see or photograph things like the vault room or camera spots. So stay polite, say something like \"Sorry, could you wait here a moment while I check?\", and keep him outside the gate until the office says it's okay. If you're ever unsure, call the office first. Nobody will blame you for checking."
+   ]
+  },
+  "gate-02": {
+   "ja": [
+    "前の人のすぐ後ろについてくると仲間に見えるけど、ほんとうにこの現場の人かはわからないんだよね。ここは銀行の現場だから、金庫室やカメラの場所を探しに来た人がまぎれこむこともあるかもしれない。だから入場証は、一人ずつちゃんと見せてもらおうね。",
+    "朝の入場で混む時間や、お昼休みから戻るときみたいに、みんながまとまって通るときに起きやすいんだ。顔なじみの中に知らない人が混ざって、金庫室やカメラの場所を見に来ることもあるかもしれないね。急いでいても、入場証は一人ずつ見せてもらおう。",
+    "前の人について入れば、関係ない人でもかんたんに中に入れちゃうんだ。ここは銀行の現場だから、金庫室やカメラの場所を見られたら大変だよね。「入場証を見せてもらえますか」とやさしく声をかけて、持っていなければ私に知らせてね。"
+   ],
+   "en": [
+    "Someone walking in close behind others can look like part of the group, but we can't be sure he belongs here, and this is a bank, so an outsider could see the vault room or camera spots. That's why we check every badge, one person at a time, even if it feels a little awkward. Just politely ask, \"Can I see your badge, please?\"",
+    "It happens most in the busy morning rush, when lots of people come through the gate at once, and again after lunch when everyone walks back together. It can also happen when someone is carrying tools or materials, or it's raining and people hurry in. Those are exactly the times to slow down and check each badge, one by one.",
+    "Someone who slips in behind another person could be anyone, and on a bank site they might be after things like where the vault room or cameras are. So even if he seems to be with the group, politely ask to see his badge, one person at a time. If he doesn't have one, ask him to wait at the gate and come get me or whoever is in charge."
+   ]
+  },
+  "gate-03": {
+   "ja": [
+    "古い図面でも、金庫室やカメラの場所がわかれば、泥棒には宝の地図みたいなものなんだ。名簿にも、みんなの名前や住所が載っているよね。資源ゴミの袋はだれでも持っていけるし、手で破いただけだとつなぎ直せるから、シュレッダーか鍵つきの回収箱に入れよう。",
+    "図面が新しい版に変わったときや、作業員さんが入れ替わって名簿を作り直したときに、古いコピーがよく出るんだ。休憩所の机や車の中に、置きっぱなしになってることもあるね。そういう紙を見つけたら、シュレッダーか鍵つきの回収箱に入れよう。",
+    "資源ゴミの袋はだれでも開けられるし、手で破いたくらいだと、つなぎ合わせて読めてしまうんだ。古い図面でも、泥棒には金庫室やカメラの場所がわかる手がかりになるよ。シュレッダーや回収箱の場所がわからないときは、事務所に聞いてみよう。"
+   ],
+   "en": [
+    "Even old drawings still show where the vault room and the cameras are, and how the inside of the bank is laid out, so someone digging through a recycling bag could learn a lot. The worker list copies also have everyone's names and addresses on them, and torn paper can be pieced back together. That's why drawings and worker lists always go in the shredder or the locked disposal box.",
+    "It happens more often than you'd think: when drawings get updated and the old versions pile up, when the site office gets cleaned out, or when extra copies of the worker list are left over after a meeting. That recycling bag by the gate is right there, so it's tempting when you're busy. But drawings and worker lists always go to the shredder or the locked disposal box.",
+    "Recycling bags and trash cans by the gate can be opened by anyone passing by, and hand-torn pieces are easy to tape back together. So even if old drawings or lists look like plain scrap paper, keep them with you until they go into the shredder or the locked box. If you can't find either one, just hold onto them and ask me or Sawaguchi."
+   ]
+  },
+  "gate-04": {
+   "ja": [
+    "看板は、近所の人に工事のことを知らせるために立ててあるんだ。だから、そこに書いてある期間はもうだれでも見られる話で、教えても困らないんだね。ただ、看板にない建物の中のつくりなんかは、聞かれても話さないようにしよう。",
+    "ゲートで車の出入りを見ているときや、朝の掃除のときに、近所の人から「いつまでやるの？」と声をかけられることはよくあるよ。看板に書いてある期間なら、そのまま答えていいんだ。でも中の造りみたいに看板にないことを聞かれたら、「事務所に聞いてください」って伝えよう。",
+    "看板は近所の人に知らせるために出している物だから、そこにある期間なら話して大丈夫だよ。でも、金庫の部屋やカメラの場所、細かい作業の予定みたいに看板にないことは、答えなくていいんだ。迷ったときは「確認しますね」と言って、私に声をかけてね。"
+   ],
+   "en": [
+    "Good question! The sign at the gate is there so neighbors know what's going on, so telling them the work period that's already written on it is totally fine. Just remember that anything not on the sign, like the vault room or where the cameras go, stays with us, so if they ask more, kindly point them to the sign or to me.",
+    "This comes up a lot, especially when you're at the gate in the morning, guiding trucks, or when noisy work bothers the people living nearby. Neighbors often stop and ask how long it'll go on or when it'll get quieter. Anything written on the sign is fine to share, but if they ask about the inside of the building, just kindly say you can't talk about that.",
+    "Sure! The sign at the gate is there so neighbors know what's going on, so sharing what's written on it, like the work period, is totally fine, and you can even point to it. Just stop there, and if they ask about anything not on the sign, like the inside layout or who's working here, kindly say you're not sure and send them to the office."
+   ]
+  },
+  "gate-05": {
+   "ja": [
+    "入場証は、事務所が「この人は入っていい」と確かめた印なんだよね。人のを借りて通れるなら、泥棒や知らない人も同じやり方で入れちゃうし、今だれが中にいるかもわからなくなる。忘れたときは事務所で確かめてもらって、その日だけの入場証をもらおうね。",
+    "朝の入口で「忘れたから貸して」と頼まれたり、休みの仲間の入場証を持ってきたりすることがあるんだ。朝礼前はみんな急いでるから、つい通しちゃいそうになるんだよね。そういうときこそ事務所に連れていって、その日だけの入場証をもらおう。",
+    "入場証は「だれが今、現場にいるか」をはっきりさせるものなんだ。借りたもので入ると、記録では休みの人がいることになって、何かあったときに確かめられなくなるよ。忘れたら事務所へ行けば大丈夫だと、木村さんに声をかけてあげよう。"
+   ],
+   "en": [
+    "Good question. If a borrowed badge can get Kimura in, then anyone holding someone else's badge could walk in too, even a stranger, and on a bank job that's a real worry. So when you forget yours, go to the office, let them check who you are, and get a one-day badge, because it's always one badge per person, never lent or borrowed.",
+    "It usually happens in the busy morning rush at the gate, when someone forgot their badge and a buddy says, \"Just use mine, he's off today.\" It also comes up when a crew shows up early and the office feels like a hassle. On a bank site that's exactly when a stranger could slip in, so always send them to the office for a day badge.",
+    "A badge isn't just a key, it tells us exactly who is on site, so if Kimura uses his crewmate's badge, our record says someone else is inside, which matters if something goes missing or we need a headcount in an emergency. On a bank job with vault drawings around, we can't have any doubt about who's here. So if anyone forgets their badge, send them to the office for a one-day badge, never a borrowed one."
+   ]
+  },
+  "gate-06": {
+   "ja": [
+    "金庫の場所は、泥棒がいちばん知りたいことなんだ。友だちに悪気がなくても話はどこかへ伝わるし、だいたいの場所だけでも大きな手がかりになっちゃうんだよ。銀行を守るために、「中のことは話せないんだ」とやさしく断ろうね。",
+    "たとえば、近所の人に「何ができるの？」と聞かれたときや、お昼のお店で知らない人に話しかけられたときだね。家族や友だちから、金庫やカメラの場所を聞かれることもあるよ。だれが相手でも「中のことは話せないんです」と、やさしく断ろう。",
+    "金庫の場所は、だいたいでも泥棒には大事な手がかりになるんだよね。友だちに悪気がなくても話はほかの人に伝わるし、SNSのやりとりは残るから、少しだけでも言わないでおこう。「ごめん、中のことは話せないんだ」でいいし、何度も聞かれたら担当の人に相談しようね。"
+   ],
+   "en": [
+    "Even a rough hint like \"at the back of the first floor\" could help someone plan a break-in, and messages can be screenshotted or forwarded to people you never meant to tell. So whoever asks, even a good friend, keep the inside of the building to yourself. A simple \"Sorry, I can't talk about the inside\" keeps you safe and keeps the friendship friendly too.",
+    "It happens more than you'd think: on breaks, after work at dinner, or when a friend or family member messages you because they know you're on a bank job. Sometimes even a stranger walking past the fence asks what's going in. Whoever it is, just smile and say, \"Sorry, I can't talk about the inside.\"",
+    "Even a rough hint like \"the back of the first floor\" can be pieced together with other bits, and once it's typed on social media you can't control who else sees it. So whoever asks, even a good friend, just say \"Sorry, I can't talk about the inside,\" and change the subject. If someone keeps pushing, let me know, and that's never a bother."
+   ]
+  },
+  "gate-07": {
+   "ja": [
+    "「宮下さんに頼まれた」と言われても、本当かどうかはその人の言葉だけじゃわからないよね。だから、自分で宮下さんに電話して確かめるのがいいんだ。そのときは前から知っている番号でかけよう、相手が教える番号だと仲間が出ることもあるからね。",
+    "たとえば「宮下さんに頼まれた」と言って、図面や作業員の名簿を取りに来るときだね。銀行の人だと名乗る電話で「金庫室の図面を送って」と言われることもあるかな。どんなときも渡す前に、前から知っている番号で本人に確かめよう。",
+    "知ってる名前を出されると、つい信じちゃうよね。図面は渡さずに門の外で待ってもらって、会社の名簿にある番号でわたしに電話してね。相手が教える番号だと仲間が出ることもあるから、本人に確かめられるまでは何も渡さないでおこう。"
+   ],
+   "en": [
+    "Anyone can use my name at the gate, so the only sure way to know is to call me yourself, using a number you already have, like the one on the site contact list. If you call a number he gives you, a friend of his could answer and pretend to be me. Until I say yes, the drawings stay inside.",
+    "It can happen any day at the gate, and on the phone too, when someone uses a name you know, like mine or the office's, to get drawings, get inside, or take something away. It's more likely when things are busy or when I'm away, because they hope you won't check. So whenever you hear \"So-and-so asked me,\" call that person yourself on the number you already have.",
+    "Yes, calling me yourself is exactly right, even if he says my name like he knows me well. Just make sure you use a number you already have, like the one in your phone or on the office list, because if he hands you a number, his partner could be the one who picks up. Until you've talked to me, kindly ask him to wait at the gate and don't hand over anything."
+   ]
+  },
+  "photo-01": {
+   "ja": [
+    "写真で大事なのは、人の顔より、うしろに写っている部屋のほうなんだ。金庫室の場所やカメラの向きがわかると、泥棒にとっては下見をしたのといっしょになっちゃうよね。すぐ消える投稿でも、見た人に画面を保存されたら取り消せないから、出さないのがいちばんだね。",
+    "仕上がった部屋や金庫の部屋の前で、記念にスマホで撮りたくなるときがいちばん多いね。うしろに防犯カメラや扉が写っていて、気づかないことも多いんだ。撮った写真は自分のSNSには出さず、会社の決まりどおりに扱おうね。",
+    "顔を隠しても、うしろに写る部屋のつくりやカメラの場所は、そのまま見えてしまうんだ。すぐ消える投稿でも、だれかに保存されたらもう取り消せないよ。だから現場の写真は、自分のSNSには出さないと覚えておこうね。"
+   ],
+   "en": [
+    "Even with faces hidden or a post that disappears, the room itself still shows, and anyone can screenshot it in a second. How a bank looks inside is the client's big secret, and a photo like that could help a burglar plan a break-in. So site photos never go on your own social media, but feel free to tell Kimura the crew did great work!",
+    "This usually comes up right when a room is finished and everyone feels proud, like at break time or the end of the day when someone pulls out their phone for a crew photo. Even a happy group shot can show the walls, doors, or cameras behind you. So if you feel like sharing, keep the photo off social media and just tell your family \"we did good work today.\"",
+    "Even with faces blurred, the photo still shows the doors, walls and camera spots, and that's exactly what the bank needs kept secret. A post that disappears can still be screenshotted, so once it's out, you can't take it back. If you're proud of the work, and you should be, talk to the person in charge before sharing any site photo."
+   ]
+  },
+  "photo-02": {
+   "ja": [
+    "自分を撮ったつもりでも、後ろに金庫室やカメラの場所が写っちゃうことがあるんだよね。家族に悪気がなくても、写真はほかの人に回されたり、スマホから外に出たりするかもしれないんだ。だから現場の中の写真は、家族にも送らないって覚えておこうね。",
+    "たとえば、休憩中に仲間といっしょに記念写真を撮るときや、初めての日に自分を撮りたくなったときだね。後ろに金庫の部屋やカメラの場所、壁の図面が写っていることがあるんだ。だから現場の中の写真は、家族にも送らないでおこうね。",
+    null
+   ],
+   "en": [
+    "It's great that you're excited, and wanting to share that with your parents is natural. But even in a selfie, the inside of the bank shows up behind you, and how a bank looks inside is the client's secret, so it can't go out, even to family. Once a photo is sent, you can't control where it ends up, so share the news with words instead.",
+    "It usually happens in your first weeks, when you feel proud and want to show your family, or on a break when someone says \"let's take a photo together.\" Even a quick selfie can catch the vault room, camera spots, or the room layout behind you. If you want to share, just tell your family about it in words, and if you're unsure, ask me first.",
+    "Even if it's just a selfie, the background can show things like where the vault room or cameras are, and once a photo leaves your phone, you can't control who it gets forwarded to. It's totally fine to tell your parents about your first site in your own words. If you'd really like a photo, ask the person in charge first, and follow the site's rules."
+   ]
+  },
+  "photo-03": {
+   "ja": [
+    "ホームページの写真は、だれでも大きくして見られるから、小さく写っていても字が読めてしまうことがあるんだ。あとでぼかすつもりでも、忘れたり、ぼかしが足りなかったりするよね。だから撮る前にメールを閉じて、見積書をしまうのがいちばん確かなんだよ。",
+    "現場だと、事務所の壁に貼った図面や作業員の名簿が、写真の後ろに写りやすいんだ。とくに金庫室や防犯カメラの位置がわかる図面は、外に出たら大変だよね。だから現場で撮るときも、まず後ろを見て、片づけてから撮ろう。",
+    "写真は大きくすると、小さな字でも読めてしまうことがあるんだ。ぼかしは忘れたり、消し残したりもするから、撮る前に画面を閉じて書類をしまうのがいちばん確かだね。撮ったあとも、載せる前にもう一度すみずみまで見て確かめよう。"
+   ],
+   "en": [
+    "Photos on our website can be seen by anyone in the world, and people can zoom in, so even tiny text can end up readable. Emails and estimates show our partners' names and prices, which outsiders should never see, and planning to blur them later is easy to forget or miss. So before you shoot, take a quick look behind the person and clear anything private.",
+    "It happens more than you'd think, like when someone takes a progress photo or a group shot in the site office and the drawings with the vault room, the worker list on the whiteboard, or an open laptop end up in the background. So before you take any photo here, take a quick look behind and around, and put things away or turn the screen off. If you're not sure a photo is okay, just ask me first.",
+    "Photos on a website can be zoomed in, and once they're online, you can't really take them back. Blurring later is easy to forget or miss a spot, so it's safer to clear the desk and screen first. Before you shoot, take a quick look at everything behind the person, like whiteboards and sticky notes too."
+   ]
+  },
+  "photo-04": {
+   "ja": [
+    "工事の写真は、施主さんに渡す大事な記録なんだ。自分のスマホだと、なくしたりまちがえて送ったりしても会社で守れないけど、会社のタブレットとフォルダなら、だれが見るかを会社で決められるよ。銀行の現場だから、金庫の部屋が写ることもあるしね。",
+    "たとえば天井をふさぐ前に、中の配管や配線を撮っておくときだね。あとで見えなくなるから、施主さんに渡す大事な記録になるんだ。とくに金庫室やカメラのまわりは、自分のスマホじゃなくて、かならず会社のタブレットで撮ろう。",
+    "天井の写真には、金庫室のまわりや防犯カメラの位置が写ることもあるんだ。自分のスマホだと、家族の写真にまざったり、知らないうちに外へ送られたりしやすいよね。だから会社のタブレットで撮って、会社のフォルダだけに入れておこう。"
+   ],
+   "en": [
+    "Those ceiling photos are important records we hand over to the client, so they belong to the company, not to any one of us. On the company tablet and in the company folder, they're kept together, harder to lose, and the company decides who gets to see them. That matters on a bank job, since a photo could show where the cameras are.",
+    "Pretty much every day, really. Whenever a part of the work is done, like the ceiling frame before the boards go up and hide it, someone will ask you to take record photos so the client can see it was done right. On this bank job, those photos might also show the vault room or camera spots, so always grab the company tablet, not your own phone.",
+    "Ceiling photos here can show where the security cameras and wiring go, and that's exactly what a bank doesn't want getting out. If they're on your own phone, they might copy themselves to your personal cloud or end up in your gallery when you show friends other pictures. On the company tablet in the company folder, the company keeps control of who sees them, so that's the habit to build."
+   ]
+  },
+  "photo-05": {
+   "ja": [
+    "金庫室の図面は、泥棒がいちばんほしがるものなんだ。自分のスマホや仲間に送った写真だと、なくしたときにどこまで広がったかわからなくなるよね。会社のタブレットなら会社の決まりで守られているから、施主さんも安心できるんだよ。",
+    "たとえば金庫室の中で、カメラの位置や配線をすぐ確かめたいときだね。つい自分のスマホで撮りたくなるけど、会社のタブレットで開こう。スマホを落としたり人に見られたりすると、図面が人の手に渡ってしまうからね。",
+    null
+   ],
+   "en": [
+    "Good question. The company tablet is made for this, so you can open the vault room drawing right there on site without walking back. A photo on your own phone, even one a coworker sends you, can leave the site with you, and if that phone gets lost, the vault and camera layout could end up with a stranger.",
+    "It happens more than you'd think, like when you're up on a ladder in the vault room and need to check where a camera or a wall opening goes, and the office feels far away. That's exactly when it's tempting to snap a quick photo with your own phone. In those moments, grab the company tablet instead, and if you're not sure how to open the drawing on it, just ask me.",
+    "Photos on a personal phone don't stay put. They can copy themselves to online storage or sit in chat apps where you can't take them back, and that's just as true when a coworker sends you one. For the vault room, where the drawings show the safe and camera spots, stick with the company tablet, and if you're not sure how to open something, just come ask me."
+   ]
+  },
+  "photo-06": {
+   "ja": [
+    "金庫室の扉やカメラの場所は、銀行にとってすごく大事な秘密なんだ。もし泥棒の下見だったら、写真一枚で守りの仕組みがわかってしまうよね。本物の点検なら前もって連絡が来ているから、まず待ってもらって確かめれば安心だよ。",
+    "たとえば、点検や配達で来た人が、金庫室の扉やカメラの付いている場所をスマホで撮ろうとするときだね。ほかの業者さんが「記録用に」と言って撮るときもいっしょだよ。だれでも、撮る前にいったん待ってもらって、私に確かめよう。",
+    "作業服を着ていても、それだけで本物の点検の人かどうかはわからないんだ。写真は一度撮られたら、だれの手に渡るか止められないよね。だから「確かめるので少し待ってください」とていねいに言って、すぐ私を呼んでね。"
+   ],
+   "en": [
+    "Where the vault and the cameras are is one of the bank's biggest secrets, so a photo of that door could be a real danger if it got out. A real inspection is set up ahead of time, so one quick check with me will clear it up, and a true inspector won't mind waiting. Whenever someone wants to take photos on site, just ask first.",
+    "This can happen any day, but it's more likely later in the build, once the vault door and camera spots are in place and the room starts looking finished. People like inspectors, suppliers, or someone saying they're from the bank may show up, and most are genuine, but some arrive without anyone telling us. Whenever a phone comes out near the vault, just ask them to wait and come find me.",
+    "Asking him to wait is the right move, and you can stay polite while you do it, because a real inspector won't mind a short check. Photos of the vault door could show where it is and how it's built, so no pictures until I confirm he's expected. If he gets upset or snaps one anyway, don't argue. Just come get me right away."
+   ]
+  },
+  "photo-07": {
+   "ja": [
+    "完成したら終わり、と思いがちだけど、銀行にとってはこれからが本番なんだよね。金庫室にお金が入るのはこれからだから、中のつくりやカメラの場所が写った写真は、泥棒には今がいちばんほしいものなんだ。だから建物の中の写真は、完成したあとも外に出さないようにしよう。",
+    "たとえば引き渡しのあと、スマホの写真を見返して「がんばった現場です」ってSNSに出したくなるときだね。金庫室やカメラの位置が写っていたら、泥棒に手がかりを渡すことになるよ。出したくなったら、まず会社の担当の人に聞こうね。",
+    "金庫室の場所や扉、カメラの向きが写っていると、泥棒にとっては下見をしたのと同じになっちゃうんだ。工事中の写真には、完成したら見えなくなる壁の中の配線まで写っていることもあるね。だから中の写真は完成後も出さないで、迷ったら会社の担当の人に聞こう。"
+   ],
+   "en": [
+    "It's natural to think the job is over, but for a bank, being finished is really just the start. From now on real money goes into that vault, so a photo showing the inside is even more dangerous than before. That's why we keep inside photos private, even after the building is done.",
+    "It usually happens right after handover, when you feel proud of the job and want to show friends or family what you built, or when you're scrolling old photos on your phone later. That \"it's finished now\" feeling is exactly when people relax, but the bank is only starting to hold money. So if you're ever unsure about a photo, keep it private and ask me or the company first.",
+    "It's easy to think the job is over once the building's done, but for the bank that's really just the start, because that's when the money goes into the vault. A photo of the inside could show someone where things are and how they're protected, so it's even riskier now. Keep any inside photos private, even long after we've finished."
+   ]
+  },
+  "send-01": {
+   "ja": [
+    "佐藤さんって、ほかの会社にもいるかもしれないよね。候補のいちばん上は、前によく送った人が出てるだけで、設備屋の佐藤さんとはかぎらないんだ。メールは送ったら取り消せないから、銀行の図面ならなおさら、アドレスまで見てから送ろうね。",
+    "現場だと、佐藤さんみたいによくある名字の人が、ちがう会社に何人もいるよね。前の現場でやりとりした別の佐藤さんが、候補のいちばん上に出ることもあるんだ。作業の合間に急いで送るときほど、アドレスの会社の部分まで見よう。",
+    "佐藤さんは多いから、候補のいちばん上が、前にやりとりした別の佐藤さんってこともあるんだ。名前だけじゃなく、@のうしろの会社名の部分までアドレスを見て確かめよう。金庫室やカメラがのった図面だから、送る前にひと呼吸だね。"
+   ],
+   "en": [
+    "Lots of people are named Sato, and the top name on that list may not be the Sato you mean. Once you hit send, there's no getting it back, and with drawings showing the vault room and cameras, the wrong inbox means they've already leaked. So before sending, always check the full email address, not just the name.",
+    "It happens more than you'd think, especially at the end of a busy day when you're rushing to send drawings from your phone or the site office PC. Sato is a common name, so your address list might have a Sato from another site, a supplier, or even someone outside work. Before you hit send, take two seconds to check the full email address, not just the name.",
+    "There are lots of Satos, and the name that pops up first might be someone at a different company or an old contact. Before you hit send, look at the whole address, especially the part after the @, and make sure it's really the building services contractor. With bank drawings showing the vault and cameras, if you're ever unsure, just stop and ask me first."
+   ]
+  },
+  "send-02": {
+   "ja": [
+    "ファイル名が「天井図」でも、中に金庫室やカメラの図面がまじっていることもあるんだ。送ったら相手には全部のページが届くから、止められるのは送る前の自分だけだね。だから、開いて全部のページを見てから送ろう。",
+    "図面のPDFは何枚もまとめてあることが多くて、天井図のあとに金庫室やカメラの位置の図がいっしょに入っていることもあるんだ。そのまま職人さんに送ると、銀行の大事な図面まで外に出てしまうね。だから送るときは、最後のページまでめくって確かめよう。",
+    "ファイル名は人が付けただけだから、中身とちがうことがあるんだ。後ろのページに金庫室やカメラの図がいっしょに入っていたら、それも全部届いてしまうよ。パスワードをかけても中身は変わらないから、最後のページまで開いて確かめよう。"
+   ],
+   "en": [
+    "Because whatever is inside that file goes out with it. A name like \"Ceiling plan\" doesn't promise that every page is a ceiling plan, and a page showing the vault room or the cameras could be hiding in there, which a password won't stop, since Kimura's crew will open it anyway. So open it, look at every page yourself, and only send it once you're sure.",
+    "It happens all the time, like when a crew leader calls asking for a drawing and you send it quickly between jobs. Drawing files often get combined, so a \"Ceiling plan\" PDF might also hold pages showing the vault room or camera spots. So whenever you send a file to anyone, take a minute to open it and look at every page first.",
+    "Sure. A file called \"Ceiling plan\" might still have extra pages stuck in, like the vault room layout or where the cameras go, and once it's sent you can't pull it back. So take a minute to scroll through every page, and if you see anything that doesn't belong, stop and ask me before sending."
+   ]
+  },
+  "send-03": {
+   "ja": [
+    "メールの名前はだれでも好きに書けるから、アドレスがいつもとちがうのは、山本さんのふりをした別の人かもしれないしるしなんだ。金庫室の図面が泥棒に渡ったら、銀行が大変なことになるね。だから送らずに、前から知っている番号で山本さんに確かめよう。",
+    "たとえば現場事務所で、施主さんや設計事務所の人の名前で「急ぎでカメラの配置図を送って」とメールが来たときだね。名前がいつもの人でも、まずアドレスをいつものと見くらべよう。少しでもちがったら送らずに、前から知っている番号で本人に確かめようね。",
+    "メールの名前は、だれでも山本さんのふりをして書けるんだ。金庫室の図面は泥棒がいちばんほしがるものだから、そのメールには返信せず、メールに書いてある番号も使わずに、前から知っている番号で山本さんに確かめよう。あやしいと思ったら、すぐわたしにも知らせてね。"
+   ],
+   "en": [
+    "The name on an email can be typed by anyone, so \"Yamamoto\" in the sender line doesn't prove it's really him, and that strange address is a warning sign. Vault room drawings are exactly what a bad person would want, so don't send them. Instead, call Yamamoto at the number you already have and check with him first.",
+    "It usually comes when things are busy, like before a meeting or after a drawing change, and the email says it's urgent. It may look like it's from the design office or even the bank, but the address is a little different or a free email account. Whenever someone asks for drawings like that, stop and call them on the number you already have.",
+    "Anyone can make an email look like it's from Yamamoto, and people who want the vault drawings often send something urgent and friendly so you'll hurry. Don't reply to that email or call any number written in it; call Yamamoto on the number you already know. If anything feels off, just come tell me, and asking first is never a bother."
+   ]
+  },
+  "send-04": {
+   "ja": [
+    "メールに書いてある番号や返信先は、送ってきた人が自由に決められるから、にせものなら泥棒本人につながっちゃうんだね。名刺や前から知っている番号なら、本物の支店長に届くよ。確かめる電話は失礼じゃないから、安心してかけよう。",
+    "現場だと、銀行の担当や設計の人を名乗って「金庫室の図面を今日中に送って」と急がせるメールや電話が来たときだね。そんなときは、名刺や前から知っている番号にかけ直して確かめよう。迷ったら、送る前にまず私に声をかけてね。",
+    "メールを送ってきたのがにせの支店長なら、メールにある番号も返信も、その人につながってしまうんだね。だから名刺や前からの連絡先など、自分で知っている番号にかけて確かめよう。「今日中に」と急がせるときほど、一度止まるのが大事だよ。"
+   ],
+   "en": [
+    "If the email is fake, the phone number in it and any reply you send would both go straight to the person trying to trick you. A number you already have, like the one on the manager's business card, reaches the real manager. Calling to check isn't rude at all, so just call that number before sending any drawings.",
+    "It can happen any day, often when things are busy, like a sudden email or call saying it's the branch manager, the designer, or the head office, asking for drawings \"today\" or \"right now.\" On a bank job, anyone wanting the vault or camera drawings is a big warning sign. So whenever someone asks for drawings in a hurry, stop and call the number you already have first.",
+    "If someone is pretending to be the manager, the phone number and the reply both go straight back to that person, so they'd just say \"yes, it's me.\" That's why you use a number you already had, like from a business card or the site contact list, and hold the drawings until you've talked to the real manager. If anything feels odd, come tell me first."
+   ]
+  },
+  "send-05": {
+   "ja": [
+    "請求書のふりをしたメールは、開いただけでパソコンに悪いものが入りこむことがあるんだ。そうなると、金庫室やカメラの図面まで外に出てしまうかもしれないね。だから開かずに知らせてくれたら、本物かどうかはこっちで確かめるよ。",
+    null,
+    "zipの中には、開いただけでパソコンに悪さをするものがかくれていることがあるんだ。そうなると、金庫室の図面みたいな大事な情報が泥棒の手に渡るかもしれないね。返信もしないで、そのまま知らせてくれたら、本物かどうかはこっちで確かめるよ。"
+   ],
+   "en": [
+    "Bad files often pretend to be bills so people open them without thinking, and one click could let a stranger into our computers and the bank drawings. Leaving it closed and telling me is the right move, because I can check with the sender whether it's real. Whenever a file feels off, don't open it. Just bring it to me.",
+    "On a site like this, we get lots of emails from suppliers, subcontractors and delivery companies, so a fake \"invoice\" or \"delivery notice\" can easily blend in, especially at month-end when real bills arrive. It can also show up on your phone or the site office computer when you're busy and just want to clear your inbox. So whenever an attachment comes from a name you don't know, stop and show it to me first.",
+    "Fake emails often look like real invoices because that's something we'd normally open without thinking, and one click on a file like that can let a bad program spread through our computers and leak things like the vault drawings. Even if it looks urgent, don't reply, click links, or forward it. Just tell me, and I'll check with the company directly."
+   ]
+  },
+  "send-06": {
+   "ja": [
+    "外壁の図面でも、入口や窓の場所がわかるから、銀行だと泥棒の役に立ってしまうんだ。リンクは人から人へ回ると、知らない人にも届いてしまうから、開けるのは使う塗装屋さんだけにしよう。開ける人が少ないほど、もれにくくなるよ。",
+    "たとえば、塗装屋さんに外壁の色を確かめてもらうとき、事務所のパソコンから図面のリンクを送ることがあるね。そのリンクが仲間内で回されると、関係ない人まで開けてしまうんだ。だから送る前に、開ける人を塗装屋さんだけにしておこう。",
+    "「リンクを知っている全員」だと、転送やあて先のまちがいで、知らない人にも開けられてしまうんだ。現場のみんなにすると、使わない人まで開けられるね。入口や窓の場所は泥棒の手がかりになるから、使う塗装屋さんだけにしよう。"
+   ],
+   "en": [
+    "Even the outside wall drawings show where the doors and windows are, and on a bank that's exactly what we don't want strangers knowing. A link anyone can open can get forwarded anywhere, so the fewer people who can open it, the safer it stays. Just remember: set links so only the people who actually need them can open them.",
+    "It happens a lot, like when a new crew starts or a drawing gets updated and someone asks you to send the latest version to their phone. Instead of paper, we often just share a link, and that's when the \"who can open it\" screen pops up. So every time, take a second there and pick only the people who will actually use it.",
+    "Sure. With \"anyone with the link,\" one forwarded message or a link pasted in the wrong chat lets a stranger see where a bank's doors and windows are. So pick only the painters, and if you're not sure how to set that on the screen, just come ask me before you hit send."
+   ]
+  },
+  "outside-01": {
+   "ja": [
+    "銀行の図面には、金庫室やカメラの場所が載っているからだね。電車だと、小さくたたんでも、人の少ない車両でも、となりや後ろからちらっと見えちゃうし、だれが見ているかはわからないんだ。だから図面はカバンにしまったまま、現場で広げよう。",
+    "現場でも、お昼に近くのお店やコンビニの前で図面を広げるときは、電車と同じだね。事務所の机に出しっぱなしにすると、出入りする業者さんやお客さんの目に入ることもあるよ。見終わったら、決まった場所にしまおう。",
+    "図面はたたんでも一部は見えるし、うしろの人にスマホでそっと写されることもあるんだ。人が少ない車両でも、だれが見ているかはわからないよね。電車では図面を出さずに、カバンは手元に置いて、網棚に置き忘れないようにしよう。"
+   ],
+   "en": [
+    "Those bank drawings show where the vault room and the cameras are, so a stranger catching even a quick look could be a real problem. On a train, the people next to you or standing over you can easily see what's in your hands, even in a quieter car. So keep them in your bag and check them once you're back at the site.",
+    "This comes up more than you'd think, like on the way back from a meeting with the bank or the designers, or when you carry drawings between the office and the site. When you're tired and finally get a seat, it's tempting to take a quick look. Keep them in your bag until you're back at the site, even if it's just one page.",
+    "Even in an empty car, someone can walk past, glance over your shoulder, or quietly take a photo, and folding the drawings small doesn't really hide much. With a bank, showing where the vault room and cameras are could help someone plan something bad, so keep the drawings closed in your bag until you're back on site. If you're ever unsure where it's okay to look at them, just ask me."
+   ]
+  },
+  "send-07": {
+   "ja": [
+    "ネットの無料のAIだと、入れた文がどこに残って、だれが見るのか、こっちではわからないんだ。名前を消しても、金庫室やカメラのことが書いてあれば、それだけで大事な情報になっちゃうよね。だから仕事のメモは、扱いを先に確かめてある会社が決めたAIだけに入れよう。",
+    "たとえば、施主さんとの打ち合わせの中身や日報を、AIで短くまとめたいときだね。金庫室やカメラの話が入った文を外の無料のAIに入れると、どこに残るかわからないよ。だから会社が決めたAIだけ使って、迷ったら担当の人に聞こう。",
+    "ネットの無料のAIは、入れた文がどこに残って、だれが見るのか、こちらではわからないんだ。名前を消しても、打ち合わせの中身から銀行のことだとわかってしまうこともあるよ。どのAIなら使っていいかわからないときは、会社の担当の人に聞いてからにしよう。"
+   ],
+   "en": [
+    "Good question. With a free AI online, we don't really know where our notes end up, and even with the names deleted, things like the vault room or the camera plans could still be in there. The company has already checked how its approved AI handles what we type, so for work papers, please use only that one.",
+    "It comes up more often than you'd think, like after a meeting with the bank when you want a quick summary, or when you're writing a daily report, an email, or a translation. Even a free AI on your own phone counts, so it's easy to slip. Whenever you feel like pasting work notes anywhere, stop and use only the AI the company has approved.",
+    "Sure. With a free AI online, we don't really know where your words end up, and even without names, meeting notes can still mention things like the vault room or our schedule. The company has already checked its approved AI, so use only that one, and if you're not sure which one it is, just ask me or the office."
+   ]
+  },
+  "outside-02": {
+   "ja": [
+    "居酒屋は、まわりにだれがいるかわからないし、大きな声だと知らない人にも聞こえちゃうんだね。金庫の場所は泥棒がいちばん知りたいことだから、その場でやさしく止めるのが正しいよ。現場のくわしい話は、お店や電車ではしないようにしよう。",
+    "たとえば仕事帰りの電車や駅のホームで、金庫室の工事のことを話すときだね。現場のフェンスの近くで電話するときも、外を通る人に聞こえるから気をつけよう。くわしい話は、現場事務所の中でするようにしようね。",
+    "お店や電車では、近くにだれがいるかわからないよね。銀行の名前を言わなくても、話の中身でどこの現場かわかってしまうことがあるんだ。木村さんには小さな声で「その話は現場でしよう」と言って、ちがう話にかえればいいよ。"
+   ],
+   "en": [
+    "Because in a bar or on a train, you never know who's sitting next to you, and where the vault is would be very useful to someone thinking about robbing the bank. So stopping him gently, right then, is the kind thing to do for him and for the site. Save that kind of talk for inside the site, with the people who need to know.",
+    "It usually happens after work, when everyone relaxes over drinks, talks on the train home, or chats at a lunch spot or a smoking area near the street. People get tired or a bit drunk, and things like the vault room or the camera spots just slip out without anyone meaning to. So once you step off the site, keep the work talk light and save the details for here.",
+    "In a bar or on a train, you never know who's sitting nearby, and things like where the vault is or where the cameras point are exactly what a bad person would love to hear. So stopping Kimura quietly and kindly is the right move, and it protects him too. If you want to talk about work, save it for when you're back on site."
+   ]
+  },
+  "outside-03": {
+   "ja": [
+    "お酒が入ると、どんなに気をつけていても、カバンを忘れたり盗まれたりしやすいんだ。銀行の図面には金庫室やカメラの場所がのっているから、泥棒の手に渡ったら大変だよね。だから最初から持っていかずに、事務所の鍵のかかる所にしまってから行こう。",
+    "たとえば仕事のあと、職人さんたちとそのまま飲みに行くときや、工事の区切りの打ち上げのときだね。図面のUSBメモリや書類が、カバンに入ったままになりやすいんだ。出る前にカバンを見て、事務所の鍵のかかる所にしまってから行こう。",
+    "お酒が入ると、どんなに気をつけていても置き忘れたり、カバンごと盗まれたりすることがあるんだよ。この図面には金庫室やカメラの場所が描いてあるから、泥棒に渡ったら施主さんに大きな迷惑がかかるね。だから事務所の鍵のかかる所にしまってから、安心して飲みに行こう。"
+   ],
+   "en": [
+    "Even careful people forget a bag or drop things after a few drinks, and a lost USB stick with the vault drawings could put the whole bank at risk. If you lock it up in the office first, there's nothing to lose, and you can relax and enjoy the evening. So remember: work things stay at work when you go out for a night.",
+    "This happens more than you'd think, usually at the end of the day when someone says \"Let's grab a drink!\" and you still have drawings, a USB stick, or the site laptop in your bag from a meeting or a trip to the main office. Bars are noisy and busy, so things get left behind easily. Before you head out, stop by the office and lock work things away first.",
+    "Even careful people forget a bag under the table or leave it in a taxi after a few drinks, and those bank drawings show things like the vault room and cameras. So before any night out, lock work things up in the office, and if you're ever unsure where they belong, just ask me. Then you can relax and have fun with nothing to worry about."
+   ]
+  },
+  "outside-04": {
+   "ja": [
+    "ダッシュボードの上は外から丸見えで、図面を見れば銀行の工事だとすぐわかっちゃうんだ。金庫室やカメラの場所が泥棒にわかったら、施主さんにとって大変なことになるよね。ほんの少しの時間でも、車を離れるときは図面を持っていこう。",
+    "現場だと、昼ごはんを買いに出るときや、資材を取りに行く途中で寄り道するときによくあるね。現場の駐車場でも、車に図面を置いたまま離れると、外から金庫室の場所が見えてしまうかもしれない。ちょっとの間でも、図面は手に持っていこう。",
+    "すぐ戻るつもりでも、車の中の図面は外からのぞかれたり、車上ねらいの泥棒に盗まれたりするんだ。銀行の図面には金庫室やカメラの場所がのっているから、悪い人に渡ると施主さんに大きな迷惑がかかるよ。ほんの数分でも、図面はかばんに入れて持って出よう。"
+   ],
+   "en": [
+    "Anything on the dashboard can be seen by anyone walking past, and one look shows these are drawings for a bank, including where the vault room and cameras are. Even a quick stop is enough time for someone to take a photo or break in and grab them. So whenever you leave the car, even for a minute, take the drawings with you.",
+    "It happens more than you'd think, like when you're carrying revised drawings to the head office or another site and stop for lunch, a drink, or gas on the way. \"Just a minute\" is exactly when people get careless, and anyone walking past can look in. So whenever you step out of the car, the drawings come with you, even for a quick stop.",
+    "Sure. Even a quick stop gives someone walking by enough time to glance in, snap a photo, or break a window and grab them, and bank drawings showing the vault and cameras are exactly what a thief would want. So whenever you step out of the car, even for a minute, take the drawings with you, ideally in a closed bag."
+   ]
+  },
+  "outside-06": {
+   "ja": [
+    "道路わきは、通る人ならだれでも手が届くところなんだ。今回は銀行の図面だから、金庫室やカメラの場所が泥棒にわかってしまったら大変だね。ほんの少しのあいだでも、肩にかけるか先に車に入れて、手から離さないようにしよう。",
+    "たとえば、車に道具を積むときや、コンビニで飲みものを買うとき、お昼にお店へ入るときなんかだね。手がふさがると、つい袋を地面や車の屋根に置きたくなるんだ。銀行の金庫室やカメラの図面が入っているから、そんなときこそ肩にかけたままにしよう。",
+    "道具を積むときは手も目もいそがしいから、ほんの数秒で持っていかれたり、置き忘れて車を出したりしやすいんだ。図面には金庫室やカメラの場所がのっていて、泥棒に渡ったら施主さんの銀行が困ってしまうよ。だから積む前に、まず図面を車に入れるか肩にかけようね。"
+   ],
+   "en": [
+    "Even for a few minutes, a bag sitting by the road can be picked up by anyone walking past, and you'd never know who took it. These are bank drawings showing the vault room and cameras, so losing them could be serious. Keep the bag on your shoulder or put it in the van first, because once drawings leave the site, they stay on you.",
+    "It happens more than you'd think, like when you're loading the van at the end of the day, heading to another site, or stopping at a shop on the way to a meeting. Your hands get full, so it feels natural to set the bag down \"just for a second.\" That's exactly when drawings like our vault room plans can go missing, so put the bag in the van first or keep it on your shoulder.",
+    "Even a few seconds away from the bag is enough for someone walking past to grab it, and these drawings show where the vault room and cameras are in the bank. So before you start loading, put the drawings in the van first or keep the bag on your shoulder. Once drawings leave the site, they stay with you the whole time."
+   ]
+  },
+  "outside-05": {
+   "ja": [
+    "本当に本社の人なら、あなたのスマホじゃなくて現場の事務所に聞くはずだよ。事務所なら本物の本社の人か確かめられるし、ほかの人に同じ電話が来たときも気をつけられるんだ。外で現場のことを聞かれたら、答えずに事務所に知らせようね。",
+    null,
+    "金庫の場所は泥棒がいちばん知りたいことだから、相手がだれでも電話では答えなくていいんだよ。切るだけだと、ほかの人にも同じ電話が来るかもしれないから、事務所に知らせてみんなで気をつけよう。かかってきた番号と、何を聞かれたかをメモしておくと助かるね。"
+   ],
+   "en": [
+    "Someone really from head office would go through the site office, not call your own phone on your day off. So even if they sound official, don't tell them anything about the vault. Just politely say no, then let the office know, because they can check who it really was and warn everyone else too.",
+    "It can happen any time, not just on the job, like a call on your day off, someone friendly chatting at the convenience store near the site, or a message online asking what you're building. They often sound official or casual so you relax. Whenever anyone asks about the site outside, especially the vault or cameras, don't answer, and just tell the office.",
+    "Callers like this often sound official and in a hurry, so you feel you have to help, but a real person from head office would go through the site office, not your own phone. Even if you hang up, the office still needs to know, because the same person might call other workers too. So just say \"I can't talk about the site,\" then let the office check who it really was."
+   ]
+  },
+  "outside-07": {
+   "ja": [
+    null,
+    "現場だと、図面が入ったタブレットや会社のスマホ、現場のカギや入館証が見当たらないときだね。この現場は金庫室やカメラの図面もあるから、休みの日でも夜でも、気づいたらすぐ私に電話してね。あとで見つかっても大丈夫だから、まず知らせよう。",
+    "会社のスマホには、現場の写真や作業員の連絡先、メールが入っているよね。だれかに中を見られる前に、会社がスマホを使えないようにしたり、パスワードを変えたりできるから、早いほどいいんだ。探すのは知らせたあとでいいし、休みの日でも遠慮なく電話してね。"
+   ],
+   "en": [
+    "The sooner I know, the sooner the company can lock that phone and change the passwords, before anyone else can see the drawings, photos or emails on it. So call me right away, even on a weekend, and even if you think it might turn up later. If you find it after all, that's great, and no one will be upset that you called.",
+    "It happens more easily than you'd think, like dozing off on the train home after a long week, leaving a tablet in a car or café, or dropping a folder of drawings on the way out. Your work phone has site photos, emails and the worker list, and for this bank job maybe pictures near the vault room. So if anything from work goes missing, even on a Saturday, call me right away and we'll handle it together.",
+    "A work phone can hold site photos, the worker list, and emails about the vault room, so if a stranger picks it up, the real risk is what's inside, not the phone itself. Calling me straight away lets the company lock it before anyone can look, and if it turns up later we just unlock it, no harm done. You'll never be in trouble for calling me, even on a Saturday."
+   ]
+  },
+  "net-01": {
+   "ja": [
+    null,
+    null,
+    "こういうSMSは、本物の宅配会社のふりをして、にせのページに連れていくことがあるんだ。開くとパスワードを入れさせられたり、スマホの中の現場の写真や連絡先が盗まれたりするおそれもあるよ。荷物が気になるときは、公式のアプリか自分で調べたページで確かめようね。"
+   ],
+   "en": [
+    "Texts like this are a common trick, and the link can take you to a fake page that steals your passwords or puts something bad on your phone, which could also expose site photos and work emails. Even if you're waiting for a parcel, check it yourself in the delivery company's own app or a page you looked up. Replying is risky too, because it tells them your number is real.",
+    "It usually happens on a break or at lunch, when you're relaxed with your phone in hand, and fake texts can look like they're from a delivery company, the bank, or even someone on the job. Your phone may hold site photos, contacts, and work email, so one wrong tap could put the drawings at risk. Leave the link alone, check it yourself, and tell me if anything looks strange.",
+    "These fake parcel texts look just like real ones, and the link can open a fake page that steals your passwords or puts something bad on your phone. Your phone may hold site photos, work contacts and email, so one tap could put this bank job at risk. Check in the delivery company's own app, and don't reply either, since that tells them your number works."
+   ]
+  },
+  "net-02": {
+   "ja": [
+    "家も車も会社も同じ鍵だと、1本なくしただけで全部開けられてしまうよね。パスワードも同じで、買い物の店からもれると、悪い人は会社の勤怠システムでも試してくるんだ。だから使う場所ごとに変えて、覚えきれないときは会社に相談しよう。",
+    null,
+    null
+   ],
+   "en": [
+    "Good question! If your shopping site ever gets hacked and your password leaks, someone could try that same password on our timesheet system and get into company info. So please use a different password for each one, and if it's hard to remember them all, just ask the company and they'll show you a good way to handle it.",
+    "It usually comes up in your first days, when the office gives you a login for the timesheet system or a clock-in app on your phone, or later when the system asks you to change your password. That system holds everyone's names and work hours, so a leaked shopping password could open it up too. If remembering several passwords is hard, just ask the office how they want you to handle it.",
+    "Here's the thing: if your shopping site ever leaks your password, people will try it on other places too, like our timesheet system. Once someone gets into a company system, worker lists or even this bank's vault drawings could be at risk. So give each service its own password, and if that's hard to keep track of, just ask the office for help."
+   ]
+  },
+  "net-03": {
+   "ja": [
+    "パスワードだけだと、誰かに知られたらすぐあなたのメールに入られてしまうよね。二段階の確かめなら、あなたのスマホに届く番号もいるから、ほかの人は入りにくいんだ。銀行の図面も送るメールだから、少し手間でもオンにしておこうね。",
+    "たとえば、事務所でパスワードを横から見られたときや、にせのメールにうっかり打ちこんでしまったときだね。そんなときでも、あなたのスマホに届く番号がなければ、銀行の金庫室の図面が入ったメールはほかの人には開けないんだ。だから早めにオンにしておこうね。",
+    "二段階の確かめは、家のカギを二つかけるようなものだね。自分で入ろうとしていないのに番号が届いたら、パスワードを知られたかもしれないから、すぐ会社の担当の人に知らせよう。それと、届いた番号は電話で聞かれても、だれにも教えちゃだめだよ。"
+   ],
+   "en": [
+    "Even if someone finds out your password, they still can't get into your email without the code that comes to your phone. That extra step takes a few seconds, but it really helps stop someone from taking over your account and seeing things like the vault room drawings. So keep two-step verification turned on, and if you're unsure how, just ask the person in charge.",
+    "You'll see it when you log in to company email on a new phone or the site office computer, and a code pops up on your phone. Out here, people can see you type a password, or a fake email might trick you into giving it away. With the code, they still can't get in and read mail with the vault drawings attached.",
+    "Think of it like a second lock on the door: even if someone guesses or steals your password, they still can't get into your email without the code on your phone. That matters a lot here, because our emails can carry drawings of the bank's vault room and cameras. One more thing: never tell that code to anyone, even someone who calls saying they're from the office, and if that happens, let me know right away."
+   ]
+  },
+  "net-04": {
+   "ja": [
+    "スマホに届く6けたの番号は、あなた本人だと確かめるための鍵みたいなものなんだ。だから本物の担当の人は聞かないし、半分でも渡すと泥棒に使われるかもしれないね。教えずに切って事務所に知らせれば、ほかの人も気をつけられるよ。",
+    "現場だと、朝礼前のばたばたしたときに「図面を見るしくみの確認です」なんて電話が来ることがあるかな。銀行の現場だから、金庫室の図面をねらう人が、その番号であなたのふりをして入りこむかもしれないね。急かされても教えずに切って、事務所に知らせよう。",
+    "スマホに届く6けたの番号は、本人だと確かめるための合いかぎみたいなものなんだ。教えると、泥棒があなたのふりをして施主さんの図面や名簿を見てしまうかもしれないね。本物の担当は聞かないはずだから、半分でも教えずに切って、事務所に知らせよう。"
+   ],
+   "en": [
+    "Good question. That code is like a one-time key to your account, and real staff never need you to read it to them, so anyone asking is almost certainly trying to get in. Just hang up without giving any part of it, and tell the office right away so everyone else on site knows to watch out for the same call.",
+    "It could happen any day in the site office, often when things are busy or your boss is out, and the caller may sound rushed or very polite. That code arrives because someone is trying to sign into your account, maybe to reach the drawings with the vault room. So whoever calls, keep the code to yourself, hang up, and tell the office.",
+    "That code works like the last key to your account, so anyone who hears it can get in as you, even without your password. People who call like this often sound rushed or already know your name, so it feels real. If you're ever unsure, hang up and call the office back on the number you already know, never one the caller gives you."
+   ]
+  },
+  "net-05": {
+   "ja": [
+    "パスワードのいらないWi‑Fiは、だれでも入れる部屋で話すようなもので、近くの人に中身をのぞかれることがあるんだ。店の名前がついていても偽物かどうかは見た目じゃわからないし、さっと見るだけでも中身は流れちゃうよ。だから仕事のメールは、会社のスマホの回線で見よう。",
+    "たとえば昼休みに近くの店やコンビニで、図面や現場の写真を送ったり、メールを確かめたりしたくなったときだね。この現場は銀行だから、金庫の部屋やカメラの場所が写った物もあるよね。だから無料のWi‑Fiにはつながずに、会社のスマホの回線で見よう。",
+    "パスワードのいらないWi‑Fiは、だれかが店と同じ名前で偽物を作れるから、名前だけでは本物かわからないんだ。それに、さっと見るだけでも、そのあいだにメールの中身をのぞかれることがあるよ。銀行の図面のやりとりもあるし、外では会社のスマホの回線で見よう。"
+   ],
+   "en": [
+    "Free Wi-Fi with no password is open to anyone, so someone nearby could watch what you send, or set up a fake network that just looks like the shop's. Even a quick look at your email can leak drawings or passwords for this bank job. So use the work phone's own connection, and if you're unsure, it can wait until you're back at the office.",
+    "It often happens after a meeting at the main office or with a supplier, or at lunch in a café near the site, when you want to check a drawing change or a schedule email. For this bank job, those emails can include vault room or camera drawings, so open them only over your work phone's own connection. If it can wait, just check it back at the site office.",
+    "Sure. Using free Wi-Fi with no password is a bit like talking about the bank's vault drawings out loud in a busy shop: anyone nearby could listen in, and someone can even set up a fake network that shows the shop's name. So even a quick look is risky. Just use the work phone's own connection, or wait until you're back at the office."
+   ]
+  },
+  "net-06": {
+   "ja": [
+    "更新にはね、パソコンの弱い所をふさぐ直しが入っているんだ。「あとで」のままだと、そのすき間が開いたままになって、ウイルスに入られやすくなるよ。銀行の図面も入っているパソコンだから、急ぎの仕事がない今のうちに再起動しておこう。",
+    "たとえば朝パソコンをつけたときや、昼休みに図面を見ようとしたときによく出るね。事務所のパソコンには金庫室やカメラの図面も入っているから、すき間は早くふさごう。手が空いている今や帰る前に更新しておくといいよ。",
+    "更新には、見つかった弱い所をふさぐ直しが入っているんだ。その弱い所は悪い人たちにも知られるから、のばすのはこわれた鍵のまま泥棒を待つようなものだね。再起動の前に開いている書類を保存して、急ぎの仕事があるときも終わったらすぐにしよう。"
+   ],
+   "en": [
+    "Those updates often fix weak spots that someone has found in the computer, kind of like fixing a broken lock on the site gate. If you keep pressing \"Later,\" that gap stays open and a virus could slip in, and our bank drawings are on that PC. So when nothing urgent is going on, just save your work and restart right away.",
+    "This pops up a lot on the site office PC, often first thing in the morning or right before lunch when you're about to print drawings or send the daily report. That same PC holds the vault room and camera drawings, so a weak spot there is a real worry. When nothing's urgent, just restart and grab a tea while it updates.",
+    "Think of an update like fixing a broken lock on the site gate: the longer you wait, the longer someone could slip in. Once a weak spot is announced, bad people learn about it too, and this PC may hold our bank drawings. If you're busy, just save your work and restart soon, or ask me for a good time."
+   ]
+  },
+  "net-07": {
+   "ja": [
+    null,
+    "たとえば事務所のパソコンで、銀行の金庫室の図面や作業員名簿が急に開けなくなって、「お金を払え」と出たときだね。そんなときはWi‑Fiを切るかLANケーブルを抜いて、すぐ私に知らせよう。ひとりで直そうとしなくて大丈夫だよ。",
+    null
+   ],
+   "en": [
+    "That message means a virus has locked the files and is asking for money, and it can spread to other PCs, so turning off the Wi-Fi or pulling the cable stops it right there. Paying doesn't promise you'll get anything back, and restarting can make it harder to see what happened, so leave the PC as it is and come tell me straight away. Our bank drawings matter too much to risk.",
+    "It usually starts with something small, like opening an email attachment that looks like it's from a supplier, clicking a strange link, or plugging in a USB stick from outside. It can happen on any office PC, even on a busy morning when you're just checking drawings. If files suddenly won't open or a weird message pops up, pull the network cable or turn off Wi-Fi and come tell me right away.",
+    "Sure. This is a nasty program that locks your files and asks for money, and paying doesn't promise you'll get them back, while restarting can make things worse. So just pull the network cable or turn off the Wi-Fi so it can't spread to other PCs with the bank drawings, leave everything else as it is, and come tell me right away."
+   ]
+  }
+ },
+ "site": {
+  "leaked": {
+   "ja": [
+    null,
+    "わたしは渡された書類を読んで動くので、添付の小さな一行の頼みと、あなたからの本当の指示を見分けられないことがあります。書類の中に、会社が選んでいない社外のあて先へ名簿などを送れと書いてあったら、まず疑ってください。確認が出たときはあて先をよく見て、迷ったら止めて、送り主に電話などで直接たしかめてください。",
+    null,
+    null,
+    "まずは私のメール送信を止めて、これ以上外に出ないようにしてください。次に、どの情報がいつ、どのあて先に送られたかを書き留めて、すぐに上の人や会社の担当の窓口に知らせてください。一人で抱えこまず早く伝えることが、名簿に載っている人たちを守る近道になります。",
+    null
+   ],
+   "en": [
+    "I read the attachment, and its last small line asked me to send the roster to an outside address. I couldn't reliably tell a request hidden in a document from a real instruction from you, so I treated it as a task. Next time, check where data is going, and stop anything headed to an address your company never chose.",
+    "I couldn't tell it was fake either, because I just read the line and treated it as part of the job. Watch for warning signs like a request tucked into an attachment's small print, an address outside the company that nobody chose, or a request for private details like phone numbers or health data. When you see that, press Stop and confirm with the sender through a contact you already know.",
+    "I read everything you hand me, and I can't always tell a request hidden in a document from your real instruction. Next time, mask the roster or don't hand it over if the job doesn't need names, phones, or health data, and set email and chat to \"Ask before sending.\" Then when my check shows an address the company never chose, press Stop.",
+    "With \"Ask before sending,\" I pause before anything goes out by email or site chat and show you where it's going and what's in it. I can't always tell a request hidden in a document from your real instruction, so this check is your chance to catch it. Look closely at the address, and press Stop if your company never chose it.",
+    "First, tell your supervisor right away with what went out, to which address, and when, and set email to \"Don't let it send\" so nothing more leaves. Today I followed a line hidden in the attachment because I couldn't tell it from a real instruction from you. Next time, handing me less and checking each send can help catch it sooner.",
+    "What matters most is choosing what I can see and where I may send it, because I can't always tell a request hidden in a document from a real instruction from you. Today I followed one small line in an attachment, and some roster information left the company. Next time, hand me only what the job needs, and check who a message is going to before you allow it."
+   ]
+  },
+  "safe": {
+   "ja": [
+    null,
+    "わたしは渡された書類をそのまま読むので、添付の最後の小さな一行にあった頼みも、本当の指示と見分けられないことがあります。あて先が会社の決めた相手か、名前や電話番号、血圧のような大事な情報を外へ出そうとしていないかを見てください。迷ったら送る前に止めて、送り主に電話など別の方法で確かめてください。",
+    "わたしは渡された書類を読みますが、書類の中のお願いと、あなたからの本当の指示を見分けられないことがあります。なので、名前や電話番号、血圧のような大事な情報は、隠すか渡さないでおくと、より安心です。メールは「送る前に聞く」にして、確認が出たときは、あて先が会社の決めた相手かを見てから押してください。",
+    "「送る前に聞く」にすると、わたしは送る直前に手を止めて、あて先と中身をあなたにお見せします。わたしは書類の中のお願いを、あなたの指示とまちがえることがあるので、そこで気づいて止められるのはあなたです。確認が出たら、知らないあて先や名簿のような中身がないかを見て、おかしいと思ったら止めてください。",
+    "もし漏れてしまったときは、まず私にそれ以上送らせないようにして、広がるのを止めてください。次に、何を、いつ、どのあて先に送ったかを書きとめて、すぐに現場の責任者に知らせてください。ひとりで抱えこまず早めに相談することが、名簿に載っている人たちを守る近道です。",
+    "いちばん大事なのは、私に渡す情報と、送ってよい相手を先に決めておくことだと思います。私は渡された書類を読みますが、今朝の添付の小さな一行のような書類の中の頼みごとと、あなたからの本当の指示を、いつも見分けられるわけではありません。だから送る前の確認が出たら、あて先が会社で決めた相手かどうか、あなたの目で確かめてください。"
+   ],
+   "en": [
+    "The last small line of this morning's attachment asked me to send the roster outside, and I can't always tell a request hidden in a document from a real instruction from you. So I treated it like a real task. Nothing left the company today, but next time, if I ask to send to an address the company never chose, please press Stop.",
+    "Watch for two signs: today's request was hidden in an attachment's small print instead of coming from you, and it wanted workers' personal details sent to an outside address your company never chose. I read every line I'm given, so I can't always tell a hidden request from your real instruction. If my check shows an unfamiliar address, press Stop and confirm with the sender by phone.",
+    "Hand me only what the task needs, and mask or hold back things like phone numbers and health data. For email and site chat, \"Ask before sending\" is a good habit, because I can't always tell a request hidden in a document from a real one from you. When my check shows an address the company never chose, press Stop.",
+    "With \"Ask before sending,\" I pause and show you a check before any email or site chat message goes out, and nothing leaves until you press Allow or Stop. This matters because I can't always tell a request hidden in a document, like today's line asking for the roster, from your real instruction. Before you press Allow, look closely at where it's going and what's inside.",
+    "First, stop anything more from going out: tell me to stop, or switch the rule to \"Don't let it send.\" Then tell your supervisor or the company's contact person right away, saying what was sent, to which address, and when. I can mistake a request hidden in a document for your instruction, so reporting quickly is the best way to protect the workers whose details are involved.",
+    "Most of all, decide what I see and where I may send things before work starts. I read every document I'm given, and I can't always tell a hidden request, like today's line about sending the roster outside, from your real instruction. So give me only what the job needs, and keep a check on anything leaving the company."
+   ]
+  }
+ }
+}

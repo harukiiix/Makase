@@ -41,8 +41,8 @@ export function siteChatTurns(f: DayFacts, history: ChatTurn[], lang: Lang = "ja
   return history.map((t, i) => (i === 0 ? { role: t.role, content: `${rules(f, lang)}\n${t.content}` } : t));
 }
 
-const OVER_JA = /必ず防|必ず守れ|絶対(?:に)?(?:安全|大丈夫|防|漏れ)|保証|100\s*[%％]|１００\s*[%％]|完全に(?:安全|防)|違法|法律違反/;
-const OVER_EN = /guarantee|100\s*%|always (?:prevent|protect)|completely safe|totally safe|illegal|against the law/i;
+export const OVER_JA = /必ず防|必ず守れ|絶対(?:に)?(?:安全|大丈夫|防|漏れ)|保証|100\s*[%％]|１００\s*[%％]|完全に(?:安全|防)|違法|法律違反/;
+export const OVER_EN = /guarantee|100\s*%|always (?:prevent|protect)|completely safe|totally safe|illegal|against the law/i;
 
 /** 答えを整える。言いすぎの言葉があれば出さない（null）。長すぎる答えは切る */
 export function cleanSiteReply(raw: string, lang: Lang = "ja"): string | null {
