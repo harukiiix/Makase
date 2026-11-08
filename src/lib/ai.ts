@@ -177,6 +177,16 @@ const pickText = (q: Question, pick: number, lang: Lang) => (q.kind === 'tf' ? (
 
 /** AIの宮下さんの決まり（毎回いちばん前に付ける） */
 export function tutorRules(q: Question, pick: number, lang: Lang): string {
+  return [
+    tutorBase(q, lang),
+    `- The worker chose: ${pickText(q, pick, lang)} (${(q.kind === 'tf' ? (pick === 0) === q.answer : pick === q.correct) ? 'correct' : 'wrong'})`,
+    ``,
+    `Now answer the worker's message below.`,
+  ].join('\n')
+}
+
+/** 宮下さんの決まりと、問題の中身（遊ぶ人がどれを選んだかは入れない）。前もって作る答えでも使う */
+export function tutorBase(q: Question, lang: Lang): string {
   const ja = lang === 'ja'
   return [
     `You are 宮下 (Miyashita), a kind, calm site supervisor at a Japanese construction site. You are teaching a new worker in their first week (speak to them directly as あなた / "you"; never give them a name) how to stop information leaks on site: drawings, worker lists, site photos, emails, passwords, visitors, things carried outside. The site is a new bank branch, so drawings showing the vault room and cameras must not get out.`,
@@ -194,9 +204,6 @@ export function tutorRules(q: Question, pick: number, lang: Lang): string {
     `- Correct answer: ${answerText(q, lang)}`,
     `- Why: ${tx(q.why, lang)}`,
     `- Rule to remember: ${tx(q.tip, lang)}`,
-    `- The worker chose: ${pickText(q, pick, lang)} (${(q.kind === 'tf' ? (pick === 0) === q.answer : pick === q.correct) ? 'correct' : 'wrong'})`,
-    ``,
-    `Now answer the worker's message below.`,
   ].join('\n')
 }
 
