@@ -18,15 +18,18 @@ if (!inPath || !outPath) {
   process.exit(2)
 }
 
-function readKey() {
+/** .env.local から1つの名前の値を読む（値は表示しない） */
+function readEnv(name) {
   if (!existsSync('.env.local')) return null
   for (const line of readFileSync('.env.local', 'utf8').split(/\r?\n/)) {
-    const m = /^\s*(?:export\s+)?ANTHROPIC_API_KEY\s*=\s*(.*)\s*$/.exec(line)
+    const m = new RegExp(`^\\s*(?:export\\s+)?${name}\\s*=\\s*(.*)\\s*$`).exec(line)
     if (m) return m[1].replace(/^(['"])(.*)\1$/, '$2').trim() || null
   }
   return null
 }
-const KEY = readKey()
+const KEY = readEnv('ANTHROPIC_API_KEY')
+// ワークスペースに結びついていない鍵の時に要る、ワークスペースの ID（秘密ではない。なければ送らない）
+const WORKSPACE = readEnv('ANTHROPIC_WORKSPACE_ID')
 if (!KEY) {
   console.error('.env.local に ANTHROPIC_API_KEY が見つかりません（値は表示しません）')
   process.exit(2)
@@ -37,7 +40,7 @@ const hide = (s) => String(s).split(KEY).join('[鍵]').replace(/sk-ant-[A-Za-z0-
 const { items } = JSON.parse(readFileSync(inPath, 'utf8'))
 const out = existsSync(outPath) ? JSON.parse(readFileSync(outPath, 'utf8')) : { model: MODEL, createdAt: new Date().toISOString().slice(0, 10), answers: {} }
 const todo = items.filter((it) => !out.answers[it.id]).slice(0, ONLY_ONE ? 1 : undefined)
-console.log(`頼み ${items.length} 件、これから送る ${todo.length} 件（モデル ${MODEL}）`)
+console.log(`頼み ${items.length} 件、これから送る ${todo.length} 件（モデル ${MODEL}、ワークスペースの ID ${WORKSPACE ? 'あり' : 'なし'}）`)
 
 let usageIn = 0
 let usageOut = 0
@@ -56,7 +59,7 @@ async function ask(it) {
   for (let tries = 0; tries < 3; tries++) {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'anthropic-version': '2023-06-01', 'x-api-key': KEY },
+      headers: { 'content-type': 'application/json', 'anthropic-version': '2023-06-01', 'x-api-key': KEY, ...(WORKSPACE ? { 'anthropic-workspace-id': WORKSPACE } : {}) },
       body: JSON.stringify({ model: MODEL, max_tokens: 600, messages: [{ role: 'user', content: it.prompt }] }),
     }).catch((e) => ({ ok: false, status: 0, text: async () => hide(e.message) }))
     if (res.ok) {
@@ -76,6 +79,7 @@ async function ask(it) {
       continue
     }
     console.error(`${it.id}：失敗（${status}）${why}`)
+    if (/workspace/i.test(why)) console.error('→ .env.local に ANTHROPIC_WORKSPACE_ID=（Console の Settings → Workspaces にある ID）を足して、もう一度打ってください')
     break
   }
   failed++
