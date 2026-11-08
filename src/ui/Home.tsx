@@ -4,12 +4,11 @@
 //   その下：5日間の見回り（月〜金とまとめテスト。工程表のように並べる）、AIの練習、ノートとあそびかた
 //   横か下：自分の階級・ポイント・続けた日数、のびていく建物
 // ============================================================
-import { useEffect, useState } from 'react'
 import { EXTRA_LESSONS, LESSONS, lessonOf, questionOf } from '../game/course'
 import { DAY_CARD_EYEBROW, DAY_CARD_GO, DAY_CARD_NOTE, DAY_CARD_TEXT, DAY_EN, DAY_SUB, DAY_TITLE } from '../makase/words'
 import { dayNumber, dueIds, lessonOpen, PASS, rankOf, weakTopic, type Progress } from '../game/learn'
 import type { Lang, TopicId } from '../game/types'
-import { getAI } from '../lib/ai'
+import { useAIState } from './AiKey'
 import { sfx } from '../lib/platform'
 import { Art } from './Art'
 import { Building } from './Building'
@@ -59,14 +58,7 @@ export function Home(p: {
   const order = LESSONS.map((l) => l.id)
   const next = LESSONS.find((l) => !pr.lessons[l.id]?.done && lessonOpen(pr, order, l.id))
   const firstLocked = LESSONS.findIndex((l) => !lessonOpen(pr, order, l.id))
-  const [ai, setAi] = useState(false)
-  useEffect(() => {
-    let alive = true
-    void getAI().then((a) => alive && setAi(!!a))
-    return () => {
-      alive = false
-    }
-  }, [])
+  const ai = !!useAIState()
   const playedToday = pr.lastDay === today
   // 1日あいたら、続けた日数は切れている（次に遊んだ時に1日目から）
   const streakAlive = pr.streak > 0 && pr.lastDay !== null && pr.lastDay >= today - 1

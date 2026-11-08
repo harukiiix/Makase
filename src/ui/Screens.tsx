@@ -5,7 +5,7 @@ import { ALL_QUESTIONS, EXTRA_LESSONS, LESSONS } from '../game/course'
 import { BADGES, type Progress } from '../game/learn'
 import { PRINCIPLES } from '../game/science'
 import type { Lang } from '../game/types'
-import { getAI } from '../lib/ai'
+import { useAIState } from './AiKey'
 import { sfx, type Settings } from '../lib/platform'
 import { Art } from './Art'
 import { BackButton, LangButton, LangToggle, Sheet } from './Common'
@@ -14,14 +14,7 @@ import { BADGE_TEXT, S } from './strings'
 
 /** AIが使えるか（claude.ai で開いた時だけ） */
 function useHasAI() {
-  const [ai, setAi] = useState(false)
-  useEffect(() => {
-    let alive = true
-    void getAI().then((a) => alive && setAi(!!a))
-    return () => {
-      alive = false
-    }
-  }, [])
+  const ai = !!useAIState()
   return ai
 }
 

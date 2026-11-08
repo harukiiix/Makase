@@ -12,7 +12,8 @@ import { judgeDay } from '../makase/judge'
 import { todayOf, type Today } from '../makase/takeaway'
 import { JOBS, JOB_NOTE, JOB_NOTE_EN, cleanJobLines, customJob, jobLabel, jobPrompt, type Job } from '../makase/jobLine'
 import { cleanSiteReply, siteChatTurns, type ChatTurn } from '../makase/siteChat'
-import { aiOff, CLAUDE_AI_URL, errorKind, getAI, onClaudeAi, type SampleFn } from '../lib/ai'
+import { aiOff, errorKind } from '../lib/ai'
+import { AiKeyBox, useAIState } from './AiKey'
 import { S } from './strings'
 import { useAiBudget } from './aiBudget'
 import type { Answer, Permission } from '../makase/types'
@@ -775,6 +776,7 @@ function Takeaway({ today, facts, onAgain, onHome }: { today: Today; facts: DayF
             </p>
           )}
           <p className="text-sm text-ink2">{one.note}</p>
+          <TakeKeyBox />
           <AskSiteAI facts={facts} />
           <JobAsk today={today} one={one} />
           <div className="grid grid-cols-2 gap-3">
@@ -794,16 +796,13 @@ function Takeaway({ today, facts, onAgain, onHome }: { today: Today; facts: DayF
 // ---------------- あなたの仕事に合わせる（AIの宮下さん） ----------------
 // claude.ai で開いた時だけ使える（GitHub Pages など、AIが使えない所では、claude.ai の版への案内だけを出す）。
 // 押した時だけ呼ぶ。答えは文字として出すだけ。漏れたかどうかは、コードの判定（today）をそのまま渡す
-function useSample(): SampleFn | null | undefined {
-  const [ai, setAi] = useState<SampleFn | null | undefined>(undefined)
-  useEffect(() => {
-    let alive = true
-    void getAI().then((a) => alive && setAi(() => a))
-    return () => {
-      alive = false
-    }
-  }, [])
-  return ai
+const useSample = useAIState
+
+/** 持ち帰りの画面の、鍵の欄（AI が使えない公開ページでだけ出る） */
+function TakeKeyBox() {
+  const ai = useSample()
+  if (ai === undefined) return null
+  return <AiKeyBox ai={ai} />
 }
 
 // ---------------- 現場AIに自由に聞く（本物のAI。使える所だけ出す） ----------------
@@ -950,16 +949,7 @@ function JobAsk({ today, one }: { today: Today; one: ReturnType<typeof takeHome>
   useEffect(() => () => ctl.current?.abort(), [])
   if (ai === undefined) return null
   // AIが使えない所（GitHub Pages など）では、claude.ai の版を案内するだけにする
-  if (ai === null && onClaudeAi()) return null
-  if (ai === null)
-    return (
-      <p data-ai-elsewhere className="text-sm text-ink2">
-        {W.JOB_HEAD}{lang === 'en' ? ': ' : '：'}
-        <a href={CLAUDE_AI_URL} target="_blank" rel="noopener noreferrer" className="underline">
-          {S.aiElsewhere[lang]}
-        </a>
-      </p>
-    )
+  if (ai === null) return null
   const spent = budget.left.left === 0
 
   const ask = async (j: Job) => {

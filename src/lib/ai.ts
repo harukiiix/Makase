@@ -33,11 +33,44 @@ const BUILD_KEY: string = (import.meta.env.VITE_ANTHROPIC_API_KEY as string | un
 /** この版で、鍵を使ってAIと話せるか（claude.ai の外でも宮下さんに聞ける） */
 export const hasBuildKey = () => BUILD_KEY.length > 0
 
+/**
+ * 遊ぶ人が入れる鍵（公開ページで AI を使う時）。そのタブのメモリの中だけに置き、localStorage などには保存しない。
+ * 閉じたり読み直したりすると消える。送り先は Anthropic の API だけ
+ */
+let userKey = ''
+const listeners = new Set<() => void>()
+/** 鍵の形（Anthropic の鍵は sk-ant- で始まる）。それ以外は受け取らない */
+const KEY_SHAPE = /^sk-ant-[A-Za-z0-9_-]{20,200}$/
+export const hasUserKey = () => userKey.length > 0
+/** 鍵を入れる。形が合わなければ false（入れない） */
+export function setUserKey(raw: string): boolean {
+  const k = raw.trim()
+  if (!KEY_SHAPE.test(k)) return false
+  userKey = k
+  changed()
+  return true
+}
+export function clearUserKey(): void {
+  if (!userKey) return
+  userKey = ''
+  changed()
+}
+/** AI が使えるかが変わった時に知らせる（画面が出し直すため） */
+export function subscribeAI(cb: () => void): () => void {
+  listeners.add(cb)
+  return () => void listeners.delete(cb)
+}
+function changed() {
+  pending = null
+  for (const cb of listeners) cb()
+}
+
 let pending: Promise<SampleFn | null> | null = null
 /**
  * 使えれば関数、使えなければ null（10秒ほどで決まる）。
- * 1) claude.ai の画面の中：見る人の Claude（sample）
- * 2) それ以外（GitHub Pages や、Artifact を単独のページで開いた時）：作るときに入れた鍵があれば、それで Claude を呼ぶ
+ * 1) claude.ai の会話の中：見る人の Claude（sample）
+ * 2) それ以外（GitHub Pages など）：遊ぶ人が入れた鍵があれば、それで Claude を呼ぶ
+ * 3) 手元で作るときに入れた鍵（.env。公開ページには入れない）
  */
 export function getAI(): Promise<SampleFn | null> {
   if (!pending)
@@ -51,9 +84,11 @@ export function getAI(): Promise<SampleFn | null> {
       } catch {
         // claude.ai の外。下の鍵へ
       }
-      if (!hasBuildKey()) return null
+      // 呼ぶたびに今の鍵を読む（消した鍵は、もう使わない）
+      const key = () => userKey || BUILD_KEY
+      if (!key()) return null
       try {
-        return await keySample(BUILD_KEY)
+        return await keySample(key)
       } catch {
         return null
       }
@@ -62,11 +97,16 @@ export function getAI(): Promise<SampleFn | null> {
 }
 
 /** 鍵で Claude を呼ぶ。sample と同じ形（文字を少しずつ返す・止められる・json）にそろえる */
-export async function keySample(apiKey: string, fetchImpl?: typeof fetch): Promise<SampleFn> {
+export async function keySample(apiKey: string | (() => string), fetchImpl?: typeof fetch): Promise<SampleFn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk')
   // 見る人のブラウザから直接呼ぶ（中継のサーバーがない GitHub Pages のため）。fetchImpl はテストのため
-  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true, maxRetries: 1, ...(fetchImpl ? { fetch: fetchImpl } : {}) })
+  const keyOf = typeof apiKey === 'string' ? () => apiKey : apiKey
   const call = async (input: string | Turn[], opts: SampleOpts = {}): Promise<{ text: string; truncated: boolean }> => {
+    const k = keyOf()
+    if (!k) throw { code: 'not_granted' }
+    // 呼ぶたびに作る（鍵は変数に置いたまま、どこにも書かない）
+    // 送り先は Anthropic だけ（環境の ANTHROPIC_BASE_URL などは読まない）。使う資格情報は、入れた鍵だけ（ANTHROPIC_AUTH_TOKEN などは読まない）
+    const client = new Anthropic({ apiKey: k, authToken: null, baseURL: 'https://api.anthropic.com', dangerouslyAllowBrowser: true, maxRetries: 1, ...(fetchImpl ? { fetch: fetchImpl } : {}) })
     const messages = typeof input === 'string' ? [{ role: 'user' as const, content: input }] : input
     try {
       const stream = client.beta.messages.stream(

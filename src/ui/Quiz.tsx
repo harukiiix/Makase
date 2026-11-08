@@ -11,7 +11,8 @@ import { CASES } from '../game/cases'
 import { lessonOf } from '../game/course'
 import { answer, finished, isRight, next, shuffle, startSession, whyFor, type Session, type SessionKind } from '../game/learn'
 import type { Lang, Question, TopicId } from '../game/types'
-import { aiOff, CLAUDE_AI_URL, errorKind, getAI, onClaudeAi, tutorRules, type SampleFn } from '../lib/ai'
+import { aiOff, errorKind, tutorRules, type SampleFn } from '../lib/ai'
+import { AiKeyBox, useAIState } from './AiKey'
 import { useAiBudget } from './aiBudget'
 import { FAST, sfx } from '../lib/platform'
 import { Art } from './Art'
@@ -439,19 +440,8 @@ function Choice({ i, mark, disabled, onPick, correct, label, compact, hideDim, c
   )
 }
 
-/** AIが使えるか（null = 使えない、undefined = 調べている） */
-function useAI(): SampleFn | null | undefined {
-  const [ai, setAi] = useState<SampleFn | null | undefined>(undefined)
-  useEffect(() => {
-    let alive = true
-    // 関数をそのまま setAi に渡すと、React が「更新の関数」として呼んでしまうので包む
-    void getAI().then((a) => alive && setAi(() => a))
-    return () => {
-      alive = false
-    }
-  }, [])
-  return ai
-}
+/** AIが使えるか（null = 使えない、undefined = 調べている）。鍵を入れたり消したりすると出し直す */
+const useAI = useAIState
 
 // ------------------------------------------------------------
 // 答えたあと：結果、選んだ答えへの言葉、覚えること（青い「守ること」の印）
@@ -529,16 +519,10 @@ function FeedbackActions({ q, ok, ai, onOpen, compact, noLink }: { q: Question; 
   )
 }
 
-/** AIが使えない所（GitHub Pages など）では、claude.ai の版を案内する（遊ぶ人自身の Claude で答えるため） */
+/** AIが使えない所（GitHub Pages など）では、遊ぶ人が自分の鍵を入れる欄を出す */
 function AiElsewhere({ ai }: { ai: SampleFn | null | undefined }) {
-  const t = useT()
-  if (ai !== null || onClaudeAi()) return null
-  return (
-    <a data-ai-elsewhere href={CLAUDE_AI_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-ink2 underline">
-      <Art id="icon.ai" scale={1.5} />
-      {t(S.aiElsewhere)}
-    </a>
-  )
+  if (ai === undefined) return null
+  return <AiKeyBox ai={ai} />
 }
 
 /** 正解のわけ（まちがえた時）：正しい答えと、そのわけ */
